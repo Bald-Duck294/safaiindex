@@ -290,7 +290,7 @@ export default function ReviewContent({ companyId }) {
       };
 
       console.log('sending company_id', companyId);
-      const response = await CleanerReviewApi.getAllCleanerReviews(params, companyId);
+      const response = await CleanerReviewApi.getAllCleanerReviews(params);
 
       if (response.success) {
         // Clean the data

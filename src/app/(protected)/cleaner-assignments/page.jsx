@@ -43,7 +43,7 @@ export default function AssignmentListPage() {
 
   useEffect(() => {
     fetchAssignments();
-  }, []);
+  }, [companyId]);
 
   return (
     <div className="p-6">

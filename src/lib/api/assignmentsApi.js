@@ -26,11 +26,10 @@ export const AssignmentsApi = {
   },
 
 
-  getAllAssignments: async (companyId = null) => {
+  getAllAssignments: async (companyId ) => {
+    console.log(companyId, "company id form api assignments ")
     try {
-      const url = companyId
-        ? `${API_BASE_URL}/assignments?company_id=${companyId}`
-        : `${API_BASE_URL}/assignments`;
+      const url = `/assignments?company_id=${companyId}`
 
       const response = await axiosInstance.get(url);
       console.log(response, "assign response");

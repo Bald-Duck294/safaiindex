@@ -110,24 +110,24 @@ export default function DashboardPage() {
       href: "/role/admin",
       borderColor: "border-green-500"
     },
-    {
-      label: "Supervisor",
-      count: counts.supervisor,
-      href: "/role/supervisor",
-      borderColor: "border-yellow-500"
-    },
+    // {
+    //   label: "Supervisor",
+    //   count: counts.supervisor,
+    //   href: "/role/supervisor",
+    //   borderColor: "border-yellow-500"
+    // },
     {
       label: "Cleaner",
       count: counts.users,
       href: "/role/cleaner",
       borderColor: "border-pink-400"
     },
-    {
-      label: "Users",
-      count: counts.users,
-      href: "/role/user",
-      borderColor: "border-red-500"
-    },
+    // {
+    //   label: "Users",
+    //   count: counts.users,
+    //   href: "/role/user",
+    //   borderColor: "border-red-500"
+    // },
   ];
 
   const handleCardClick = (href) => {
