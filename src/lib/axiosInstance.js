@@ -4,8 +4,8 @@ import axios from "axios";
 import { store } from "@/store/store";
 // console.log("in axios instance");
 
-const API_BASE_URL = "http://localhost:8000/api";
-// const API_BASE_URL = "https://saaf-ai-backend.onrender.com/api";
+// const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "https://saaf-ai-backend.onrender.com/api";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
