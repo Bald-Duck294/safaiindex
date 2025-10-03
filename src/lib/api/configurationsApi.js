@@ -21,13 +21,13 @@ import axiosInstance from "../axiosInstance";
 // import axios from 'axios';
 
 export const fetchToiletFeaturesByName = async (name) => {
-  const res = await axiosInstance.get(`${API_BASE_URL}/configurations/${name}`);
+  const res = await axiosInstance.get(`/configurations/${name}`);
   return res.data;
 };
 
 export const fetchToiletFeaturesById = async (id) => {
   console.log('config id ' , id)
-  const res = await axiosInstance.get(`${API_BASE_URL}/configurations/id/${id}`);
+  const res = await axiosInstance.get(`/configurations/id/${id}`);
   return res.data;
 };
 
