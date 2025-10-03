@@ -36,6 +36,13 @@ export default function AddLocationPage() {
   useEffect(() => {
     async function loadInitialData() {
       console.log(companyId, "companyId from add location ");
+
+      // 🚨 ADD THIS GUARD CLAUSE
+      if (!companyId || companyId === 'null' || companyId === null) {
+        console.log('Skipping API call - companyId not ready:', companyId);
+        return; // Don't make API calls until companyId is valid
+      }
+      
       try {
         const [config, types] = await Promise.all([
           fetchToiletFeaturesByName("cleaner_config", companyId),
