@@ -14,11 +14,12 @@ export default function AddUserPage() {
 
   const router = useRouter();
 
-  const companyId = useCompanyId();
+  const {companyId} = useCompanyId();
 
+  console.log(companyId, 'companyId from add usere');
   const handleAddUser = async (formData) => {
     const toastId = toast.loading("Creating user...");
-    const response = await UsersApi.createUser(formData);
+    const response = await UsersApi.createUser(formData, companyId);
 
     if (response.success) {
       toast.success("User created successfully!", { id: toastId });

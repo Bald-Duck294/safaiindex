@@ -162,10 +162,11 @@ export const UsersApi = {
     }
   },
 
-  createUser: async (data) => {
+  createUser: async (data, companyId) => {
     console.log(data, "Create User Data");
+    console.log(companyId, "companyId")
     try {
-      const response = await axiosInstance.post('/users', data);
+      const response = await axiosInstance.post(`/users?companyId=${companyId}`, data);
       console.log(response, "create user response");
       return {
         success: true,

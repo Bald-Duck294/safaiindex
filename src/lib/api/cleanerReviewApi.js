@@ -154,7 +154,7 @@ export const CleanerReviewApi = {
 
   getReviewsByStatus: async (status, companyId) => {
 
-    console.log('get review by stat'  , status , companyId)
+    console.log('get review by stat', status, companyId)
     try {
       const response = await axiosInstance.get(`/cleaner-reviews?status=${status}&company_id=${companyId}`);
       return {
@@ -166,6 +166,38 @@ export const CleanerReviewApi = {
       return {
         success: false,
         error: error.message,
+      };
+    }
+  },
+
+  async getCleanerReviewById(reviewId) {
+    console.log(reviewId, "id")
+    try {
+      const response = await axiosInstance(`/cleaner-reviews/${reviewId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(response , "response")
+
+      if (response) {
+        return {
+          success: true,
+          data: response?.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: data.message || 'Failed to fetch review details',
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching review by ID:', error);
+      return {
+        success: false,
+        error: 'Network error occurred',
       };
     }
   },

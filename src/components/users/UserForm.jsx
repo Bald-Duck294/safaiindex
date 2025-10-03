@@ -5,15 +5,17 @@ import { useState, useEffect } from "react";
 import roleApi from "@/lib/api/roleApi";
 // import { LocationsApi } from "../../lib/api/locationsApi";
 import LocationsApi from "@/lib/api/LocationApi";
-
+import { useCompanyId } from "@/lib/providers/CompanyProvider";
 export default function UserForm({ initialData, onSubmit, isEditing = false }) {
+
+    const { companyId } = useCompanyId();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         phone: '',
         role_id: '',
-        company_id: '1', // Default or fetch dynamically
+        company_id: companyId, // Default or fetch dynamically
         location_ids: [],
     });
 
@@ -23,13 +25,13 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
 
     // --- MOCK USER DATA ---
     // FIXME: Replace this with your actual user state management (e.g., Redux, Context API)
-    const [currentUser, setCurrentUser] = useState({
-        company_id: '1' // Default company_id for demonstration
-    });
+    // const [currentUser, setCurrentUser] = useState({
+    //     company_id: '1' // Default company_id for demonstration
+    // });
 
     // Fetch roles and locations on component mount
     useEffect(() => {
-        const companyId = currentUser?.company_id;
+        // const companyId = currentUser?.company_id;
         if (!companyId) return;
 
         setFormData(prev => ({ ...prev, company_id: companyId }));
@@ -43,7 +45,7 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
             if (locationsRes.success) setLocations(locationsRes.data);
         };
         fetchData();
-    }, [currentUser]);
+    }, [companyId]);
 
     // Pre-fill form if editing
     useEffect(() => {
@@ -54,11 +56,11 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 password: '', // Never pre-fill password
                 phone: initialData.phone || '',
                 role_id: initialData.role_id || '',
-                company_id: initialData.company_id || currentUser?.company_id,
+                company_id: initialData.company_id || companyId,
                 location_ids: initialData.location_assignments?.filter(a => a.is_active).map(a => a.location_id.toString()) || [],
             });
         }
-    }, [initialData, currentUser]);
+    }, [initialData]);
 
     // Determine if location assignment should be visible
     useEffect(() => {

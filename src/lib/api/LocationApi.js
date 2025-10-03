@@ -96,10 +96,11 @@ export const LocationsApi = {
     }
   },
 
-  postLocation: async (data) => {
+  postLocation: async (data, companyId) => {
     console.log(data, "posting the data");
+    console.log(companyId, 'from location')
     try {
-      const response = await axiosInstance.post(`${API_BASE_URL}/locations`, data);
+      const response = await axiosInstance.post(`/locations?companyId=${companyId}`, data);
       return {
         success: true,
         data: response.data,
