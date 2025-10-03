@@ -16,7 +16,7 @@ export default function AddLocationTypesPage() {
 
   useEffect(() => {
     fetchTypes();
-  }, []);
+  }, [companyId]);
 
   return (
     <div className="p-6">

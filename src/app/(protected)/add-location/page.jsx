@@ -51,7 +51,7 @@ export default function AddLocationPage() {
       }
     }
     loadInitialData();
-  }, []);
+  }, [companyId]);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));

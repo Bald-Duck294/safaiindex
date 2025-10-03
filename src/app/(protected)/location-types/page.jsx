@@ -96,6 +96,7 @@ export default function LocationTypesPage() {
     setIsLoading(true);
     try {
       const data = await locationTypesApi.getAll(companyId);
+      console.log(data, "data from location types");
       setTypes(data);
       setFilteredTypes(data);
     } catch (err) {
