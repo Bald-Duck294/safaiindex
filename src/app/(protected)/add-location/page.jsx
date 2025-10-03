@@ -33,32 +33,59 @@ export default function AddLocationPage() {
     options: {},
   });
 
+
   useEffect(() => {
     async function loadInitialData() {
-      console.log(companyId, "companyId from add location ");
+      console.log(companyId, "companyId from add location");
 
-      // 🚨 ADD THIS GUARD CLAUSE
       if (!companyId || companyId === 'null' || companyId === null) {
-        console.log('Skipping API call - companyId not ready:', companyId);
-        return; // Don't make API calls until companyId is valid
+        console.log('Skipping - companyId not ready');
+        return;
       }
-      
-      try {
-        const [config, types] = await Promise.all([
-          fetchToiletFeaturesByName("cleaner_config", companyId),
-          locationTypesApi.getAll(companyId),
-        ]);
 
-        console.log(config, "config");
-        console.log(types, "types");
-        setFeatures(config?.description); // for DynamicOptions
-        setLocationTypes(types); // for LocationTypeSelect
+      try {
+        // ✅ Handle each API call separately instead of Promise.all
+        let config = null;
+        let types = null;
+
+        // Try to fetch config (if this fails, continue with types)
+        try {
+          config = await fetchToiletFeaturesByName("cleaner_config", companyId);
+          console.log('Config loaded successfully:', config);
+        } catch (configError) {
+          console.error('Failed to load config (continuing anyway):', configError);
+          // Don't throw - continue with types
+        }
+
+        // Try to fetch types (this is more critical)
+        try {
+          types = await locationTypesApi.getAll(companyId);
+          console.log('Types loaded successfully:', types);
+        } catch (typesError) {
+          console.error('Failed to load location types:', typesError);
+          types = []; // Set empty array as fallback
+        }
+
+        // Set state regardless of individual failures
+        setFeatures(config?.description || []);
+        setLocationTypes(Array.isArray(types) ? types : []);
+
+        console.log('Final state:', {
+          features: config?.description || [],
+          types: types || []
+        });
+
       } catch (err) {
-        console.error("Failed to load config or types", err);
+        console.error("Unexpected error in loadInitialData", err);
+        // Fallback state
+        setFeatures([]);
+        setLocationTypes([]);
       }
     }
+
     loadInitialData();
   }, [companyId]);
+
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
