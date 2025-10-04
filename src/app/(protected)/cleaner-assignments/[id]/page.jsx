@@ -202,7 +202,7 @@ export default function EditAssignmentPage() {
       </div>
 
       {/* ✅ Debug Information (Remove in production) */}
-      <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      {/* <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <details>
           <summary className="cursor-pointer text-sm font-medium text-yellow-800">
             Debug Info (Click to expand)
@@ -216,7 +216,7 @@ export default function EditAssignmentPage() {
             <p><strong>Available Locations:</strong> {allLocations.length}</p>
           </div>
         </details>
-      </div>
+      </div> */}
 
       <form onSubmit={handleUpdate} className="space-y-6">
         {/* Cleaner Information */}
@@ -340,8 +340,8 @@ export default function EditAssignmentPage() {
             >
               <option value="assigned">Assigned</option>
               <option value="unassigned">Unassigned</option>
-              <option value="completed">Completed</option>
-              <option value="in-progress">In Progress</option>
+              {/* <option value="completed">Completed</option> */}
+              {/* <option value="in-progress">In Progress</option> */}
             </select>
           </div>
         </div>
