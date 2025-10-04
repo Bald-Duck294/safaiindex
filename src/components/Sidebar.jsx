@@ -186,24 +186,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         // ✅ ADD REGISTERED USERS FOR SUPERADMIN
-        {
-          icon: ClipboardList,
-          label: "Registered Users",
-          hasDropdown: true,
-          key: "registered-users",
-          children: [
-            {
-              icon: List,
-              label: "Registered Users List",
-              href: `/registered-users?companyId=${companyId}`,
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Registered User",
-              href: `/registered-users/add?companyId=${companyId}`,
-            },
-          ],
-        },
+        // {
+        //   icon: ClipboardList,
+        //   label: "Registered Users",
+        //   hasDropdown: true,
+        //   key: "registered-users",
+        //   children: [
+        //     {
+        //       icon: List,
+        //       label: "Registered Users List",
+        //       href: `/registered-users?companyId=${companyId}`,
+        //     },
+        //     {
+        //       icon: PlusCircle,
+        //       label: "Add Registered User",
+        //       href: `/registered-users/add?companyId=${companyId}`,
+        //     },
+        //   ],
+        // },
         {
           icon: ClipboardList,
           label: "Cleaner Review",
