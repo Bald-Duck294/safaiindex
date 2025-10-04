@@ -123,7 +123,7 @@ export default function EditAssignmentPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-2xl mx-auto">
       <Toaster />
       
       <h1 className="text-2xl font-bold mb-6">Edit Assignment #{assignment.id}</h1>
