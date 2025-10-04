@@ -52,7 +52,7 @@ export const AssignmentsApi = {
 
     console.log('in get assignment by id ', id, companyId);
     try {
-      const url = `/assignments/${id}${companyId ? `?company_id=${companyId}` : ''}`;
+      const url = `/assignments/cleaner/${id}${companyId ? `?company_id=${companyId}` : ''}`;
 
       const response = await axiosInstance.get(url);
       console.log('Single assignment response:', response.data);
