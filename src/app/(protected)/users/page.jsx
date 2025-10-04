@@ -50,7 +50,7 @@ export default function UsersPage() {
     return allUsers.filter(user => {
       const userRoleId = parseInt(user.role_id || user.role?.id || 4);
       const userRoleLevel = ROLE_HIERARCHY[userRoleId]?.level || 4;
-      
+
       // Current user can only see users with equal or lower authority (higher level number)
       // Superadmin (1) sees everyone, Admin (2) can't see Superadmin (1), etc.
       return userRoleLevel >= currentUserRoleLevel;
@@ -60,7 +60,7 @@ export default function UsersPage() {
   // Filter users based on search term
   const filterUsersBySearch = useCallback((allUsers, term) => {
     if (!term) return allUsers;
-    
+
     return allUsers.filter(user =>
       user.name.toLowerCase().includes(term.toLowerCase()) ||
       (user.email && user.email.toLowerCase().includes(term.toLowerCase())) ||
@@ -81,13 +81,13 @@ export default function UsersPage() {
       const response = await UsersApi.getAllUsers(companyId);
       if (response.success) {
         console.log('All users fetched:', response.data);
-        
+
         // Apply role-based filtering
         const roleFilteredUsers = filterUsersByRole(response.data);
         console.log('Role filtered users:', roleFilteredUsers);
-        
+
         setUsers(roleFilteredUsers);
-        
+
         // Apply search filter on top of role filter
         const searchFilteredUsers = filterUsersBySearch(roleFilteredUsers, searchTerm);
         setFilteredUsers(searchFilteredUsers);
@@ -115,7 +115,7 @@ export default function UsersPage() {
   const canManageUser = (targetUser) => {
     const targetUserRoleId = parseInt(targetUser.role_id || targetUser.role?.id || 4);
     const targetUserRoleLevel = ROLE_HIERARCHY[targetUserRoleId]?.level || 4;
-    
+
     // Can manage users with equal or lower authority (higher level number)
     return targetUserRoleLevel >= currentUserRoleLevel;
   };
@@ -202,8 +202,8 @@ export default function UsersPage() {
                 </p>
               </div>
             </div>
-            <a 
-              href={`/users/add?companyId=${companyId}`} 
+            <a
+              href={`/users/add?companyId=${companyId}`}
               className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-transform transform hover:scale-105 cursor-pointer"
             >
               <Plus size={20} />
@@ -212,11 +212,11 @@ export default function UsersPage() {
           </div>
 
           {/* Role Filter Info */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          {/* <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <Users size={16} />
               <span>
-                <strong>Access Level:</strong> {ROLE_HIERARCHY[currentUserRoleId]?.name} 
+                <strong>Access Level:</strong> {ROLE_HIERARCHY[currentUserRoleId]?.name}
                 - You can manage users with roles: {
                   Object.entries(ROLE_HIERARCHY)
                     .filter(([_, role]) => role.level >= currentUserRoleLevel)
@@ -273,8 +273,8 @@ export default function UsersPage() {
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => navigateTo(`/users/view/${user.id}`)} 
+                            <button
+                              onClick={() => navigateTo(`/users/view/${user.id}?companyId=${companyId}`)}
                               className="p-2 text-green-600 bg-green-100 rounded-md hover:bg-green-200 transition"
                               title="View User"
                             >
@@ -282,15 +282,15 @@ export default function UsersPage() {
                             </button>
                             {canManageUser(user) && (
                               <>
-                                <button 
-                                  onClick={() => navigateTo(`/users/${user.id}`)} 
+                                <button
+                                  onClick={() => navigateTo(`/users/${user.id}?companyId=${companyId}`)}
                                   className="p-2 text-sky-600 bg-sky-100 rounded-md hover:bg-sky-200 transition"
                                   title="Edit User"
                                 >
                                   <Edit size={16} />
                                 </button>
-                                <button 
-                                  onClick={() => handleDelete(user)} 
+                                <button
+                                  onClick={() => handleDelete(user)}
                                   className="p-2 text-red-600 bg-red-100 rounded-md hover:bg-red-200 transition"
                                   title="Delete User"
                                 >

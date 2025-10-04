@@ -46,7 +46,11 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 const rolesRes = await roleApi.getAllRoles(companyId);
                 console.log(rolesRes, "roles res");
                 if (rolesRes.success) {
-                    setRoles(rolesRes.data?.data || []);
+                    const filteredRoles = (rolesRes.data?.data || []).filter(role => role.id !== 1);
+                    console.log(`Filtered ${rolesRes.data?.data?.length || 0} roles to ${filteredRoles.length} (excluded superadmin)`);
+                    // setRoles(rolesRes.data?.data || []);
+                    setRoles(filteredRoles);
+
                 }
 
                 // Fetch locations for current company
@@ -107,19 +111,19 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         // Validation
         if (!companyId) {
             alert('Company context not available');
             return;
         }
-        
+
         const dataToSend = {
             ...formData,
             company_id: companyId, // Ensure company_id is current company
             role_id: formData.role_id ? parseInt(formData.role_id) : null,
         };
-        
+
         console.log('Submitting user data:', dataToSend);
         onSubmit(dataToSend);
     };
@@ -149,13 +153,13 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
             {/* Name Field */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                <input 
-                    type="text" 
-                    name="name" 
-                    value={formData.name} 
-                    onChange={handleChange} 
-                    required 
-                    className={inputClass} 
+                <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
                     placeholder="Enter full name"
                 />
             </div>
@@ -164,25 +168,25 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                    <input 
-                        type="email" 
-                        name="email" 
-                        value={formData.email} 
-                        onChange={handleChange} 
-                        required 
-                        className={inputClass} 
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className={inputClass}
                         placeholder="Enter email address"
                     />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                    <input 
-                        type="tel" 
-                        name="phone" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
-                        className={inputClass} 
-                        maxLength={10} 
+                    <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className={inputClass}
+                        maxLength={10}
                         placeholder="Enter 10-digit phone number"
                     />
                 </div>
@@ -193,14 +197,14 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                     Password {!isEditing && '*'}
                 </label>
-                <input 
-                    type="password" 
-                    name="password" 
-                    value={formData.password} 
-                    onChange={handleChange} 
-                    required={!isEditing} 
-                    className={inputClass} 
-                    placeholder={isEditing ? "Leave blank to keep current password" : "Enter password (min 6 characters)"} 
+                <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required={!isEditing}
+                    className={inputClass}
+                    placeholder={isEditing ? "Leave blank to keep current password" : "Enter password (min 6 characters)"}
                     minLength={!isEditing ? 6 : undefined}
                 />
             </div>
@@ -208,11 +212,11 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
             {/* Role Selection */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Role *</label>
-                <select 
-                    name="role_id" 
-                    value={formData.role_id} 
-                    onChange={handleChange} 
-                    required 
+                <select
+                    name="role_id"
+                    value={formData.role_id}
+                    onChange={handleChange}
+                    required
                     className={inputClass}
                     disabled={isLoadingData}
                 >
@@ -279,15 +283,15 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4 pt-4">
-                <button 
-                    type="button" 
-                    onClick={() => window.history.back()} 
+                <button
+                    type="button"
+                    onClick={() => window.history.back()}
                     className="px-6 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 transition-colors"
                 >
                     Cancel
                 </button>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400"
                     disabled={isLoadingData}
                 >
