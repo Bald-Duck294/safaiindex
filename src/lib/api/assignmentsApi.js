@@ -2,14 +2,14 @@ import axiosInstance from "../axiosInstance";
 // import API_BASE_URL from "../utils/Constant";
 
 
-const API_BASE_URL = 'http://localhost:8000/api'
+// const API_BASE_URL = 'http://localhost:8000/api'
 export const AssignmentsApi = {
 
   createAssignment: async (assignmentData) => {
     console.log("in create assighments", assignmentData);
     try {
       const response = await axiosInstance.post(
-        `${API_BASE_URL}/assignments`,
+        `/assignments`,
         assignmentData
       );
       return {
@@ -26,7 +26,7 @@ export const AssignmentsApi = {
   },
 
 
-  getAllAssignments: async (companyId ) => {
+  getAllAssignments: async (companyId) => {
     console.log(companyId, "company id form api assignments ")
     try {
       const url = `/assignments?company_id=${companyId}`
@@ -73,7 +73,7 @@ export const AssignmentsApi = {
   updateAssignment: async (id, assignmentData) => {
     try {
       const response = await axiosInstance.post(
-        `${API_BASE_URL}/assignments/${id}`,
+        `/assignments/${id}`,
         assignmentData
       );
       return { success: true, data: response.data };
@@ -89,7 +89,7 @@ export const AssignmentsApi = {
   deleteAssignment: async (id) => {
     try {
       const response = await axiosInstance.delete(
-        `${API_BASE_URL}/assignments/${id}`
+        `/assignments/${id}`
       );
       return { success: true, data: response.data };
     } catch (error) {
