@@ -2,32 +2,69 @@ import axios from "axios";
 import { Thermometer } from "lucide-react";
 import API_BASE_URL from "../utils/Constant";
 import axiosInstance from "../axiosInstance";
-// export const fetchToiletFeatures = async () => {
-//   try {
-// const res =  await axios('http://localhost:8000/api/configurations/:Toilet_Features') //for now it is hardcoded 
 
-// return res.data
 
-// } catch (error) {
+// export const fetchToiletFeaturesByName = async (name) => {
+//   const res = await axiosInstance.get(`/configurations/${name}`);
+//   return res.data;
+// };
 
-//     console.log(error , "error");
-// //  throw new error;
-// return error;
-// }
+// export const fetchToiletFeaturesById = async (id) => {
+//   console.log('config id ' , id)
+//   const res = await axiosInstance.get(`/configurations/id/${id}`);
+//   return res.data;
 // };
 
 
-// lib/api/configurationsApi.js
-// import axios from 'axios';
+
+
+// Update your configurations API to handle toilet features better
 
 export const fetchToiletFeaturesByName = async (name) => {
-  const res = await axiosInstance.get(`/configurations/${name}`);
-  return res.data;
+  try {
+    const res = await axiosInstance.get(`/configurations/${name}`);
+
+    // Parse the configuration value if it's a JSON string
+    if (res.data && res.data.value) {
+      try {
+        const parsedValue = typeof res.data.value === 'string' 
+          ? JSON.parse(res.data.value) 
+          : res.data.value;
+        return parsedValue;
+      } catch (parseError) {
+        console.error('Error parsing configuration value:', parseError);
+        return [];
+      }
+    }
+
+    return res.data || [];
+  } catch (error) {
+    console.error('Error fetching toilet features:', error);
+    return [];
+  }
 };
 
 export const fetchToiletFeaturesById = async (id) => {
-  console.log('config id ' , id)
-  const res = await axiosInstance.get(`/configurations/id/${id}`);
-  return res.data;
-};
+  try {
+    console.log('config id', id);
+    const res = await axiosInstance.get(`/configurations/id/${id}`);
 
+    // Parse the configuration value if it's a JSON string
+    if (res.data && res.data.value) {
+      try {
+        const parsedValue = typeof res.data.value === 'string' 
+          ? JSON.parse(res.data.value) 
+          : res.data.value;
+        return parsedValue;
+      } catch (parseError) {
+        console.error('Error parsing configuration value:', parseError);
+        return [];
+      }
+    }
+
+    return res.data || [];
+  } catch (error) {
+    console.error('Error fetching toilet features by id:', error);
+    return [];
+  }
+};

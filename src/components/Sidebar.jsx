@@ -145,13 +145,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             {
               icon: PlusCircle,
               label: "Add Washroom",
-              href: `/add-location?companyId=${companyId}`
+              href: `/washrooms/add-location?companyId=${companyId}`
             },
           ],
         },
         {
           icon: ClipboardList,
-          label: "Cleaner Assignments",
+          label: "Cleaner Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
           children: [
@@ -206,7 +206,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         // },
         {
           icon: ClipboardList,
-          label: "Cleaner Review",
+          label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
       ];
@@ -256,19 +256,19 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             {
               icon: PlusCircle,
               label: "Add Washroom",
-              href: `/add-location?companyId=${companyId}`
+              href: `/washrooms/add-location?companyId=${companyId}`
             },
           ],
         },
         {
           icon: ClipboardList,
-          label: "Cleaner Assignments",
+          label: "Cleaner Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
           children: [
             {
               icon: List,
-              label: "Assignments List",
+              label: "Mapped List",
               href: `/cleaner-assignments?companyId=${companyId}`,
             },
             {
@@ -317,7 +317,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
         {
           icon: ClipboardList,
-          label: "Cleaner Review",
+          label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
       ];
@@ -441,7 +441,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 mt-2">
+        <nav className="flex-1 overflow-y-auto p-3 mt-2"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#475569 #1e293b'
+          }}>
           <ul className="space-y-1">
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
@@ -540,7 +544,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Footer */}
         <div className="border-t border-slate-700 bg-slate-800">
           <div className="p-4">
-            {sidebarOpen && (
+            {/* {sidebarOpen && (
               <div className="flex items-center space-x-3 mb-3 p-2 rounded-md hover:bg-slate-700 transition">
                 <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
                   {getInitials()}
@@ -554,10 +558,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   </p>
                 </div>
               </div>
-            )}
+            )} */}
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center px-3 py-2 rounded-md text-gray-300 hover:bg-red-600 hover:text-white transition-all duration-200
+              className={`cursor-pointer w-full flex items-center px-3 py-2 rounded-md text-gray-300 hover:bg-red-600 hover:text-white transition-all duration-200
                 ${!sidebarOpen ? "justify-center" : ""}
               `}
             >

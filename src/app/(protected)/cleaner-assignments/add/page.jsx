@@ -322,7 +322,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import { UsersApi } from "@/lib/api/usersApi";
-// import  LocationsApi  from '../../lib/api/LocationApi'
 import LocationsApi from "@/lib/api/LocationApi";
 import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
@@ -455,8 +454,8 @@ const AddAssignmentPage = () => {
     
     if (!cleanerUserId || selectedLocations.length === 0) {
       return toast.error("Please select a cleaner and at least one location.");
-
     }
+
     setIsLoading(true);
 
     const assignmentData = {

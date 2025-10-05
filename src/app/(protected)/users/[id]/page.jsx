@@ -6,12 +6,14 @@ import { UsersApi } from "@/lib/api/usersApi";
 import toast, { Toaster } from "react-hot-toast";
 import UserForm from "@/components/users/UserForm";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useCompanyId } from "@/lib/providers/CompanyProvider";
 
 export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
-  
+  const { companyId } = useCompanyId();
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,7 +45,7 @@ export default function EditUserPage() {
 
     if (response.success) {
       toast.success("User updated successfully!", { id: toastId });
-      router.push("/users");
+      router.push(`/users?companyId=${companyId}`);
     } else {
       toast.error(response.error || "Failed to update user.", { id: toastId });
     }
@@ -52,24 +54,24 @@ export default function EditUserPage() {
   return (
     <>
       <Toaster position="top-center" />
-       <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
+      <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
         <div className="max-w-2xl mx-auto">
-            <button onClick={() => router.back()} className="flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
-                <ArrowLeft size={18} />
-                Back to Users
-            </button>
-           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6">Edit User</h1>
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-48">
-                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                    </div>
-                ) : user ? (
-                    <UserForm initialData={user} onSubmit={handleUpdateUser} isEditing={true} />
-                ) : (
-                    <p className="text-center text-slate-500">User not found.</p>
-                )}
-            </div>
+          <button onClick={() => router.back()} className="flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
+            <ArrowLeft size={18} />
+            Back to Users
+          </button>
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6">Edit User</h1>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-48">
+                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+              </div>
+            ) : user ? (
+              <UserForm initialData={user} onSubmit={handleUpdateUser} isEditing={true} />
+            ) : (
+              <p className="text-center text-slate-500">User not found.</p>
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -114,26 +114,68 @@ export const LocationsApi = {
     }
   },
 
-  updateLocation: async (id, data) => {
-    try {
-      const response = await axiosInstance.put(`/locations/${id}`, data);
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      console.error("Error updating location:", error);
-      return {
-        success: false,
-        error: error.message,
-      };
+
+  
+// Update the existing updateLocation method
+updateLocation: async (id, data, companyId = null) => {
+  try {
+    const params = new URLSearchParams();
+    if (companyId) {
+      params.append('companyId', companyId);
     }
-  },
+
+    const response = await axiosInstance.post(
+      `/locations/update/${id}?${params.toString()}`, 
+      data
+    );
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error updating location:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+},
+
+// Add search locations method
+searchLocations: async (query, companyId) => {
+  try {
+    const params = new URLSearchParams({
+      search: query,
+      company_id: companyId,
+      cb: Date.now()
+    });
+
+    const response = await axiosInstance.get(
+      `/locations/search?${params.toString()}`
+    );
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error searching locations:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+},
+
   // Get single location by ID
-  getLocationById: async (id) => {
+  getLocationById: async (id, companyId = null) => {
     try {
+      const params = new URLSearchParams({ cb: Date.now() });
+      if (companyId) {
+        params.append('companyId', companyId);
+      }
+
       const response = await axiosInstance.get(
-        `/locations/${id}?cb=${Date.now()}`
+        `/locations/${id}?${params.toString()}`
       );
       return {
         success: true,
@@ -147,5 +189,25 @@ export const LocationsApi = {
       };
     }
   },
+
+  // Add new method to get all locations for prev/next navigation
+  getAllLocationNames: async (companyId) => {
+    try {
+      const response = await axiosInstance.get(
+        `/locations?companyId=${companyId}&fields=id,name&cb=${Date.now()}`
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching location names:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  },
+
 };
 export default LocationsApi;

@@ -197,9 +197,9 @@ export default function UsersPage() {
               <Users className="w-8 h-8 text-indigo-600" />
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Manage Users</h1>
-                <p className="text-sm text-slate-600 mt-1">
+                {/* <p className="text-sm text-slate-600 mt-1">
                   Showing users you can manage ({ROLE_HIERARCHY[currentUserRoleId]?.name} level and below)
-                </p>
+                </p> */}
               </div>
             </div>
             <a
@@ -326,7 +326,7 @@ export default function UsersPage() {
                 Showing {filteredUsers.length} of {users.length} manageable users
               </span>
               <span>
-                Your role: <strong>{ROLE_HIERARCHY[currentUserRoleId]?.name}</strong>
+                {/* Your role: <strong>{ROLE_HIERARCHY[currentUserRoleId]?.name}</strong> */}
               </span>
             </div>
           </div>

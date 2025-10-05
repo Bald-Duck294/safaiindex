@@ -272,7 +272,7 @@ export default function UserDetailPage() {
                   <span className="text-gray-900">{user.age || 'Not provided'}</span>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Birth Date
                   </label>
@@ -280,7 +280,7 @@ export default function UserDetailPage() {
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-900">{formatDate(user.birthdate)}</span>
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* Timestamps */}
