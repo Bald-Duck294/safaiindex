@@ -168,8 +168,8 @@ const LoadingSkeleton = () => (
 
 const StatusBadge = ({ isActive, label }) => (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${isActive
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800'
+        ? 'bg-green-100 text-green-800'
+        : 'bg-red-100 text-red-800'
         }`}>
         {isActive ? (
             <CheckCircle className="w-4 h-4" />
@@ -292,7 +292,7 @@ export default function UserDetailPage() {
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => router.back()}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5 text-gray-600" />
                             </button>
@@ -313,9 +313,13 @@ export default function UserDetailPage() {
                             </div>
                         </div>
 
+
+                        {/* users/86?companyId=14 */}
+                        {/* {`/role/${role}/${userId}/edit${finalCompanyId ? `?companyId=${finalCompanyId} */}
                         <Link
-                            href={`/role/${role}/${userId}/edit${finalCompanyId ? `?companyId=${finalCompanyId}` : ''}`}
-                            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            href={`/users/86?companyId=${companyId}`}
+                            // onClick={() => router.push(`users/86?companyId=${companyId}`)}
+                            className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
                             <Edit className="w-4 h-4" />
                             Edit User
@@ -341,10 +345,10 @@ export default function UserDetailPage() {
                                     <label className="text-sm font-medium text-gray-500">Date of Birth</label>
                                     <p className="text-gray-900">{formatDate(user.birthdate)}</p>
                                 </div>
-                                <div>
+                                {/* <div>
                                     <label className="text-sm font-medium text-gray-500">User ID</label>
                                     <p className="text-gray-900 font-mono">#{user.id}</p>
-                                </div>
+                                </div> */}
                             </div>
                         </InfoCard>
 
@@ -405,25 +409,6 @@ export default function UserDetailPage() {
 
                     {/* Right Column - Secondary Info */}
                     <div className="space-y-6">
-                        {/* Role Information */}
-                        <InfoCard icon={Shield} title="Role & Permissions">
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Role</label>
-                                    <p className="text-gray-900 font-medium">{user.role?.name || 'No Role'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Description</label>
-                                    <p className="text-gray-600 text-sm">
-                                        {user.role?.description || 'No description available'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">Role ID</label>
-                                    <p className="text-gray-900 font-mono">#{user.role_id}</p>
-                                </div>
-                            </div>
-                        </InfoCard>
 
                         {/* Company Information */}
                         {user.companies && (
@@ -433,19 +418,40 @@ export default function UserDetailPage() {
                                         <label className="text-sm font-medium text-gray-500">Company Name</label>
                                         <p className="text-gray-900 font-medium">{user.companies.name}</p>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <label className="text-sm font-medium text-gray-500">Description</label>
                                         <p className="text-gray-600 text-sm">
                                             {user.companies.description || 'No description'}
                                         </p>
-                                    </div>
-                                    <div>
+                                    </div> */}
+                                    {/* <div>
                                         <label className="text-sm font-medium text-gray-500">Company ID</label>
                                         <p className="text-gray-900 font-mono">#{user.companies.id}</p>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </InfoCard>
                         )}
+                        {/* Role Information */}
+                        <InfoCard icon={Shield} title="Role & Permissions">
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Role</label>
+                                    <p className="text-gray-900 font-medium">{user.role?.name || 'No Role'}</p>
+                                </div>
+                                {/* <div>
+                                    <label className="text-sm font-medium text-gray-500">Description</label>
+                                    <p className="text-gray-600 text-sm">
+                                        {user.role?.description || 'No description available'}
+                                    </p>
+                                </div> */}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Role ID</label>
+                                    <p className="text-gray-900 font-mono">#{user.role_id}</p>
+                                </div>
+                            </div>
+                        </InfoCard>
+
+
 
                         {/* Account Information */}
                         <InfoCard icon={Clock} title="Account Information">

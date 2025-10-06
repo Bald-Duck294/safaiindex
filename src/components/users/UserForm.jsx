@@ -286,13 +286,13 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 <button
                     type="button"
                     onClick={() => window.history.back()}
-                    className="px-6 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 transition-colors"
+                    className="cursor-pointer px-6 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 transition-colors"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
-                    className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400"
+                    className="cursor-pointer px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400"
                     disabled={isLoadingData}
                 >
                     {isEditing ? 'Save Changes' : 'Create User'}

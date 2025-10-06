@@ -72,7 +72,7 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async () => {
     if (!companyId) {
       setIsLoading(false);
-      toast.error("Could not determine your company.");
+      // toast.error("Could not determine your company.");
       return;
     }
 
@@ -275,7 +275,7 @@ export default function UsersPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => navigateTo(`/users/view/${user.id}?companyId=${companyId}`)}
-                              className="p-2 text-green-600 bg-green-100 rounded-md hover:bg-green-200 transition"
+                              className="p-2 cursor-pointer text-green-600 bg-green-100 rounded-md hover:bg-green-200 transition"
                               title="View User"
                             >
                               <Eye size={16} />
@@ -284,14 +284,14 @@ export default function UsersPage() {
                               <>
                                 <button
                                   onClick={() => navigateTo(`/users/${user.id}?companyId=${companyId}`)}
-                                  className="p-2 text-sky-600 bg-sky-100 rounded-md hover:bg-sky-200 transition"
+                                  className=" cursor-pointer p-2 text-sky-600 bg-sky-100 rounded-md hover:bg-sky-200 transition"
                                   title="Edit User"
                                 >
                                   <Edit size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(user)}
-                                  className="p-2 text-red-600 bg-red-100 rounded-md hover:bg-red-200 transition"
+                                  className=" cursor-pointer p-2 text-red-600 bg-red-100 rounded-md hover:bg-red-200 transition"
                                   title="Delete User"
                                 >
                                   <Trash2 size={16} />

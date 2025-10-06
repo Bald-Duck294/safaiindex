@@ -249,7 +249,8 @@ export default function EditUserPage() {
                     placeholder="Enter age"
                   />
                 </div>
-{/* 
+                
+                {/* 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Birth Date

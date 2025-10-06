@@ -47,7 +47,7 @@ export default function ViewUserPage() {
             <Toaster position="top-center" />
             <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
                 <div className="max-w-2xl mx-auto">
-                    <button onClick={() => router.back()} className="flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
+                    <button onClick={() => router.back()} className="cursor-pointer flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
                         <ArrowLeft size={18} />
                         Back to Users
                     </button>
@@ -63,7 +63,10 @@ export default function ViewUserPage() {
                                         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">{user.name}</h1>
                                         <p className="text-md text-slate-500">{user.role?.name || 'No Role Assigned'}</p>
                                     </div>
-                                    <Link href={`/users/${user.id}/edit`}>
+
+
+                                    {/* `/users/${user.id}/edit`     */}
+                                    <Link href={`users/${user.id}?companyId=${companyId}`}>
                                         <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer">
                                             <Edit size={16} />
                                             Edit User
@@ -73,19 +76,19 @@ export default function ViewUserPage() {
                                 <div className="p-6 sm:p-8 grid grid-cols-1 divide-y divide-slate-200">
                                     <DetailItem icon={<Mail size={20} />} label="Email" value={user.email} />
                                     <DetailItem icon={<Phone size={20} />} label="Phone" value={user.phone} />
-                                    <DetailItem 
-                                        icon={<MapPin size={20} />} 
-                                        label="Assigned Locations" 
+                                    <DetailItem
+                                        icon={<MapPin size={20} />}
+                                        label="Assigned Locations"
                                         value={
                                             user.location_assignments && user.location_assignments.length > 0
-                                            ? user.location_assignments.map(a => a.location.name).join(', ')
-                                            : 'None'
-                                        } 
+                                                ? user.location_assignments.map(a => a.location.name).join(', ')
+                                                : 'None'
+                                        }
                                     />
                                 </div>
                             </>
                         ) : (
-                             <p className="text-center text-slate-500 p-12">User not found.</p>
+                            <p className="text-center text-slate-500 p-12">User not found.</p>
                         )}
                     </div>
                 </div>

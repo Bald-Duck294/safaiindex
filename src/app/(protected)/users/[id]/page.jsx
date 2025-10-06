@@ -56,7 +56,7 @@ export default function EditUserPage() {
       <Toaster position="top-center" />
       <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
         <div className="max-w-2xl mx-auto">
-          <button onClick={() => router.back()} className="flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
+          <button onClick={() => router.back()} className=" cursor-pointer flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800">
             <ArrowLeft size={18} />
             Back to Users
           </button>

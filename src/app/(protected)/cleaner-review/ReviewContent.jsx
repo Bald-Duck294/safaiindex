@@ -214,7 +214,6 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-import { useCompanyId } from '@/lib/providers/CompanyProvider';
 
 // Helper function to clean malformed strings
 const cleanString = (str) => {
@@ -282,7 +281,16 @@ export default function ReviewContent({ companyId }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+
+    // if (!companyId || companyId === 'null' || companyId === null) {
+    //   console.log('Skipping fetch - companyId not ready:', companyId);
+    //   // setLoading(false);
+    //   setIsLoading(false)
+    //   return;
+    // }
+
     const fetchReviews = async () => {
+
       setIsLoading(true);
       const params = {
         status: filter === "all" ? null : filter,

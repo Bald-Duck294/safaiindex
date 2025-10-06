@@ -173,14 +173,14 @@ export const CleanerReviewApi = {
   async getCleanerReviewById(reviewId) {
     console.log(reviewId, "id")
     try {
-      const response = await axiosInstance(`/cleaner-reviews/${reviewId}`, {
+      const response = await axiosInstance(`/cleaner-reviews/task/${reviewId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      console.log(response , "response")
+      console.log(response, "response")
 
       if (response) {
         return {
