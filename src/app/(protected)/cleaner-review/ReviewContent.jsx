@@ -300,11 +300,13 @@ export default function ReviewContent({ companyId }) {
       console.log('sending company_id', companyId);
       const response = await CleanerReviewApi.getAllCleanerReviews(params);
 
+      console.log(response?.data, "cleaner data");
+      console.log(response?.data?.[0]?.cleaner_user.name, "cleaner user");
       if (response.success) {
         // Clean the data
         const cleanedReviews = response.data.map(review => ({
           ...review,
-          name: cleanString(review.name),
+          name: cleanString(review?.cleaner_user?.name),
           address: cleanString(review.address),
           initial_comment: cleanString(review.initial_comment),
           final_comment: cleanString(review.final_comment),

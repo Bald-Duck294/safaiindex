@@ -218,7 +218,7 @@ export default function ReviewDetails() {
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
                 <div className="flex-1">
                   <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
-                    Cleaning Review #{review.id}
+                    Cleaning Review -{review?.cleaner_user?.name}
                   </h1>
                   <p className="flex items-center gap-2 text-slate-600 text-sm sm:text-base">
                     <MapPin size={16} />
