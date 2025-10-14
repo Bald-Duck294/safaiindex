@@ -417,7 +417,7 @@ export default function ReviewContent({ companyId }) {
                       {/* Header */}
                       <div className="flex justify-between items-start mb-3">
                         <h3 className="text-lg font-bold text-slate-800 pr-2 group-hover:text-indigo-600 transition-colors">
-                          {review.name || 'Unnamed Cleaner'}
+                          {review.cleaner_user?.name || 'Unnamed Cleaner'}
                         </h3>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${review.status === "completed"

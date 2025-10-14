@@ -433,9 +433,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               className="p-2 rounded-lg hover:bg-slate-700 transition-all duration-200"
             >
               {sidebarOpen ? (
-                <ChevronLeft size={20} className="text-gray-300" />
+                <ChevronLeft size={20} className="text-gray-300 cursor-pointer" />
               ) : (
-                <ChevronRight size={20} className="text-gray-300" />
+                <ChevronRight size={20} className="text-gray-300 cursor-pointer" />
               )}
             </button>
           )}
