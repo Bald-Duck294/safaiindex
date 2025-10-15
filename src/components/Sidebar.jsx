@@ -209,6 +209,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
+        {
+          icon: Building,
+          label: "User Review",
+          href: `/user-activity?companyId=${companyId}`
+        },
       ];
     }
     else if (hasCompanyContext && user?.role_id === 2) {
@@ -295,6 +300,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               href: `/users/add?companyId=${companyId}`,
             },
           ],
+        },
+        {
+          icon: Building,
+          label: "User Review",
+          href: `/user-activity?companyId=${companyId}`
         },
         // ✅ ADD REGISTERED USERS FOR ADMIN (Company-specific)
 

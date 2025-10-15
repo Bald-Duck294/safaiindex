@@ -1,17 +1,20 @@
 // src/store/store.js
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import { configurationApi } from './slices/configurationApi'; // ✅ Add this import
+import { configurationApi } from './slices/configurationApi'; 
+import { reviewApi } from './slices/reviewSlice'; 
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    [configurationApi.reducerPath]: configurationApi.reducer, // ✅ This was missing the import
+    [configurationApi.reducerPath]: configurationApi.reducer,
+    [reviewApi.reducerPath]: reviewApi.reducer, 
   },
-  // ✅ Add the middleware - this was completely missing
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-      configurationApi.middleware
+      configurationApi.middleware,
+      reviewApi.middleware
     ),
 });
 

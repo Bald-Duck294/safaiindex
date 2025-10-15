@@ -25,7 +25,7 @@ export default function AddLocationPage() {
 
   console.log('add location mounted');
   const { companyId } = useCompanyId();
-  
+
   const [form, setForm] = useState({
     name: "",
     parent_id: null,
@@ -85,7 +85,7 @@ export default function AddLocationPage() {
   // ✅ Handle image file selection
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length === 0) return;
 
     // Validate file types and sizes
@@ -111,14 +111,14 @@ export default function AddLocationPage() {
     if (validFiles.length > 0) {
       // Add to images array
       setImages(prev => [...prev, ...validFiles]);
-      
+
       // Create preview URLs
       const newPreviews = validFiles.map(file => ({
         file,
         url: URL.createObjectURL(file),
         name: file.name
       }));
-      
+
       setPreviewImages(prev => [...prev, ...newPreviews]);
     }
 
@@ -132,7 +132,7 @@ export default function AddLocationPage() {
   const removeImage = (index) => {
     // Revoke preview URL to free memory
     URL.revokeObjectURL(previewImages[index].url);
-    
+
     setImages(prev => prev.filter((_, i) => i !== index));
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
@@ -149,7 +149,7 @@ export default function AddLocationPage() {
   // ✅ Updated submit handler with image support
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!form.name || !form.type_id) {
       toast.error("Please fill in the required fields (Name and Location Type)");
       return;
@@ -159,19 +159,19 @@ export default function AddLocationPage() {
     console.log("Images:", images);
 
     setUploading(true);
-    
+
     try {
       const res = await LocationsApi.postLocation(form, companyId, images);
       console.log(res, "form submitted successfully");
 
       if (res?.success) {
         toast.success("Location added successfully!");
-        
+
         // Clean up preview URLs
         previewImages.forEach(preview => {
           URL.revokeObjectURL(preview.url);
         });
-        
+
         router.push(`/washrooms?companyId=${companyId}`);
       } else {
         toast.error(res?.error || "Failed to add location");
@@ -237,7 +237,7 @@ export default function AddLocationPage() {
               <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
                 Location Coordinates
               </h3>
-              
+
               <GoogleMapPicker
                 lat={form.latitude}
                 lng={form.longitude}
@@ -263,7 +263,7 @@ export default function AddLocationPage() {
                 <ImageIcon className="h-5 w-5" />
                 Location Images
               </h3>
-              
+
               {/* Upload Area */}
               <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-200">
                 <input
@@ -274,12 +274,12 @@ export default function AddLocationPage() {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                
+
                 <div className="space-y-4">
                   <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
                     <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                  
+
                   <div>
                     <button
                       type="button"
@@ -354,7 +354,7 @@ export default function AddLocationPage() {
               </button>
               <button
                 type="submit"
-                disabled={uploading || !form.name || !form.type_id}
+                disabled={uploading || !form.name || !form.type_id || !form.latitude || !form.longitude}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed min-w-32"
               >
                 {uploading ? (
@@ -364,7 +364,7 @@ export default function AddLocationPage() {
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 cursor-pointer" />
                     Create Location
                   </>
                 )}
