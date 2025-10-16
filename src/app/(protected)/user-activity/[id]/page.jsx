@@ -50,7 +50,7 @@ const REASON_MAP = {
 // Image Modal Component
 const ImageModal = ({ imageUrl, onClose }) => {
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
@@ -138,7 +138,7 @@ export default function UserReviewDetailPage() {
                   </h1>
                   {review.toilet_id && (
                     <p className="text-indigo-100">
-                      Toilet ID: <span className="font-semibold">{review.toilet_id}</span>
+                      Toilet Name: <span className="font-semibold">{review?.location?.name}</span>
                     </p>
                   )}
                 </div>
@@ -220,28 +220,21 @@ export default function UserReviewDetailPage() {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {review.images.map((imageUrl, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-square cursor-pointer group"
-                        onClick={() => setSelectedImage(imageUrl)}
+                      <div
+                        key={index}
+                        className="relative bg-slate-100 cursor-pointer group flex items-center justify-center"
+                        style={{ minHeight: "180px" }}
+                        onClick={() => setSelectedImage(cleanString(imageUrl))}
                       >
                         <img
-                          src={imageUrl}
+                          src={cleanString(imageUrl)}
                           alt={`Review photo ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg border-2 border-slate-200 group-hover:border-indigo-500 transition-all"
-                          onError={(e) => {
-                            e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
-                            e.target.parentElement.style.display = 'none';
-                          }}
+                          className="max-w-full max-h-full object-contain rounded-lg border-2 border-slate-200 group-hover:border-indigo-500 transition-all"
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-                          <span className="text-white opacity-0 group-hover:opacity-100 font-semibold">
-                            View
-                          </span>
-                        </div>
                       </div>
                     ))}
                   </div>
+
                 </div>
               )}
 
@@ -250,7 +243,7 @@ export default function UserReviewDetailPage() {
                 <h3 className="text-lg font-semibold text-slate-800 mb-3">
                   Additional Information
                 </h3>
-                
+
                 <div className="flex items-center gap-3 text-slate-600">
                   <Calendar size={18} className="text-indigo-600" />
                   <div>
@@ -291,9 +284,9 @@ export default function UserReviewDetailPage() {
 
       {/* Image Modal */}
       {selectedImage && (
-        <ImageModal 
-          imageUrl={selectedImage} 
-          onClose={() => setSelectedImage(null)} 
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
         />
       )}
     </>

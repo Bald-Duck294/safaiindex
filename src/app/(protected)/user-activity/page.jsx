@@ -73,6 +73,9 @@ export default function UserReviewsPage() {
     toiletId ? { toilet_id: toiletId, limit } : { limit }
   );
 
+
+  console.log('data', data);
+
   const handleReset = () => {
     setToiletId("");
     setLimit(50);
@@ -133,7 +136,7 @@ export default function UserReviewsPage() {
             </div>
 
             {/* Filter Bar */}
-            <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 bg-white rounded-lg shadow-sm border">
+            {/* <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 bg-white rounded-lg shadow-sm border">
               <div className="w-full md:w-auto">
                 <label
                   htmlFor="toilet-filter"
@@ -160,7 +163,7 @@ export default function UserReviewsPage() {
               {isFetching && (
                 <span className="text-sm text-indigo-600">Refreshing...</span>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* Reviews Grid */}
@@ -186,7 +189,7 @@ export default function UserReviewsPage() {
                           </h3>
                           {review.toilet_id && (
                             <p className="text-xs text-slate-500 mt-1">
-                              Toilet ID: {review.toilet_id}
+                              Toilet Name: {review?.location?.name || 'unknown'}
                             </p>
                           )}
                         </div>
