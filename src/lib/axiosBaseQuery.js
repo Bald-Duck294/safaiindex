@@ -1,7 +1,8 @@
 // src/lib/axiosBaseQuery.js
 import axios from "axios";
+// const API_BASE_URL = "http://localhost:8000/api";
 
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "https://saaf-ai-backend.onrender.com/api";
 
 // Create axios instance WITHOUT importing store
 const axiosInstance = axios.create({
