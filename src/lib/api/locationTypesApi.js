@@ -32,11 +32,41 @@ const locationTypesApi = {
   //   return res;
   // },
 
-  update: async (id, data, companyId) => {
-    console.log("update", id, data);
-    const res = await axiosInstance.patch(`${BASE}/${id}`, data);
-    console.log(res, "response from the location types")
-    return res;
+  // update: async (id, data, companyId) => {
+  //   console.log("update", id, data);
+  //   const res = await axiosInstance.patch(`${BASE}/${id}`, data);
+  //   console.log(res, "response from the location types")
+  //   return res;
+  // },
+
+
+  update: async (id, data) => {
+    try {
+      const response = await axiosInstance.patch(`${BASE}/${id}`, data);
+      console.log(response.data, "type-location update");
+      return response.data;
+    } catch (error) {
+      console.error("Error updating location type:", error);
+      throw error;
+    }
+  },
+
+
+  // Delete method
+  delete: async (id, companyId) => {
+    try {
+      const url = `${BASE}/delete/${id}${companyId ? `?companyId=${companyId}` : ''}`;
+      const response = await axiosInstance.delete(url);
+      console.log(response.data, "type delete response");
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting location type:", error);
+      // Axios errors have response.data
+      if (error.response) {
+        throw error.response.data;
+      }
+      throw error;
+    }
   },
   updateParent: async (id, data) => {
     const res = await axiosInstance.patch(`${BASE}/${id}`, data);
