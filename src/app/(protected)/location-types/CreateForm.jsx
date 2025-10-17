@@ -117,56 +117,197 @@
 
 
 
+// "use client";
+
+// import { useState } from "react";
+// import locationTypesApi from "@/lib/api/locationTypesApi";
+// import { all } from "axios";
+// // import useCompanyId from "@/lib/utils/getCompanyId";
+// import { useCompanyId } from '@/lib/providers/CompanyProvider';
+// import toast from "react-hot-toast"; // ✅ Add this import
+
+
+
+// export default function CreateForm({ onCreated, allTypes }) {
+//   const [name, setName] = useState("");
+//   const [parentId, setParentId] = useState("");
+//   const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Add loading state
+
+//   const { companyId } = useCompanyId();
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!name.trim()) return;
+
+//     await locationTypesApi.create({
+//       name,
+//       parent_id: parentId ? parseInt(parentId) : null,
+//     }, companyId);
+
+//       // ✅ Dismiss loading and show success
+//       toast.success("Location type created successfully!", {
+//         id: loadingToast,
+//       });
+
+//     setName("");
+//     setParentId("");
+//     onCreated(); // Refresh list
+//   };
+
+//   console.log(allTypes, "all types");
+//   return (
+//     <form onSubmit={handleSubmit} className="mb-6 space-y-4 max-w-md">
+//       <div>
+//         <label className="block font-semibold mb-1">Type Name</label>
+//         <input
+//           type="text"
+//           className="border border-gray-300 p-2 rounded w-full"
+//           value={name}
+//           onChange={(e) => setName(e.target.value)}
+//           placeholder="e.g., Ward, Floor, Platform"
+//         />
+//       </div>
+
+//       <div>
+//         <label className="block font-semibold mb-1">Parent Type (optional)</label>
+//         <select
+//           value={parentId}
+//           onChange={(e) => setParentId(e.target.value)}
+//           className="border border-gray-300 p-2 rounded w-full"
+//         >
+//           <option value="">No Parent</option>
+//           {allTypes?.length > 0 ? (
+//             allTypes.map((type) => (
+//               <option key={type.id} value={type.id}>
+//                 {type.name}
+//               </option>
+//             ))
+//           ) : (
+//             <option disabled>No parent found</option>
+//           )}
+//         </select>
+//       </div>
+
+//       <button
+//         type="submit"
+//         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+//       >
+//         Create Type
+//       </button>
+//     </form>
+//   );
+// }
+
+
+
+// updated on friday - 16 - 10 - 2025
+
 "use client";
 
 import { useState } from "react";
 import locationTypesApi from "@/lib/api/locationTypesApi";
-import { all } from "axios";
-// import useCompanyId from "@/lib/utils/getCompanyId";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
-
+import toast from "react-hot-toast"; // ✅ Add this import
 
 export default function CreateForm({ onCreated, allTypes }) {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Add loading state
   const { companyId } = useCompanyId();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    
+    // Validation
+    if (!name.trim()) {
+      toast.error("Location type name is required");
+      return;
+    }
 
-    await locationTypesApi.create({
-      name,
-      parent_id: parentId ? parseInt(parentId) : null,
-    }, companyId);
+    // Check for duplicate names
+    const isDuplicate = allTypes?.some(
+      type => type.name.toLowerCase() === name.trim().toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      toast.error("A location type with this name already exists");
+      return;
+    }
 
-    setName("");
-    setParentId("");
-    onCreated(); // Refresh list
+    setIsSubmitting(true);
+    
+    // ✅ Show loading toast
+    const loadingToast = toast.loading("Creating location type...");
+
+    try {
+      console.log('beofre createing location ')
+      await locationTypesApi.create({
+        name: name.trim(),
+        parent_id: parentId ? parseInt(parentId) : null,
+      }, companyId);
+
+      // ✅ Dismiss loading and show success
+      toast.success("Location type created successfully!", {
+        id: loadingToast,
+      });
+
+      // Reset form
+      setName("");
+      setParentId("");
+      
+      // Refresh list
+      onCreated();
+      
+    } catch (error) {
+      console.error("Error creating location type:", error);
+      
+      // ✅ Dismiss loading and show error
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Failed to create location type";
+      
+      toast.error(errorMessage, {
+        id: loadingToast,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  console.log(allTypes, "all types");
   return (
     <form onSubmit={handleSubmit} className="mb-6 space-y-4 max-w-md">
       <div>
-        <label className="block font-semibold mb-1">Type Name</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Type Name *
+        </label>
         <input
           type="text"
-          className="border border-gray-300 p-2 rounded w-full"
+          className="border border-gray-300 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Ward, Floor, Platform"
+          required
+          disabled={isSubmitting}
+          maxLength={100}
         />
+        {name.trim() && (
+          <p className="text-xs text-gray-500 mt-1">
+            {name.trim().length}/100 characters
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="block font-semibold mb-1">Parent Type (optional)</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Parent Type (optional)
+        </label>
         <select
           value={parentId}
           onChange={(e) => setParentId(e.target.value)}
-          className="border border-gray-300 p-2 rounded w-full"
+          className="border border-gray-300 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          disabled={isSubmitting}
         >
-          <option value="">No Parent</option>
+          <option value="">No Parent (Top Level)</option>
           {allTypes?.length > 0 ? (
             allTypes.map((type) => (
               <option key={type.id} value={type.id}>
@@ -174,16 +315,27 @@ export default function CreateForm({ onCreated, allTypes }) {
               </option>
             ))
           ) : (
-            <option disabled>No parent found</option>
+            <option disabled>No types available</option>
           )}
         </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Select a parent to create a hierarchy
+        </p>
       </div>
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        disabled={isSubmitting || !name.trim()}
+        className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        Create Type
+        {isSubmitting ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Creating...
+          </>
+        ) : (
+          "Create Location Type"
+        )}
       </button>
     </form>
   );

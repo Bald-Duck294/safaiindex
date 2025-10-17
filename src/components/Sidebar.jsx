@@ -6,14 +6,21 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"; // âœ
 import { logout } from "../store/slices/authSlice.js";
 
 import {
-  LayoutDashboard,
-  List,
-  FolderTree,
+  LayoutDashboard,// Dashboard
+  Building2, // Client Dashboard
+  List,   //List views
+  FolderTree, // Location Types parent
   FolderPlus,
+  UserPlus,      // Add User
+  Users,             // User Management
+  UserCog,           // Cleaner Mapping
+  PlusCircle,        // Add actions
   Bath,
-  PlusCircle,
+  Toilet,            // Washrooms (better than Bath)
   ClipboardList,
   CheckCircle,
+  ClipboardCheck,
+  UserCheck, // for registered user
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -21,8 +28,9 @@ import {
   LogOut,
   Menu,
   X,
-  MapPin,
+  MapPin, // Locations
   Building,
+  MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -104,7 +112,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       return [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         {
-          icon: Building,
+          icon: Building2,
           label: "Client Dashboard",
           href: `/clientDashboard/${companyId}`
         },
@@ -132,7 +140,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         {
-          icon: Bath,
+          icon: Toilet,
           label: "Washrooms",
           hasDropdown: true,
           key: "washrooms",
@@ -150,7 +158,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         {
-          icon: ClipboardList,
+          icon: UserCog,
           label: "Cleaner Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
@@ -168,7 +176,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         {
-          icon: ClipboardList,
+          icon: Users,
           label: "User Management",
           hasDropdown: true,
           key: "user-management",
@@ -179,7 +187,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               href: `/users?companyId=${companyId}`,
             },
             {
-              icon: PlusCircle,
+              icon: UserPlus,
               label: "Add User",
               href: `/users/add?companyId=${companyId}`,
             },
@@ -210,7 +218,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           href: `/cleaner-review?companyId=${companyId}`
         },
         {
-          icon: Building,
+          icon: MessageSquare,
           label: "User Review",
           href: `/user-activity?companyId=${companyId}`
         },
@@ -248,7 +256,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         {
-          icon: Bath,
+          icon: Toilet,
           label: "Washrooms",
           hasDropdown: true,
           key: "washrooms",
@@ -277,14 +285,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               href: `/cleaner-assignments?companyId=${companyId}`,
             },
             {
-              icon: PlusCircle,
+              icon: UserCog,
               label: "Add Assignment",
               href: `/cleaner-assignments/add?companyId=${companyId}`,
             },
           ],
         },
         {
-          icon: ClipboardList,
+          icon: Users,
           label: "User Management",
           hasDropdown: true,
           key: "user-management",
@@ -295,7 +303,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               href: `/users?companyId=${companyId}`,
             },
             {
-              icon: PlusCircle,
+              icon: UserPlus,
               label: "Add User",
               href: `/users/add?companyId=${companyId}`,
             },
