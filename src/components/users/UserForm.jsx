@@ -7,6 +7,7 @@ import { CompanyApi } from "@/lib/api/companyApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 
 export default function UserForm({ initialData, onSubmit, isEditing = false }) {
+
     const { companyId } = useCompanyId(); // Current user's company context
 
     const [formData, setFormData] = useState({
@@ -25,6 +26,14 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
     const [canAssignLocation, setCanAssignLocation] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
+    const isFormValid = () => {
+        const hasName = formData.name.trim().length > 0;
+        const hasPhone = formData.phone.trim().length === 10;
+        const hasRole = formData.role_id !== '';
+        const hasPassword = isEditing || formData.password.trim().length >= 6;
+
+        return hasName && hasPhone && hasRole && hasPassword;
+    };
     // Fetch current company details and company-specific data
     useEffect(() => {
         const fetchCompanyData = async () => {
@@ -95,7 +104,13 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'phone') {
+            const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+            setFormData(prev => ({ ...prev, [name]: numericValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleLocationChange = (e) => {
@@ -167,26 +182,27 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
             {/* Email and Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email </label>
                     <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        required
                         className={inputClass}
                         placeholder="Enter email address"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone *</label>
                     <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
                         className={inputClass}
+                        required
                         maxLength={10}
+                        pattern="[0-9]{10}"
                         placeholder="Enter 10-digit phone number"
                     />
                 </div>
@@ -281,7 +297,6 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 </div>
             )}
 
-            {/* Submit Buttons */}
             <div className="flex justify-end gap-4 pt-4">
                 <button
                     type="button"
@@ -292,8 +307,8 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 </button>
                 <button
                     type="submit"
-                    className="cursor-pointer px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400"
-                    disabled={isLoadingData}
+                    className="cursor-pointer px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    disabled={isLoadingData || !isFormValid()}
                 >
                     {isEditing ? 'Save Changes' : 'Create User'}
                 </button>
