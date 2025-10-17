@@ -138,14 +138,56 @@ const SingleLocation = () => {
     setImageLoading(prev => ({ ...prev, [reviewId]: false }));
   };
 
+  // const renderStars = (rating) => {
+  //   return [...Array(5)].map((_, i) => (
+  //     <Star
+  //       key={i}
+  //       className={`w-4 h-4 ${i < rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
+  //     />
+  //   ));
+  // };
+
   const renderStars = (rating) => {
-    return [...Array(5)].map((_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`}
-      />
-    ));
+    const stars = [];
+    const fullStars = Math.floor(rating); // Full stars
+    const hasHalfStar = rating % 1 >= 0.25 && rating % 1 < 0.75; // Half star if decimal is between 0.25 and 0.75
+    const emptyStars = 5 - Math.ceil(rating); // Remaining empty stars
+
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(
+        <Star
+          key={`full-${i}`}
+          className="w-4 h-4 text-amber-400 fill-amber-400"
+        />
+      );
+    }
+
+    // Half star
+    if (hasHalfStar) {
+      stars.push(
+        <div key="half" className="relative w-4 h-4">
+          <Star className="w-4 h-4 text-gray-300 absolute" />
+          <div className="overflow-hidden absolute" style={{ width: '50%' }}>
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+          </div>
+        </div>
+      );
+    }
+
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <Star
+          key={`empty-${i}`}
+          className="w-4 h-4 text-gray-300"
+        />
+      );
+    }
+
+    return <div className="flex items-center">{stars}</div>;
   };
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -504,7 +546,9 @@ const SingleLocation = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  {renderStars(Math.round(location.averageRating))}
+                  {/* {renderStars(Math.round(location.averageRating))} */}
+                    {renderStars(location.averageRating || 0)}
+
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {location.averageRating?.toFixed(1) || 'N/A'}

@@ -114,6 +114,12 @@ export default function LocationTypesPage() {
   };
 
   useEffect(() => {
+
+    if (!companyId || companyId === 'null' || companyId === null) {
+      console.log('Skipping fetch - companyId not ready:', companyId);
+      return;
+    }
+
     fetchTypes();
   }, [companyId]);
 
