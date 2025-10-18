@@ -31,7 +31,9 @@ export default function EditUserPage() {
     phone: '',
     company_id: '',
     age: '',
-    birthdate: ''
+    birthdate: '',
+    password: '',
+    confirmPassword: ''
   });
 
   const [companies, setCompanies] = useState([]);
@@ -68,7 +70,9 @@ export default function EditUserPage() {
           phone: user.phone || '',
           company_id: user.company_id || '',
           age: user.age || '',
-          birthdate: user.birthdate ? user.birthdate.split('T')[0] : ''
+          birthdate: user.birthdate ? user.birthdate.split('T')[0] : '',
+          password: '',
+          confirmPassword: ''
         });
       } else {
         toast.error(response.error);
@@ -89,6 +93,29 @@ export default function EditUserPage() {
     }));
   };
 
+
+  const validatePasswords = () => {
+    if (formData.password || formData.confirmPassword) {
+      if (!formData.password) {
+        toast.error('Please enter a password');
+        return false;
+      }
+      if (!formData.confirmPassword) {
+        toast.error('Please confirm your password');
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match');
+        return false;
+      }
+      if (formData.password.length < 6) {
+        toast.error('Password must be at least 6 characters');
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -103,6 +130,9 @@ export default function EditUserPage() {
       return;
     }
 
+    if (!validatePasswords()) {
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -112,6 +142,13 @@ export default function EditUserPage() {
         age: formData.age ? parseInt(formData.age) : null,
         birthdate: formData.birthdate || null
       };
+
+      if (formData.password) {
+        submitData.password = formData.password;
+      }
+
+      // Removing confirmPassword from submission
+      delete submitData.confirmPassword;
 
       const response = await UsersApi.updateUser(id, submitData);
 
@@ -249,7 +286,7 @@ export default function EditUserPage() {
                     placeholder="Enter age"
                   />
                 </div>
-                
+
                 {/* 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -263,6 +300,42 @@ export default function EditUserPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div> */}
+              </div>
+              {/* Password Section */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter new password"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Role Display */}
