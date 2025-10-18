@@ -147,11 +147,13 @@ const SingleLocation = () => {
   //   ));
   // };
 
+  // ✅ Updated renderStars function for 1-10 scale (10 stars)
   const renderStars = (rating) => {
     const stars = [];
-    const fullStars = Math.floor(rating); // Full stars
-    const hasHalfStar = rating % 1 >= 0.25 && rating % 1 < 0.75; // Half star if decimal is between 0.25 and 0.75
-    const emptyStars = 5 - Math.ceil(rating); // Remaining empty stars
+    const fullStars = Math.floor(rating); // Full stars (e.g., 7.3 → 7 full stars)
+    const hasHalfStar = rating % 1 >= 0.25 && rating % 1 < 0.75; // Half star for decimals between 0.25-0.75
+    const totalStars = 10; // Total stars to display
+    const emptyStars = totalStars - Math.ceil(rating); // Remaining empty stars
 
     // Full stars
     for (let i = 0; i < fullStars; i++) {
@@ -185,8 +187,9 @@ const SingleLocation = () => {
       );
     }
 
-    return <div className="flex items-center">{stars}</div>;
+    return <div className="flex items-center gap-0.5">{stars}</div>;
   };
+
 
 
   const formatDate = (dateString) => {
@@ -547,7 +550,7 @@ const SingleLocation = () => {
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   {/* {renderStars(Math.round(location.averageRating))} */}
-                    {renderStars(location.averageRating || 0)}
+                  {renderStars(location.averageRating || 0)}
 
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
