@@ -558,7 +558,7 @@ const SingleLocation = () => {
                 </p>
               </div>
 
-              <div className="text-center">
+              {/* <div className="text-center">
                 <div className="w-12 h-12 mx-auto mb-2 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
                   <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
@@ -569,7 +569,7 @@ const SingleLocation = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Cleaner Reviews
                 </p>
-              </div>
+              </div> */}
 
               <div className="text-center">
                 <div className="w-12 h-12 mx-auto mb-2 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
