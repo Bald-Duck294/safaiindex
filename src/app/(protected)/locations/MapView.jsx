@@ -1,100 +1,3 @@
-// "use client";
-
-// import React, { useEffect, useState, useCallback } from "react";
-// import { GoogleMap, useLoadScript, Marker, InfoWindow } from "@react-google-maps/api";
-// import { Loader2 } from "lucide-react";
-// import locationsApi from "@/lib/api/LocationApi"; // adjust path as needed
-
-// const mapContainerStyle = {
-//   width: "100%",
-//   height: "80vh",
-// };
-
-// const center = {
-//   lat: 21.1458, // Centered around Nagpur
-//   lng: 79.0882,
-// };
-
-// const MapView = () => {
-//   const { isLoaded, loadError } = useLoadScript({
-//     googleMapsApiKey: "AIzaSyBfBFN6L_HROTd-mS8QqUDRIqskkvHvFYk",
-//   });
-
-//   const [locations, setLocations] = useState([]);
-//   const [selected, setSelected] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   const fetchLocations = useCallback(async () => {
-//     setLoading(true);
-//     const res = await locationsApi.getAllLocations();
-//     if (res.success) {
-//         console.log('response' , 'response')
-//       setLocations(res.data);
-//     } else {
-//       console.error(res.error);
-//     }
-//     setLoading(false);
-//   }, []);
-
-//   useEffect(() => {
-//     fetchLocations();
-//   }, [fetchLocations]);
-
-//   if (loadError) return <div>Error loading maps</div>;
-//   if (!isLoaded) return <div className="flex justify-center items-center h-96"><Loader2 className="animate-spin" /></div>;
-
-//   return (
-//     <div className="p-4">
-//       <h2 className="text-xl font-bold mb-4">Toilets Map</h2>
-
-//       {loading ? (
-//         <div className="flex justify-center items-center h-96">
-//           <Loader2 className="animate-spin" />
-//         </div>
-//       ) : (
-//         <GoogleMap
-//           mapContainerStyle={mapContainerStyle}
-//           zoom={13}
-//           center={center}
-//         >
-//           {locations.map((loc) => (
-//             <Marker
-//               key={loc.id}
-//               position={{
-//                 lat: parseFloat(loc.latitude),
-//                 lng: parseFloat(loc.longitude),
-//               }}
-//               onClick={() => setSelected(loc)}
-//               title={loc.name}
-//             />
-//           ))}
-
-//           {selected && (
-//             <InfoWindow
-//               position={{
-//                 lat: parseFloat(selected.latitude),
-//                 lng: parseFloat(selected.longitude),
-//               }}
-//               onCloseClick={() => setSelected(null)}
-//             >
-//               <div className="text-sm">
-//                 <p className="font-semibold">{selected.name}</p>
-//                 {selected.averageRating !== null ? (
-//                   <p>Avg. Rating: {selected.averageRating.toFixed(1)} ⭐</p>
-//                 ) : (
-//                   <p>No ratings yet</p>
-//                 )}
-//               </div>
-//             </InfoWindow>
-//           )}
-//         </GoogleMap>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default MapView;
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -103,9 +6,8 @@ import {
   useLoadScript,
   Marker,
   InfoWindow,
-  Autocomplete,
 } from "@react-google-maps/api";
-import { Loader2, LocateIcon } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import locationsApi from "@/lib/api/LocationApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import { useRouter } from "next/navigation";
@@ -123,7 +25,6 @@ const defaultCenter = {
 const MapView = () => {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: "AIzaSyBfBFN6L_HROTd-mS8QqUDRIqskkvHvFYk",
-    libraries: ["places"],
   });
 
   const router = useRouter();
@@ -133,8 +34,9 @@ const MapView = () => {
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState([]);
   const [center, setCenter] = useState(defaultCenter);
+  const [showDropdown, setShowDropdown] = useState(false);
   const mapRef = useRef(null);
-  const autocompleteRef = useRef(null);
+  const searchRef = useRef(null);
 
   const { companyId, hasCompanyContext } = useCompanyId();
 
@@ -149,81 +51,74 @@ const MapView = () => {
       console.error(res.error);
     }
     setLoading(false);
-  }, []);
+  }, [companyId]);
 
   useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
 
+    if (!companyId || companyId === 'null' || companyId === null) {
+      console.log('Skipping fetch - companyId not ready:', companyId);
+      setLoading(false);
+      return;
+    }
+
+    fetchLocations();
+  }, [fetchLocations , companyId]);
+
+  // Handle search input changes
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearch(value);
 
-    const matches = locations.filter((loc) =>
-      loc.name.toLowerCase().includes(value.toLowerCase())
-    );
-
-    // console.log(matches, "matches");
-    // console.log(locations, "input change locations");
-    setFiltered(matches);
-  };
-
-  const handlePlaceSelected = () => {
-    const place = autocompleteRef.current.getPlace();
-    // console.log(place, "place");
-    if (place && place.geometry) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-
-      const locData = {
-        id: "34567",
-        latitude: place.geometry.location.lat(),
-        longitude: place.geometry.location.lng(),
-        averageRating: null,
-      };
-
-      setFiltered([locData]);
-      setCenter({ lat, lng });
-      setSelected(locData); // Deselect current toilet
-      mapRef.current?.panTo({ lat, lng });
+    if (value.trim() === "") {
+      setFiltered(locations);
+      setShowDropdown(false);
+    } else {
+      const matches = locations.filter((loc) =>
+        loc.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFiltered(matches);
+      setShowDropdown(matches.length > 0);
     }
   };
 
-  // const handlePlaceSelected = () => {
-  //   const place = autocompleteRef.current.getPlace();
+  // Handle location selection from dropdown
+  const handleLocationSelect = (loc) => {
+    const lat = parseFloat(loc.latitude);
+    const lng = parseFloat(loc.longitude);
 
-  //   if (place && place.geometry) {
-  //     const lat = place.geometry.location.lat();
-  //     const lng = place.geometry.location.lng();
+    setCenter({ lat, lng });
+    setSelected(loc);
+    setSearch(loc.name);
+    setShowDropdown(false);
 
-  //     const map = mapRef.current;
+    // Pan and zoom to selected location
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat, lng });
+      mapRef.current.setZoom(15);
+    }
+  };
 
-  //     if (!map || !place.place_id) return;
+  // Clear search
+  const handleClearSearch = () => {
+    setSearch("");
+    setFiltered(locations);
+    setShowDropdown(false);
+    setSelected(null);
+  };
 
-  //     const service = new window.google.maps.places.PlacesService(map);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
 
-  //     service.getDetails({ placeId: place.place_id }, (result, status) => {
-  //       if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-  //         const externalPlace = {
-  //           id: result.place_id,
-  //           latitude: lat,
-  //           longitude: lng,
-  //           name: result.name || "Unnamed Place",
-  //           address: result.formatted_address || "",
-  //           rating: result.rating || null,
-  //           isExternal: true, // for rendering logic
-  //         };
-
-  //         setFiltered([externalPlace]);
-  //         setCenter({ lat, lng });
-  //         setSelected(externalPlace);
-  //         map.panTo({ lat, lng });
-  //       } else {
-  //         console.error("PlacesService failed", status);
-  //       }
-  //     });
-  //   }
-  // };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded)
@@ -233,27 +128,75 @@ const MapView = () => {
       </div>
     );
 
-  // console.log("filtered data ", filtered);
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Toilets Map</h2>
 
-      {/* Google Places Autocomplete Search */}
-      <div className="mb-4">
-        <Autocomplete
-          onLoad={(autocomplete) => {
-            autocompleteRef.current = autocomplete;
-          }}
-          onPlaceChanged={handlePlaceSelected}
-        >
+      {/* Local Search Input with Dropdown */}
+      <div className="mb-4 relative" ref={searchRef}>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search any place or toilet..."
+            placeholder="Search toilets by name..."
             value={search}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+            onFocus={() => {
+              if (search && filtered.length > 0) {
+                setShowDropdown(true);
+              }
+            }}
+            className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-        </Autocomplete>
+          {search && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Search Results Dropdown */}
+        {showDropdown && filtered.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {filtered.map((loc) => (
+              <div
+                key={loc.id}
+                onClick={() => handleLocationSelect(loc)}
+                className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{loc.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      📍 {parseFloat(loc.latitude).toFixed(4)}, {parseFloat(loc.longitude).toFixed(4)}
+                    </p>
+                  </div>
+                  {loc.averageRating !== null && loc.averageRating > 0 && (
+                    <div className="flex items-center gap-1 ml-2">
+                      <span className="text-yellow-500">⭐</span>
+                      <span className="text-sm font-medium">{loc.averageRating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No Results Message */}
+        {showDropdown && filtered.length === 0 && search && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500">
+            No toilets found matching "{search}"
+          </div>
+        )}
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-2 text-sm text-gray-600">
+        Showing {filtered.length} of {locations.length} locations
       </div>
 
       {loading ? (
@@ -433,8 +376,7 @@ const MapView = () => {
                     </div>
                     <button
                       onClick={() => {
-                        // Navigate to detailed view
-                        router.push(`/washrooms/item/${selected.id}?companyId=${companyId}`, '_blank');
+                        router.push(`/washrooms/item/${selected.id}?companyId=${companyId}`);
                       }}
                       className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs font-medium underline"
                     >
@@ -445,7 +387,6 @@ const MapView = () => {
               </div>
             </InfoWindow>
           )}
-
         </GoogleMap>
       )}
     </div>
