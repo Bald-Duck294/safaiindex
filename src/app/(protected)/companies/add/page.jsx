@@ -20,7 +20,7 @@ export default function AddCompanyPage() {
       return toast.error("Orgnization name is required.");
     }
     setIsLoading(true);
-    
+
     const companyData = {
       name,
       description,
@@ -28,7 +28,7 @@ export default function AddCompanyPage() {
     };
 
     const response = await CompanyApi.createCompany(companyData);
-    
+
     if (response.success) {
       toast.success("Orgnizations created successfully!");
       setTimeout(() => {
@@ -45,11 +45,11 @@ export default function AddCompanyPage() {
       <Toaster position="top-center" />
       <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-200/60">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 mb-6">
+          <button onClick={() => router.back()} className="cursor-pointer flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 mb-6">
             <ArrowLeft size={16} />
-            Back to Companies
+            Back to Orgnizations
           </button>
-          
+
           <div className="flex items-center gap-4 mb-8">
             <Building className="w-8 h-8 text-indigo-600" />
             <h1 className="text-3xl font-bold text-slate-800">Add New Orgnization</h1>
@@ -71,10 +71,10 @@ export default function AddCompanyPage() {
                 />
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
-               <div className="relative">
+              <div className="relative">
                 <FileText className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
                 <textarea
                   id="description"
@@ -101,7 +101,7 @@ export default function AddCompanyPage() {
                 />
               </div>
             </div>
-            
+
             <div className="pt-4 border-t border-slate-200">
               <button
                 type="submit"
