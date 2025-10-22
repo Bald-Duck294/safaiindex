@@ -298,7 +298,7 @@ export default function ReviewContent({ companyId }) {
       };
 
       console.log('sending company_id', companyId);
-      const response = await CleanerReviewApi.getAllCleanerReviews(params);
+      const response = await CleanerReviewApi.getAllCleanerReviews(params, companyId);
 
       console.log(response?.data, "cleaner data");
       console.log(response?.data?.[0]?.cleaner_user.name, "cleaner user");
