@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { LogOut, Building } from "lucide-react";
 import { logout } from "../store/slices/authSlice.js";
 import { CompanyApi } from "../lib/api/companyApi";
@@ -12,7 +13,7 @@ import { CompanyApi } from "../lib/api/companyApi";
 const Header = ({ pageTitle }) => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
 
   // Get the user object from the Redux store
   const { user } = useSelector((state) => state.auth);
@@ -22,11 +23,24 @@ const Header = ({ pageTitle }) => {
   const [loadingCompany, setLoadingCompany] = useState(false);
 
   // Get company_id from URL query parameters
-  const companyId = searchParams.get('companyId');
+  // const companyId = searchParams.get('companyId');
+  const companyId = params.id; // Or params.companyId depending on your folder structure
+
+  console.log("first render cokmpanyId", companyId)
+  console.log(params, "params ")
 
   // Fetch company information when companyId changes
   useEffect(() => {
+
+    console.log("use effect render cokmpanyId", companyId)
+
+    if (!companyId || companyId === 'null' || companyId === null) {
+      console.log('Skipping fetch - companyId not ready:', companyId);
+      return;
+    }
+
     const fetchCompany = async () => {
+      console.log('inside fetch company');
       if (!companyId) {
         setCompany(null);
         return;
