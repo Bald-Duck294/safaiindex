@@ -222,7 +222,7 @@ export default function ReviewDetails() {
                   </h1>
                   <p className="flex items-center gap-2 text-slate-600 text-sm sm:text-base">
                     <MapPin size={16} />
-                    <span className="break-words">{review.address || "No address provided"}</span>
+                    <span className="break-words">{review?.location?.name || "No address provided"}</span>
                   </p>
                 </div>
                 <span

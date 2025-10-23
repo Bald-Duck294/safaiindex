@@ -463,7 +463,7 @@ export default function ReviewContent({ companyId }) {
                       {/* Address */}
                       <p className="flex items-center gap-2 text-sm text-slate-500 mb-3">
                         <MapPin size={12} />
-                        {review.address || "No address provided"}
+                        {review.location?.name || "No address provided"}
                       </p>
 
                       {/* Time Information */}
