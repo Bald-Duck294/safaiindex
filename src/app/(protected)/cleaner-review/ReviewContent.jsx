@@ -276,7 +276,12 @@ export default function ReviewContent({ companyId }) {
     return statusFromUrl || "all";
   });
 
-  const [date, setDate] = useState("");
+  // const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
