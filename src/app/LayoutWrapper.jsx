@@ -30,7 +30,7 @@ export default function LayoutWrapper({ children }) {
 
         {/* Main content */}
         <div className="flex flex-col flex-grow h-full">
-          <Header />
+         {/* <Header /> */}
           <div className="bg-gray-50 flex-grow overflow-y-auto">{children}</div>
         </div>
       </div>
