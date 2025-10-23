@@ -235,8 +235,8 @@ const SingleLocation = () => {
     console.log('Rendering options:', options); // ✅ Debug log
 
     return (
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-gray-50 /50 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-gray-900  mb-3 flex items-center gap-2">
           <Package className="w-4 h-4" />
           Amenities & Features
         </h3>
@@ -297,32 +297,32 @@ const SingleLocation = () => {
   const renderAssignedCleaners = (assignedCleaners) => {
     if (!assignedCleaners || assignedCleaners.length === 0) {
       return (
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <div className="bg-gray-50 /50 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-900  mb-3 flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
             Assigned Cleaners
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No cleaners currently assigned to this location.</p>
+          <p className="text-sm text-gray-500 ">No cleaners currently assigned to this location.</p>
         </div>
       );
     }
 
     return (
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-gray-50 /50 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-gray-900  mb-3 flex items-center gap-2">
           <UserCheck className="w-4 h-4" />
           Assigned Cleaners ({assignedCleaners.length})
         </h3>
         <div className="space-y-3">
           {assignedCleaners.map((assignment) => (
-            <div key={assignment.id} className="flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+            <div key={assignment.id} className="flex items-center justify-between bg-white  rounded-lg p-3 border border-gray-200 ">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">{assignment.cleaner?.name || 'Unknown'}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-3">
+                  <div className="font-medium text-gray-900 ">{assignment.cleaner?.name || 'Unknown'}</div>
+                  <div className="text-xs text-gray-500  flex items-center gap-3">
                     {assignment.cleaner?.phone && (
                       <span className="flex items-center gap-1">
                         <Phone className="w-3 h-3" />
@@ -366,14 +366,14 @@ const SingleLocation = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900  flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />
             Location Images ({images.length})
           </h3>
           {images.length > 4 && (
             <button
               onClick={() => setShowAllImages(!showAllImages)}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 "
             >
               {showAllImages ? (
                 <>Show Less <ChevronUp className="w-4 h-4" /></>
@@ -388,7 +388,7 @@ const SingleLocation = () => {
           {displayImages.map((image, index) => (
             <div
               key={index}
-              className="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              className="relative aspect-square bg-gray-100  rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => setSelectedImageIndex(index)}
             >
               <img
@@ -419,13 +419,13 @@ const SingleLocation = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center max-w-md w-full">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center px-4">
+        <div className="bg-white  rounded-lg shadow-lg p-8 text-center max-w-md w-full">
           <div className="text-red-500 mb-4">
             <MapPin className="w-12 h-12 mx-auto" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
+          <h2 className="text-xl font-semibold text-gray-900  mb-2">Something went wrong</h2>
+          <p className="text-gray-600  mb-6">{error}</p>
           <button
             onClick={() => router.back()}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -439,11 +439,11 @@ const SingleLocation = () => {
 
   if (!location) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center max-w-md w-full">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center px-4">
+        <div className="bg-white  rounded-lg shadow-lg p-8 text-center max-w-md w-full">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Location not found</h2>
-          <p className="text-gray-600 dark:text-gray-300">This washroom doesn't exist or has been removed.</p>
+          <h2 className="text-xl font-semibold text-gray-900  mb-2">Location not found</h2>
+          <p className="text-gray-600 ">This washroom doesn't exist or has been removed.</p>
         </div>
       </div>
     );
@@ -454,15 +454,15 @@ const SingleLocation = () => {
   const fallbackImage = "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Header - Keep existing */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white  border-b border-gray-200 ">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push(`/washrooms?companyId=${finalCompanyId}`)}
-                className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="flex items-center text-gray-600  hover:text-gray-900  transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to listings
@@ -472,25 +472,25 @@ const SingleLocation = () => {
               <button
                 onClick={handlePrevious}
                 disabled={!navigationInfo.hasPrevious}
-                className="flex items-center px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                className="flex items-center px-3 py-2 rounded-lg border border-gray-300  hover:bg-gray-50  disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 {navigationInfo.previousName && (
-                  <span className="hidden sm:inline max-w-24 truncate text-gray-600 dark:text-gray-300">
+                  <span className="hidden sm:inline max-w-24 truncate text-gray-600 ">
                     {navigationInfo.previousName}
                   </span>
                 )}
               </button>
-              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-gray-100  text-gray-700  rounded-full text-sm font-medium">
                 {navigationInfo.currentIndex + 1} of {allLocations.length}
               </span>
               <button
                 onClick={handleNext}
                 disabled={!navigationInfo.hasNext}
-                className="flex items-center px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                className="flex items-center px-3 py-2 rounded-lg border border-gray-300  hover:bg-gray-50  disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
               >
                 {navigationInfo.nextName && (
-                  <span className="hidden sm:inline max-w-24 truncate text-gray-600 dark:text-gray-300">
+                  <span className="hidden sm:inline max-w-24 truncate text-gray-600 ">
                     {navigationInfo.nextName}
                   </span>
                 )}
@@ -503,12 +503,12 @@ const SingleLocation = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* ✅ Main Info Card with Header and Amenities moved up */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-8">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white  rounded-lg shadow mb-8">
+          <div className="p-6 border-b border-gray-200 ">
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{location.name}</h1>
-                <div className="flex items-center text-gray-600 dark:text-gray-400 space-x-4 text-sm">
+                <h1 className="text-2xl font-bold text-gray-900  mb-2">{location.name}</h1>
+                <div className="flex items-center text-gray-600  space-x-4 text-sm">
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 mr-1" />
                     {parseFloat(location.latitude).toFixed(4)}, {parseFloat(location.longitude).toFixed(4)}
@@ -522,7 +522,7 @@ const SingleLocation = () => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => handleViewLocation(location.latitude, location.longitude)}
-                  className="flex items-center px-4 py-2 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  className="flex items-center px-4 py-2 text-blue-600  border border-blue-300  rounded-lg hover:bg-blue-50  transition-colors"
                 >
                   <Navigation className="w-4 h-4 mr-2" />
                   View on Map
@@ -553,10 +553,10 @@ const SingleLocation = () => {
                   {renderStars(location.averageRating || 0)}
 
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-gray-900  mb-1">
                   {location.averageRating?.toFixed(1) || 'N/A'}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   {location.ratingCount} {location.ratingCount === 1 ? 'review' : 'reviews'}
                 </p>
               </div>
@@ -565,23 +565,23 @@ const SingleLocation = () => {
                 <div className="w-12 h-12 mx-auto mb-2 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
                   <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-gray-900  mb-1">
                   {location.hygiene_scores?.[0]?.score || 'N/A'}
                   {location.hygiene_scores?.[0]?.score && '/10'}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   Cleaner Reviews
                 </p>
               </div> */}
 
               <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-2 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="w-12 h-12 mx-auto mb-2 bg-blue-100  rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-blue-600 " />
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-gray-900  mb-1">
                   {location.ReviewData?.length || 0}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   Total User reviews
                 </p>
               </div>
@@ -591,19 +591,19 @@ const SingleLocation = () => {
 
         {/* ✅ Image Gallery */}
         {location.images && location.images.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-8 p-6">
+          <div className="bg-white  rounded-lg shadow mb-8 p-6">
             {renderImageGallery(location.images)}
           </div>
         )}
 
         {/* Reviews Section - Keep existing */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Reviews</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">What people are saying about this washroom</p>
+        <div className="bg-white  rounded-lg shadow">
+          <div className="p-6 border-b border-gray-200 ">
+            <h2 className="text-xl font-semibold text-gray-900 ">Reviews</h2>
+            <p className="text-gray-600  mt-1">What people are saying about this washroom</p>
           </div>
 
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="divide-y divide-gray-200 ">
             {location.ReviewData && location.ReviewData.length > 0 ? (
               location.ReviewData.map((review) => (
                 <div key={review.id} className="p-6">
@@ -614,19 +614,19 @@ const SingleLocation = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{review.name}</span>
+                          <span className="text-sm font-medium text-gray-900 ">{review.name}</span>
                           <div className="flex items-center">
                             {renderStars(review.rating)}
                           </div>
                         </div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(review.created_at)}</span>
+                        <span className="text-sm text-gray-500 ">{formatDate(review.created_at)}</span>
                       </div>
 
-                      <p className="text-gray-700 dark:text-gray-300 mb-4">{review.description}</p>
+                      <p className="text-gray-700  mb-4">{review.description}</p>
 
                       {review.images && review.images.length > 0 && (
                         <div className="space-y-3">
-                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center text-sm text-gray-600 ">
                             <Camera className="w-4 h-4 mr-1" />
                             {review.images.length} {review.images.length === 1 ? 'photo' : 'photos'}
                           </div>
@@ -634,7 +634,7 @@ const SingleLocation = () => {
                             {review.images.map((url, imgIndex) => (
                               <div
                                 key={imgIndex}
-                                className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                                className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100  flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={() => window.open(url, '_blank')}
                               >
                                 <img
@@ -655,9 +655,9 @@ const SingleLocation = () => {
               ))
             ) : (
               <div className="p-12 text-center">
-                <MessageSquare className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No reviews yet</h3>
-                <p className="text-gray-500 dark:text-gray-400">Be the first to share your experience with this washroom.</p>
+                <MessageSquare className="w-12 h-12 text-gray-300  mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900  mb-2">No reviews yet</h3>
+                <p className="text-gray-500 ">Be the first to share your experience with this washroom.</p>
               </div>
             )}
           </div>
