@@ -216,7 +216,7 @@ export default function UserDetailPage() {
                 setError(null);
 
                 const response = await UsersApi.getUserById(userId);
-
+                console.log("response single user", response.data)
                 if (response.success) {
                     setUser(response.data);
                 } else {
@@ -317,7 +317,7 @@ export default function UserDetailPage() {
                         {/* users/86?companyId=14 */}
                         {/* {`/role/${role}/${userId}/edit${finalCompanyId ? `?companyId=${finalCompanyId} */}
                         <Link
-                            href={`/users/86?companyId=${companyId}`}
+                            href={`/users/${user?.id}?companyId=${companyId}`}
                             // onClick={() => router.push(`users/86?companyId=${companyId}`)}
                             className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >

@@ -122,12 +122,12 @@
 //         return (
 //           <div className="flex items-center justify-between">
 //             <div>
-//               <label className="font-medium text-gray-700 dark:text-gray-200">
+//               <label className="font-medium text-gray-700 ">
 //                 {item.label}
 //                 {item.required && <span className="text-red-500 ml-1">*</span>}
 //               </label>
 //               {item.category && (
-//                 <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+//                 <p className="text-sm text-gray-500 ">{item.category}</p>
 //               )}
 //             </div>
 //             <label className="relative inline-flex items-center cursor-pointer">
@@ -137,7 +137,7 @@
 //                 onChange={(e) => handleChange(item.key, e.target.checked)}
 //                 className="sr-only peer"
 //               />
-//               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+//               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300  rounded-full peer  peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all  peer-checked:bg-blue-600"></div>
 //             </label>
 //           </div>
 //         );
@@ -146,17 +146,17 @@
 //       case 'dropdown':
 //         return (
 //           <div className="space-y-2">
-//             <label className="block font-medium text-gray-700 dark:text-gray-200">
+//             <label className="block font-medium text-gray-700 ">
 //               {item.label}
 //               {item.required && <span className="text-red-500 ml-1">*</span>}
 //             </label>
 //             {item.category && (
-//               <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+//               <p className="text-sm text-gray-500 ">{item.category}</p>
 //             )}
 //             <select
 //               value={currentValue ?? item.defaultValue ?? ''}
 //               onChange={(e) => handleChange(item.key, e.target.value)}
-//               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+//               className="w-full px-3 py-2 border border-gray-300  rounded-lg bg-white  text-gray-700  focus:outline-none focus:ring-2 focus:ring-blue-500"
 //             >
 //               <option value="">Select {item.label}</option>
 //               {item.options?.map((option, index) => {
@@ -175,12 +175,12 @@
 //       case 'radio':
 //         return (
 //           <div className="space-y-2">
-//             <label className="block font-medium text-gray-700 dark:text-gray-200">
+//             <label className="block font-medium text-gray-700 ">
 //               {item.label}
 //               {item.required && <span className="text-red-500 ml-1">*</span>}
 //             </label>
 //             {item.category && (
-//               <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+//               <p className="text-sm text-gray-500 ">{item.category}</p>
 //             )}
 //             <div className="space-y-2">
 //               {item.options?.map((option, index) => {
@@ -196,7 +196,7 @@
 //                       onChange={() => handleChange(item.key, value)}
 //                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
 //                     />
-//                     <span className="text-gray-700 dark:text-gray-300">{label}</span>
+//                     <span className="text-gray-700 ">{label}</span>
 //                   </label>
 //                 );
 //               })}
@@ -213,7 +213,7 @@
 //             const value = item.type === 'number' ? parseFloat(e.target.value) || '' : e.target.value;
 //             handleChange(item.key, value);
 //           },
-//           className: "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500",
+//           className: "w-full px-3 py-2 border border-gray-300  rounded-lg bg-white  text-gray-700  focus:outline-none focus:ring-2 focus:ring-blue-500",
 //           placeholder: item.placeholder || `Enter ${item.label}`,
 //         };
 
@@ -230,12 +230,12 @@
 
 //         return (
 //           <div className="space-y-2">
-//             <label className="block font-medium text-gray-700 dark:text-gray-200">
+//             <label className="block font-medium text-gray-700 ">
 //               {item.label}
 //               {item.required && <span className="text-red-500 ml-1">*</span>}
 //             </label>
 //             {item.category && (
-//               <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+//               <p className="text-sm text-gray-500 ">{item.category}</p>
 //             )}
 //             {item.type === 'textarea' ? (
 //               <textarea {...inputProps} rows={item.rows || 3} />
@@ -255,7 +255,7 @@
 //               onChange={(e) => handleChange(item.key, e.target.checked)}
 //               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
 //             />
-//             <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+//             <span className="text-gray-700 ">{item.label}</span>
 //           </label>
 //         );
 //     }
@@ -266,7 +266,7 @@
 //       {config.map((item) => (
 //         <div 
 //           key={item.key} 
-//           className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+//           className="p-3 bg-gray-50  rounded-lg"
 //         >
 //           {renderInputField(item)}
 //         </div>
@@ -314,12 +314,12 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
         return (
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium text-gray-700 dark:text-gray-200">
+              <label className="font-medium text-gray-700 ">
                 {item.label}
                 {item.required && <span className="text-red-500 ml-1">*</span>}
               </label>
               {item.category && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+                <p className="text-sm text-gray-500 ">{item.category}</p>
               )}
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -329,7 +329,7 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
                 onChange={(e) => handleChange(item.key, e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300  rounded-full peer  peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all  peer-checked:bg-blue-600"></div>
             </label>
           </div>
         );
@@ -339,17 +339,17 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
         const selectedValues = currentValue || item.defaultValue || [];
         return (
           <div className="space-y-3">
-            <label className="block font-medium text-gray-700 dark:text-gray-200">
+            <label className="block font-medium text-gray-700 ">
               {item.label}
               {item.required && <span className="text-red-500 ml-1">*</span>}
             </label>
             {item.category && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+              <p className="text-sm text-gray-500 ">{item.category}</p>
             )}
             
             {/* Selected count indicator */}
             {selectedValues.length > 0 && (
-              <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+              <div className="text-sm text-blue-600  font-medium">
                 {selectedValues.length} selected
               </div>
             )}
@@ -366,20 +366,20 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
                     key={index} 
                     className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       isSelected 
-                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-600' 
-                        : 'bg-white border-gray-200 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600'
+                        ? 'bg-blue-50 border-blue-200  ' 
+                        : 'bg-white border-gray-200 hover:bg-gray-50   '
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={(e) => handleMultiselectChange(item.key, value, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500  "
                     />
                     <span className={`text-sm font-medium ${
                       isSelected 
-                        ? 'text-blue-700 dark:text-blue-300' 
-                        : 'text-gray-700 dark:text-gray-300'
+                        ? 'text-blue-700 ' 
+                        : 'text-gray-700 '
                     }`}>
                       {label}
                     </span>
@@ -402,13 +402,13 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
                   return (
                     <span 
                       key={value}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full dark:bg-blue-900/30 dark:text-blue-300"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full  "
                     >
                       {label}
                       <button
                         type="button"
                         onClick={() => handleMultiselectChange(item.key, value, false)}
-                        className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        className="ml-1 text-blue-600 hover:text-blue-800  "
                       >
                         ×
                       </button>
@@ -424,17 +424,17 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
       case 'dropdown':
         return (
           <div className="space-y-2">
-            <label className="block font-medium text-gray-700 dark:text-gray-200">
+            <label className="block font-medium text-gray-700 ">
               {item.label}
               {item.required && <span className="text-red-500 ml-1">*</span>}
             </label>
             {item.category && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+              <p className="text-sm text-gray-500 ">{item.category}</p>
             )}
             <select
               value={currentValue ?? item.defaultValue ?? ''}
               onChange={(e) => handleChange(item.key, e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300  rounded-lg bg-white  text-gray-700  focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select {item.label}</option>
               {item.options?.map((option, index) => {
@@ -453,12 +453,12 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
       case 'radio':
         return (
           <div className="space-y-2">
-            <label className="block font-medium text-gray-700 dark:text-gray-200">
+            <label className="block font-medium text-gray-700 ">
               {item.label}
               {item.required && <span className="text-red-500 ml-1">*</span>}
             </label>
             {item.category && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+              <p className="text-sm text-gray-500 ">{item.category}</p>
             )}
             <div className="space-y-2">
               {item.options?.map((option, index) => {
@@ -474,7 +474,7 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
                       onChange={() => handleChange(item.key, value)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-gray-700 dark:text-gray-300">{label}</span>
+                    <span className="text-gray-700 ">{label}</span>
                   </label>
                 );
               })}
@@ -491,7 +491,7 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
             const value = item.type === 'number' ? parseFloat(e.target.value) || '' : e.target.value;
             handleChange(item.key, value);
           },
-          className: "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500",
+          className: "w-full px-3 py-2 border border-gray-300  rounded-lg bg-white  text-gray-700  focus:outline-none focus:ring-2 focus:ring-blue-500",
           placeholder: item.placeholder || `Enter ${item.label}`,
         };
 
@@ -508,12 +508,12 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
 
         return (
           <div className="space-y-2">
-            <label className="block font-medium text-gray-700 dark:text-gray-200">
+            <label className="block font-medium text-gray-700 ">
               {item.label}
               {item.required && <span className="text-red-500 ml-1">*</span>}
             </label>
             {item.category && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
+              <p className="text-sm text-gray-500 ">{item.category}</p>
             )}
             {item.type === 'textarea' ? (
               <textarea {...inputProps} rows={item.rows || 3} />
@@ -533,7 +533,7 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
               onChange={(e) => handleChange(item.key, e.target.checked)}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
             />
-            <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+            <span className="text-gray-700 ">{item.label}</span>
           </label>
         );
     }
@@ -544,7 +544,7 @@ export default function DynamicOptions({ config = [], options = {}, setOptions }
       {config.map((item) => (
         <div 
           key={item.key} 
-          className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600"
+          className="p-4 bg-gray-50  rounded-xl border border-gray-200 "
         >
           {renderInputField(item)}
         </div>

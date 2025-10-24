@@ -194,10 +194,10 @@ export default function AddLocationPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100   p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+        <div className="bg-white  rounded-2xl shadow-xl border border-slate-200  overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
             <h1 className="text-2xl font-bold text-white mb-2">Add New Location</h1>
             {/* <p className="text-blue-100">Create a new toilet location with details and images</p> */}
@@ -207,7 +207,7 @@ export default function AddLocationPage() {
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700  mb-2">
                   Location Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -215,13 +215,13 @@ export default function AddLocationPage() {
                   placeholder="Enter location name"
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full p-3 border border-slate-300  rounded-xl bg-white  text-slate-700  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700  mb-2">
                   Location Type <span className="text-red-500">*</span>
                 </label>
                 <LocationTypeSelect
@@ -234,7 +234,7 @@ export default function AddLocationPage() {
 
             {/* Location Coordinates */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+              <h3 className="text-lg font-semibold text-slate-800 ">
                 Location Coordinates
               </h3>
 
@@ -259,13 +259,13 @@ export default function AddLocationPage() {
 
             {/* ✅ Image Upload Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-slate-800  flex items-center gap-2">
                 <ImageIcon className="h-5 w-5" />
                 Location Images
               </h3>
 
               {/* Upload Area */}
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-200">
+              <div className="border-2 border-dashed border-slate-300  rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-200">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -276,8 +276,8 @@ export default function AddLocationPage() {
                 />
 
                 <div className="space-y-4">
-                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
-                    <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div className="w-16 h-16 bg-blue-100  rounded-full flex items-center justify-center mx-auto">
+                    <Upload className="h-8 w-8 text-blue-600 " />
                   </div>
 
                   <div>
@@ -289,7 +289,7 @@ export default function AddLocationPage() {
                       <Plus className="h-4 w-4" />
                       Choose Images
                     </button>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                    <p className="text-sm text-slate-500  mt-2">
                       Select multiple images (max 10MB each)
                     </p>
                   </div>
@@ -299,7 +299,7 @@ export default function AddLocationPage() {
               {/* Image Previews */}
               {previewImages.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-slate-700 dark:text-slate-300">
+                  <h4 className="font-medium text-slate-700 ">
                     Selected Images ({previewImages.length})
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -308,7 +308,7 @@ export default function AddLocationPage() {
                         <img
                           src={preview.url}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
+                          className="w-full h-24 object-cover rounded-lg border border-slate-200 "
                         />
                         <button
                           type="button"
@@ -332,7 +332,7 @@ export default function AddLocationPage() {
             {/* Dynamic Options */}
             {features.length > 0 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                <h3 className="text-lg font-semibold text-slate-800 ">
                   Additional Features
                 </h3>
                 <DynamicOptions
@@ -344,11 +344,11 @@ export default function AddLocationPage() {
             )}
 
             {/* Submit Button */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200 dark:border-slate-600">
+            <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200 ">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-medium transition-colors duration-200"
+                className="px-6 py-3 text-slate-600  hover:bg-slate-100  rounded-xl font-medium transition-colors duration-200"
               >
                 Cancel
               </button>

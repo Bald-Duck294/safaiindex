@@ -22,17 +22,28 @@ const Header = ({ pageTitle }) => {
 
   // ✅ Get company_id from BOTH sources (params OR searchParams)
   const getCompanyId = () => {
+
+    const queryCompanyId = searchParams.get('companyId');
+
+    // console.log("cope query params", queryCompanyId)
+    console.log("both paras ", Boolean(params && queryCompanyId))
     // Priority 1: Check dynamic route parameter (e.g., /clientDashboard/17)
+    if (params && queryCompanyId) {
+      console.log("returned company id ")
+      return queryCompanyId;
+    }
+
     if (params.id) {
       return params.id;
     }
-    
+
     // Priority 2: Check query parameter (e.g., ?companyId=87)
-    const queryCompanyId = searchParams.get('companyId');
     if (queryCompanyId) {
       return queryCompanyId;
     }
-    
+
+
+
     // No company ID found
     return null;
   };
@@ -40,15 +51,14 @@ const Header = ({ pageTitle }) => {
   const companyId = getCompanyId();
 
   console.log("Company ID from URL:", companyId);
-  console.log("Params (dynamic):", params);
-  console.log("Search Params (query):", searchParams.get('companyId'));
+  // console.log("Params (dynamic):", params);
+  // console.log("Search Params (query):", searchParams.get('companyId'));
 
   // Fetch company information when companyId changes
   useEffect(() => {
-    console.log("useEffect triggered - companyId:", companyId);
 
     if (!companyId || companyId === 'null' || companyId === null) {
-      console.log('Skipping fetch - companyId not ready:', companyId);
+      // console.log('Skipping fetch - companyId not ready:', companyId);
       setCompany(null);
       return;
     }
@@ -61,7 +71,7 @@ const Header = ({ pageTitle }) => {
         const response = await CompanyApi.getCompanyById(companyId);
 
         if (response.success) {
-          console.log('✅ Company fetched successfully:', response.data.name);
+          // console.log('✅ Company fetched successfully:', response.data.name);
           setCompany(response.data);
         } else {
           console.error('❌ Failed to fetch company:', response.error);

@@ -356,7 +356,7 @@ function WashroomsPage() {
                     <tr className="bg-slate-50/50 border-b border-slate-200">
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">#</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Location Name</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Images</th>
+                      {/* <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Images</th> */}
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Rating</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Coordinates</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Date Added</th>
@@ -377,9 +377,9 @@ function WashroomsPage() {
                             {item.name}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        {/* <td className="py-4 px-6">
                           {renderImagesPreview(item.images)}
-                        </td>
+                        </td> */}
                         <td className="py-4 px-6">
                           {renderEmojiRating(item.averageRating, item.ratingCount)}
                         </td>
