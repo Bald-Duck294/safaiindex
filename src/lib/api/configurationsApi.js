@@ -22,7 +22,9 @@ import axiosInstance from "../axiosInstance";
 
 export const fetchToiletFeaturesByName = async (name) => {
   try {
-    const res = await axiosInstance.get(`/configurations/${name}`);
+    const res = await axiosInstance.get(`/configurations/${name}`  , {
+      
+    });
 
     // Parse the configuration value if it's a JSON string
     if (res.data && res.data.value) {

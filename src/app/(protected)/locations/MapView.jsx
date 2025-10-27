@@ -130,7 +130,7 @@ const MapView = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Toilets Map</h2>
+      <h2 className="text-xl font-bold mb-4">Washroom Map</h2>
 
       {/* Local Search Input with Dropdown */}
       <div className="mb-4 relative" ref={searchRef}>

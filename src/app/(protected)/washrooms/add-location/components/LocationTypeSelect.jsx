@@ -9,7 +9,7 @@ export default function LocationTypeSelect({
   return (
     <div className="mt-4">
       <label htmlFor="locationType" className="block text-sm font-medium">
-        Location Type
+        Location Hirarchy
       </label>
       <select
         id="locationType"
@@ -17,7 +17,7 @@ export default function LocationTypeSelect({
         onChange={(e) => setSelectedType(e.target.value)}
         className="w-full border px-3 py-2 rounded"
       >
-        <option value="">Select a location type</option>
+        <option value="">Select a location hirarchy</option>
         {types.map((type) => (
           <option key={type.id} value={type.id}>
             {type.name}

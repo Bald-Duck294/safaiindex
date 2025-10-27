@@ -70,10 +70,10 @@ const EmptyState = ({ companyId }) => (
         <FolderPlus className="w-12 h-12 text-gray-400" />
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-3">
-        No Location Types Found
+        No Location Hierarchy Found
       </h3>
       <p className="text-gray-500 mb-6">
-        You haven't created any location types yet. Start by adding your first location type to organize your washroom locations.
+        You haven't created any location hierarchy yet. Start by adding your first location type to organize your washroom locations.
       </p>
       <Link
         href={companyId ? `/location-types/add?companyId=${companyId}` : "/location-types/add"}
@@ -103,11 +103,11 @@ export default function LocationTypesPage() {
     setIsLoading(true);
     try {
       const data = await locationTypesApi.getAll(companyId);
-      console.log(data, "data from location types");
+      console.log(data, "data from location hierarchy");
       setTypes(data);
       setFilteredTypes(data);
     } catch (err) {
-      console.error("Failed to fetch location types", err);
+      console.error("Failed to fetch location hierarchy", err);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +160,7 @@ export default function LocationTypesPage() {
 
     // Check for children
     if (hasChildren(typeId)) {
-      toast.error("Cannot delete location type with child types. Delete children first.");
+      toast.error("Cannot delete location hierarchy with child hierarchy. Delete children first.");
       setDeleteModal({ open: false, type: null });
       return;
     }
@@ -205,11 +205,11 @@ export default function LocationTypesPage() {
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Location Types</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Location Hierarchy</h1>
                   <p className="text-sm text-gray-500 mt-1">
                     {hasCompanyContext
-                      ? `Company-specific location types`
-                      : 'Manage all location types'
+                      ? `Company-specific location hierarchy`
+                      : 'Manage all location hierarchy'
                     }
                   </p>
                 </div>
@@ -240,20 +240,20 @@ export default function LocationTypesPage() {
                   className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium order-1 sm:order-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Location Type
+                  Add Location Hierarchy
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Search Bar - Only show if there are types */}
+          {/* Search Bar - Only show if there are hierarchy */}
           {types.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm border mb-6 p-4">
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search location types..."
+                  placeholder="Search location hierarchy..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -277,7 +277,7 @@ export default function LocationTypesPage() {
                   <div>
                     <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
                       <h3 className="text-lg font-medium text-gray-900">
-                        All Location Types
+                        All Location Hierarchy
                         {searchTerm && (
                           <span className="text-sm font-normal text-gray-500 ml-2">
                             ({filteredTypes.length} of {types.length})
@@ -310,7 +310,7 @@ export default function LocationTypesPage() {
                               <td colSpan="4" className="px-6 py-8 text-center">
                                 <div className="text-gray-500">
                                   <Search className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                  <p className="font-medium">No location types found</p>
+                                  <p className="font-medium">No location hierarchy found</p>
                                   <p className="text-sm">Try adjusting your search terms</p>
                                 </div>
                               </td>
@@ -356,7 +356,7 @@ export default function LocationTypesPage() {
                       <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <p className="text-sm text-gray-700">
-                            Showing {filteredTypes.length} of {types.length} location types
+                            Showing {filteredTypes.length} of {types.length} location hierarchy
                           </p>
                           {searchTerm && (
                             <button
@@ -378,7 +378,7 @@ export default function LocationTypesPage() {
                         Hierarchy View
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Drag and drop to reorganize the location type hierarchy
+                        Drag and drop to reorganize the location  hierarchy
                       </p>
                     </div>
                     <TreeView types={types} onUpdate={fetchTypes} flag={false} />
@@ -416,7 +416,7 @@ export default function LocationTypesPage() {
                 </p>
                 {hasChildren(deleteModal.type?.id) && (
                   <p className="mt-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                    ⚠️ This location type has child types. Delete children first.
+                    ⚠️ This location hierarchy has child hierarchy. Delete children first.
                   </p>
                 )}
               </div>

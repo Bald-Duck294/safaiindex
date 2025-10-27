@@ -25,7 +25,6 @@ export const AssignmentsApi = {
     }
   },
 
-
   getAllAssignments: async (companyId) => {
     console.log(companyId, "company id form api assignments ")
     try {
@@ -97,6 +96,79 @@ export const AssignmentsApi = {
       return {
         success: false,
         error: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
+  // ✅ NEW: Create assignments for a location (1 location → multiple cleaners)
+  createAssignmentsForLocation: async (assignmentData) => {
+    console.log("in create assignments for location", assignmentData);
+    try {
+      const response = await axiosInstance.post(
+        `/assignments/location/create`,  // New endpoint
+        assignmentData
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error creating assignments for location:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
+  getAssignmentsByLocation: async (locationId, companyId) => {
+    console.log('Fetching assignments for location:', locationId);
+    try {
+      const params = new URLSearchParams();
+      if (companyId) {
+        params.append('company_id', companyId);
+      }
+
+      const response = await axiosInstance.get(
+        `/assignments/location/${locationId}?${params.toString()}`
+      );
+
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Error fetching assignments by location:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: []
+      };
+    }
+  },
+
+  // In assignmentsApi.js - Add this method if not already present
+  getAssignmentsByCleanerId: async (cleanerUserId, companyId) => {
+    try {
+      const params = new URLSearchParams();
+      if (companyId) {
+        params.append('company_id', companyId);
+      }
+
+      const response = await axiosInstance.get(
+        `/assignments/cleaner-id/${cleanerUserId}?${params.toString()}`
+      );
+
+      return {
+        success: true,
+        data: response.data.data || []
+      };
+    } catch (error) {
+      console.error('Error fetching assignments by cleaner:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: []
       };
     }
   },

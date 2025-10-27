@@ -110,35 +110,34 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     if (hasCompanyContext && user?.role_id === 1) {
       // SUPERADMIN VIEW - Full access including company management
       return [
+        // dashboard 
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+        // client dashboard
         {
           icon: Building2,
           label: "Client Dashboard",
           href: `/clientDashboard/${companyId}`
         },
-        {
-          icon: MapPin,
-          label: "Locations",
-          href: `/locations?companyId=${companyId}`
-        },
+        // Location hierarchy
         {
           icon: FolderTree,
-          label: "Location Types",
+          label: "Location Hierarchy",
           hasDropdown: true,
           key: "locationTypes",
           children: [
             {
               icon: List,
-              label: "View Location Types",
+              label: "View Location Hierarchy",
               href: `/location-types?companyId=${companyId}`,
             },
             {
               icon: FolderPlus,
-              label: "Add Location Type",
+              label: "Add Location Hierarchy",
               href: `/location-types/add?companyId=${companyId}`,
             },
           ],
         },
+        //washrooms 
         {
           icon: Toilet,
           label: "Washrooms",
@@ -157,24 +156,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        {
-          icon: UserCog,
-          label: "Cleaner Mapping",
-          hasDropdown: true,
-          key: "cleaner-assignments",
-          children: [
-            {
-              icon: List,
-              label: "Assignments List",
-              href: `/cleaner-assignments?companyId=${companyId}`,
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Assignment",
-              href: `/cleaner-assignments/add?companyId=${companyId}`,
-            },
-          ],
-        },
+        //user management 
         {
           icon: Users,
           label: "User Management",
@@ -193,30 +175,38 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        // ✅ ADD REGISTERED USERS FOR SUPERADMIN
-        // {
-        //   icon: ClipboardList,
-        //   label: "Registered Users",
-        //   hasDropdown: true,
-        //   key: "registered-users",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Registered Users List",
-        //       href: `/registered-users?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: PlusCircle,
-        //       label: "Add Registered User",
-        //       href: `/registered-users/add?companyId=${companyId}`,
-        //     },
-        //   ],
-        // },
+        // cleaner mapping
+        {
+          icon: UserCog,
+          label: "Cleaner Mapping",
+          hasDropdown: true,
+          key: "cleaner-assignments",
+          children: [
+            {
+              icon: List,
+              label: "Mapped List",
+              href: `/cleaner-assignments?companyId=${companyId}`,
+            },
+            {
+              icon: PlusCircle,
+              label: "Add Mapping",
+              href: `/cleaner-assignments/add?companyId=${companyId}`,
+            },
+          ],
+        },
+        // locate on map
+        {
+          icon: MapPin,
+          label: "Locate On Map",
+          href: `/locations?companyId=${companyId}`
+        },
+        // cleaner-activity
         {
           icon: ClipboardList,
           label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
+        // user-review
         {
           icon: MessageSquare,
           label: "User Review",
@@ -227,34 +217,32 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     else if (hasCompanyContext && user?.role_id === 2) {
       // ADMIN VIEW - Company-specific access
       return [
+        // admin -dashboard
         {
           icon: Building,
           label: "Dashboard",
           href: `/clientDashboard/${companyId}`
         },
-        {
-          icon: MapPin,
-          label: "Locations",
-          href: `/locations?companyId=${companyId}`
-        },
+        // admin -Locaton Hierarchy 
         {
           icon: FolderTree,
-          label: "Location Types",
+          label: "Location Hierarchy",
           hasDropdown: true,
           key: "locationTypes",
           children: [
             {
               icon: List,
-              label: "View Location Types",
+              label: "View Location Hierarchy",
               href: `/location-types?companyId=${companyId}`,
             },
             {
               icon: FolderPlus,
-              label: "Add Location Type",
+              label: "Add Location Hierarchy",
               href: `/location-types/add?companyId=${companyId}`,
             },
           ],
         },
+        // admin - washroom list
         {
           icon: Toilet,
           label: "Washrooms",
@@ -273,6 +261,27 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
+
+        // admin - user mangament 
+        {
+          icon: Users,
+          label: "User Management",
+          hasDropdown: true,
+          key: "user-management",
+          children: [
+            {
+              icon: List,
+              label: "User List",
+              href: `/users?companyId=${companyId}`,
+            },
+            {
+              icon: UserPlus,
+              label: "Add User",
+              href: `/users/add?companyId=${companyId}`,
+            },
+          ],
+        },
+        // admin -cleaner mapping 
         {
           icon: ClipboardList,
           label: "Cleaner Mapping",
@@ -286,29 +295,25 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
             {
               icon: UserCog,
-              label: "Add Assignment",
+              label: "Add Mapping",
               href: `/cleaner-assignments/add?companyId=${companyId}`,
             },
           ],
         },
+
+        // locate on map
         {
-          icon: Users,
-          label: "User Management",
-          hasDropdown: true,
-          key: "user-management",
-          children: [
-            {
-              icon: List,
-              label: "User List",
-              href: `/users?companyId=${companyId}`,
-            },
-            {
-              icon: UserPlus,
-              label: "Add User",
-              href: `/users/add?companyId=${companyId}`,
-            },
-          ],
+          icon: MapPin,
+          label: "Locate On Map",
+          href: `/locations?companyId=${companyId}`
         },
+        // cleaner activity
+        {
+          icon: ClipboardList,
+          label: "Cleaner Activity",
+          href: `/cleaner-review?companyId=${companyId}`
+        },
+        // admin - user -activity 
         {
           icon: Building,
           label: "User Review",
@@ -334,11 +339,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         //     },
         //   ],
         // },
-        {
-          icon: ClipboardList,
-          label: "Cleaner Activity",
-          href: `/cleaner-review?companyId=${companyId}`
-        },
+
       ];
     }
 

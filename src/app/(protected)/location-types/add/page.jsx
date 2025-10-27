@@ -58,7 +58,7 @@ export default function AddLocationTypesPage() {
       />
 
       <div className="p-6">
-        <h2 className="text-xl font-bold mb-4">Create New Location Type</h2>
+        <h2 className="text-xl font-bold mb-4">Create New Location Hierarchy</h2>
         <CreateForm onCreated={fetchTypes} allTypes={types} />
         <hr className="my-4" />
         <h3 className="text-lg font-semibold mb-2">Current Hierarchy (View Only)</h3>

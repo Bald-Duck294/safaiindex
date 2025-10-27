@@ -2,16 +2,30 @@ import axios from "axios";
 
 import API_BASE_URL from "../utils/Constant";
 import axiosInstance from "../axiosInstance";
+import { success } from "zod";
 
 
 
 
 export const LocationsApi = {
   // Get all locations
-  getAllLocations: async (company_id) => {
+  getAllLocations: async (company_id, includeUnavailable = false) => {
     console.log("in get all locations", company_id);
+    // options = {} add this in the parametere if the options becomes more 
+    // const { includeUnavailable = false, type_id = null } = options; this is how to acesses it 
+
+    const params = { company_id };
+
+    if (includeUnavailable) {
+      params.include_unavailable = true;
+    }
+    // if (type_id) {
+    //   params.type_id = type_id;
+    // }
+
+    console.log(params, "from get all locs");
     try {
-      const response = await axiosInstance.get(`/locations?company_id=${company_id}`);
+      const response = await axiosInstance.get(`/locations`, { params });
       // console.log(response.data, "data22");
       return {
         success: true,
@@ -97,48 +111,119 @@ export const LocationsApi = {
   },
 
   // ✅ Fixed postLocation in LocationsApi.js
+  // postLocation: async (data, companyId, images = []) => {
+  //   console.log("=== LOCATION API DEBUG ===");
+  //   console.log("Input data:", data);
+  //   console.log("Input data options:", data.options);
+  //   console.log("Input data options type:", typeof data.options);
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     // ✅ FIXED: Properly handle all fields
+  //     Object.keys(data).forEach(key => {
+  //       if (data[key] !== null && data[key] !== undefined) {
+  //         let valueToAppend = data[key];
+
+  //         // ✅ Special handling for different data types
+  //         if (key === 'options') {
+  //           console.log(`Processing options:`, data[key]);
+  //           console.log(`Options type:`, typeof data[key]);
+
+  //           if (typeof data[key] === 'object' && data[key] !== null) {
+  //             // ✅ CRITICAL FIX: Always stringify objects
+  //             valueToAppend = JSON.stringify(data[key]);
+  //             console.log(`Stringified options:`, valueToAppend);
+  //           } else if (typeof data[key] === 'string') {
+  //             valueToAppend = data[key]; // Already a string
+  //           } else {
+  //             valueToAppend = JSON.stringify(data[key] || {});
+  //           }
+  //         } else if (key === 'latitude' || key === 'longitude') {
+  //           // Handle coordinates
+  //           const numValue = parseFloat(data[key]);
+  //           if (!isNaN(numValue)) {
+  //             valueToAppend = numValue.toString();
+  //           } else {
+  //             valueToAppend = null;
+  //           }
+  //         } else if (typeof data[key] === 'object' && data[key] !== null) {
+  //           // ✅ Handle any other objects by stringifying them
+  //           valueToAppend = JSON.stringify(data[key]);
+  //         }
+
+  //         // Only append if we have a valid value
+  //         if (valueToAppend !== null && valueToAppend !== undefined) {
+  //           formData.append(key, valueToAppend);
+  //         }
+  //       }
+  //     });
+
+  //     // Add image files
+  //     if (images && images.length > 0) {
+  //       images.forEach((image) => {
+  //         formData.append('images', image);
+  //       });
+  //     }
+
+  //     // ✅ Debug FormData contents
+  //     console.log("=== FORMDATA CONTENTS ===");
+  //     for (let pair of formData.entries()) {
+  //       console.log(`${pair[0]}: ${pair[1]} (type: ${typeof pair[1]})`);
+  //     }
+
+  //     const response = await axiosInstance.post(
+  //       `/locations?companyId=${companyId}`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       }
+  //     );
+
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //     };
+  //   } catch (error) {
+  //     console.error("Error posting location:", error);
+  //     return {
+  //       success: false,
+  //       error: error.response?.data?.error || error.message,
+  //     };
+  //   }
+  // },
+
+
   postLocation: async (data, companyId, images = []) => {
     console.log("=== LOCATION API DEBUG ===");
     console.log("Input data:", data);
-    console.log("Input data options:", data.options);
-    console.log("Input data options type:", typeof data.options);
 
     try {
       const formData = new FormData();
 
-      // ✅ FIXED: Properly handle all fields
-      Object.keys(data).forEach(key => {
-        if (data[key] !== null && data[key] !== undefined) {
+      // ✅ Add all form fields
+      const fieldsToSend = [
+        'name', 'parent_id', 'type_id', 'latitude', 'longitude',
+        'address', 'pincode', 'state', 'city', 'dist', 'status', 'options'
+      ];
+
+      fieldsToSend.forEach(key => {
+        if (data[key] !== null && data[key] !== undefined && data[key] !== '') {
           let valueToAppend = data[key];
 
-          // ✅ Special handling for different data types
           if (key === 'options') {
-            console.log(`Processing options:`, data[key]);
-            console.log(`Options type:`, typeof data[key]);
-
-            if (typeof data[key] === 'object' && data[key] !== null) {
-              // ✅ CRITICAL FIX: Always stringify objects
-              valueToAppend = JSON.stringify(data[key]);
-              console.log(`Stringified options:`, valueToAppend);
-            } else if (typeof data[key] === 'string') {
-              valueToAppend = data[key]; // Already a string
-            } else {
-              valueToAppend = JSON.stringify(data[key] || {});
-            }
+            valueToAppend = typeof data[key] === 'object'
+              ? JSON.stringify(data[key])
+              : data[key];
           } else if (key === 'latitude' || key === 'longitude') {
-            // Handle coordinates
             const numValue = parseFloat(data[key]);
-            if (!isNaN(numValue)) {
-              valueToAppend = numValue.toString();
-            } else {
-              valueToAppend = null;
-            }
-          } else if (typeof data[key] === 'object' && data[key] !== null) {
-            // ✅ Handle any other objects by stringifying them
-            valueToAppend = JSON.stringify(data[key]);
+            valueToAppend = !isNaN(numValue) ? numValue.toString() : null;
+          } else if (key === 'status') {
+            valueToAppend = data[key].toString(); // Convert boolean to string
           }
 
-          // Only append if we have a valid value
           if (valueToAppend !== null && valueToAppend !== undefined) {
             formData.append(key, valueToAppend);
           }
@@ -152,10 +237,9 @@ export const LocationsApi = {
         });
       }
 
-      // ✅ Debug FormData contents
       console.log("=== FORMDATA CONTENTS ===");
       for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]} (type: ${typeof pair[1]})`);
+        console.log(`${pair[0]}: ${pair[1]}`);
       }
 
       const response = await axiosInstance.post(
@@ -412,5 +496,46 @@ export const LocationsApi = {
 
     return formData;
   },
+
+  // toggleStautsLocations: async (id) => {
+  //   try {
+  //     const data = await axiosInstance.post(`/locations/status/${id}`,)
+  //     return {
+  //       success: true,
+  //       data: data
+  //     }
+  //   }
+  //   catch (err) {
+  //     console.log(err)
+  //     return {
+  //       success: false,
+  //       data: err
+  //     }
+  //   }
+
+  // }
+  // In LocationsApi.js
+  toggleStautsLocations: async (id) => {
+    try {
+      console.log('Calling toggle status API for ID:', id);
+      const response = await axiosInstance.post(`/locations/status/${id}`);
+
+      console.log('Raw API response:', response);
+      console.log('Response data:', response.data);
+
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (err) {
+      console.error('API error:', err);
+      console.error('Error response:', err.response?.data);
+      return {
+        success: false,
+        error: err.response?.data?.message || err.message
+      };
+    }
+  }
+
 };
 export default LocationsApi;

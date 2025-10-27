@@ -10,13 +10,13 @@ import Loader from '@/components/ui/Loader';
 
 export default function AssignmentListPage() {
   const [assignments, setAssignments] = useState([]);
-  
+
   // ✅ SOLUTION 1: Initialize loading as true to prevent flash of "no data" message
   const [loading, setLoading] = useState(true); // Start with true instead of false
-  
+
   // ✅ SOLUTION 2: Track if we've made the initial API call
   const [hasInitialized, setHasInitialized] = useState(false);
-  
+
   const [deleting, setDeleting] = useState(null);
 
   const { companyId, hasCompanyContext } = useCompanyId();
@@ -31,13 +31,13 @@ export default function AssignmentListPage() {
       setHasInitialized(true);
       return;
     }
-    
+
     // ✅ Only set loading to true if this isn't the initial load
     // (since we initialized loading as true)
     if (hasInitialized) {
       setLoading(true);
     }
-    
+
     try {
       const res = await AssignmentsApi.getAllAssignments(companyId);
       if (res.success) {
@@ -47,8 +47,8 @@ export default function AssignmentListPage() {
         setAssignments([]); // Ensure assignments is empty on error
       }
     } catch (error) {
-      console.error('Fetch assignments error:', error);
-      toast.error('Failed to fetch assignments');
+      console.error('Fetch mapping error:', error);
+      toast.error('Failed to fetch mappings');
       setAssignments([]); // Ensure assignments is empty on error
     } finally {
       // ✅ Always set loading to false and mark as initialized
@@ -59,7 +59,7 @@ export default function AssignmentListPage() {
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
-    
+
     setDeleting(id);
     try {
       const res = await AssignmentsApi.deleteAssignment(id);
@@ -87,20 +87,20 @@ export default function AssignmentListPage() {
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Cleaner Assignments</h1>
+          <h1 className="text-2xl font-bold">Cleaner Mappings</h1>
           <Link
             href={`/cleaner-assignments/add?companyId=${companyId}`}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
           >
-            + Add Assignment
+            + Add Mappings
           </Link>
         </div>
-        
+
         <div className="flex justify-center items-center h-64">
-          <Loader 
-            size="large" 
-            color="#6366f1" 
-            message="Loading assignments..." 
+          <Loader
+            size="large"
+            color="#6366f1"
+            message="Loading assignments..."
           />
         </div>
       </div>
@@ -111,12 +111,12 @@ export default function AssignmentListPage() {
     <div className="p-6">
       <Toaster />
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Cleaner Assignments</h1>
+        <h1 className="text-2xl font-bold">Cleaner Mappings</h1>
         <Link
           href={`/cleaner-assignments/add?companyId=${companyId}`}
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
         >
-          + Add Assignment
+          + Add Mappings
         </Link>
       </div>
 
@@ -156,13 +156,12 @@ export default function AssignmentListPage() {
                     {a.locations?.name || `Location #${a.location_id}`}
                   </td>
                   <td className="p-3 border">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      a.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${a.status === 'active'
+                        ? 'bg-green-100 text-green-800'
                         : a.status === 'unassigned'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {a.status}
                     </span>
                   </td>

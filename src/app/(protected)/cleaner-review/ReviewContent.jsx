@@ -511,7 +511,7 @@ export default function ReviewContent({ companyId }) {
                 : (
                   <div className="col-span-full text-center py-16 bg-white rounded-lg shadow-sm">
                     <h3 className="text-xl font-semibold text-slate-700">
-                      No Reviews Found
+                      No Cleaner Activity Found
                     </h3>
                     <p className="text-slate-500 mt-2">
                       There are no tasks matching the current filter.

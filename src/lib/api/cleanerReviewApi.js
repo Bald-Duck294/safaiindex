@@ -170,6 +170,22 @@ export const CleanerReviewApi = {
     }
   },
 
+  getCleanerReviewsByCleanerId: async (cleanerUserId) => {
+    try {
+      const response = await axiosInstance.get(`/cleaner-reviews/${cleanerUserId}`);
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Error fetching cleaner reviews:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: { reviews: [], stats: {} }
+      };
+    }
+  },
   async getCleanerReviewById(reviewId) {
     console.log(reviewId, "id")
     try {
@@ -201,4 +217,41 @@ export const CleanerReviewApi = {
       };
     }
   },
+
+  async getCleanerReviewsByLocationId(locationId, companyId) {
+    console.log('Fetching cleaner reviews for location:', locationId, 'company:', companyId);
+    try {
+      const queryParams = new URLSearchParams();
+      if (companyId) {
+        queryParams.append("company_id", companyId);
+      }
+
+      const response = await axiosInstance.get(
+        `/cleaner-reviews/location/${locationId}?${queryParams.toString()}`
+      );
+
+      console.log('✅ Cleaner reviews response:', response);
+
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data.data, // Extract the data object
+          stats: response.data.data?.stats || null
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Failed to fetch cleaner reviews',
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error fetching cleaner reviews by location:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Network error occurred',
+        data: { reviews: [], stats: { total_reviews: 0 } }
+      };
+    }
+  },
+
 };

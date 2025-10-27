@@ -217,10 +217,10 @@ export default function CreateForm({ onCreated, allTypes }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!name.trim()) {
-      toast.error("Location type name is required");
+      toast.error("Location hirarchy name is required");
       return;
     }
 
@@ -228,16 +228,16 @@ export default function CreateForm({ onCreated, allTypes }) {
     const isDuplicate = allTypes?.some(
       type => type.name.toLowerCase() === name.trim().toLowerCase()
     );
-    
+
     if (isDuplicate) {
-      toast.error("A location type with this name already exists");
+      toast.error("A location hirarchy with this name already exists");
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // ✅ Show loading toast
-    const loadingToast = toast.loading("Creating location type...");
+    const loadingToast = toast.loading("Creating location hirarchy...");
 
     try {
       console.log('beofre createing location ')
@@ -247,25 +247,25 @@ export default function CreateForm({ onCreated, allTypes }) {
       }, companyId);
 
       // ✅ Dismiss loading and show success
-      toast.success("Location type created successfully!", {
+      toast.success("Location Hierarchy created successfully!", {
         id: loadingToast,
       });
 
       // Reset form
       setName("");
       setParentId("");
-      
+
       // Refresh list
       onCreated();
-      
+
     } catch (error) {
       console.error("Error creating location type:", error);
-      
+
       // ✅ Dismiss loading and show error
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          "Failed to create location type";
-      
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Failed to create location type";
+
       toast.error(errorMessage, {
         id: loadingToast,
       });
@@ -278,7 +278,7 @@ export default function CreateForm({ onCreated, allTypes }) {
     <form onSubmit={handleSubmit} className="mb-6 space-y-4 max-w-md">
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Type Name *
+          Hierarchy Name *
         </label>
         <input
           type="text"
@@ -299,7 +299,7 @@ export default function CreateForm({ onCreated, allTypes }) {
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Parent Type (optional)
+          Parent Hierarchy (optional)
         </label>
         <select
           value={parentId}
@@ -315,7 +315,7 @@ export default function CreateForm({ onCreated, allTypes }) {
               </option>
             ))
           ) : (
-            <option disabled>No types available</option>
+            <option disabled>No hierarchy available</option>
           )}
         </select>
         <p className="text-xs text-gray-500 mt-1">
@@ -334,7 +334,7 @@ export default function CreateForm({ onCreated, allTypes }) {
             Creating...
           </>
         ) : (
-          "Create Location Type"
+          "Create Location Hierarchy"
         )}
       </button>
     </form>
