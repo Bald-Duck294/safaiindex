@@ -184,7 +184,7 @@ export default function AddAssignmentPage() {
                                 <div className="flex-1">
                                     <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                                         <UserPlus className="w-7 h-7" />
-                                        Assign Cleaners
+                                        Map Cleaners
                                     </h1>
                                     {locationName && (
                                         <p className="text-slate-300 text-sm mt-1">
