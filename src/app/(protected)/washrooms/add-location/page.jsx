@@ -624,6 +624,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Country, State, City } from 'country-state-city';
+import FacilityCompanyApi from "@/lib/api/facilityCompanyApi"
 
 // Indian States List
 const INDIAN_STATES = [
@@ -666,6 +667,10 @@ export default function AddLocationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [pincodeError, setPincodeError] = useState("");
+  // Add these state variables near the top with other states
+  const [facilityCompanies, setFacilityCompanies] = useState([]);
+  const [selectedFacilityCompany, setSelectedFacilityCompany] = useState(null);
+
   const fileInputRef = useRef(null);
   const router = useRouter();
 
@@ -719,6 +724,21 @@ export default function AddLocationPage() {
         let config = null;
         let types = null;
         let cleaners = null;
+        let facilities = null; // ✅ ADD THIS
+
+        try {
+          facilities = await FacilityCompanyApi.getAll(companyId, false); // Only active
+          console.log("Facility companies loaded:", facilities);
+
+          if (facilities.success) {
+            setFacilityCompanies(facilities.data || []);
+          } else {
+            setFacilityCompanies([]);
+          }
+        } catch (facilitiesError) {
+          console.error("Failed to load facility companies:", facilitiesError);
+          setFacilityCompanies([]);
+        }
 
         try {
           config = await fetchToiletFeaturesByName("Toilet_Features", companyId);
@@ -768,6 +788,8 @@ export default function AddLocationPage() {
         setFeatures([]);
         setLocationTypes([]);
         setAllCleaners([]);
+        setFacilityCompanies([]); // ✅ ADD THIS
+
       }
     }
 
@@ -894,6 +916,8 @@ export default function AddLocationPage() {
     console.log("Form Data:", form);
     console.log("Images:", images);
     console.log("Selected Cleaners:", selectedCleaners);
+    console.log("Facility Company ID:", form.facility_company_id); // ✅ ADD THIS LOG
+
 
     setSubmitting(true);
 
@@ -1018,6 +1042,43 @@ export default function AddLocationPage() {
                     setSelectedType={(id) => handleChange("type_id", id)}
                   />
                 </div>
+
+                {/* Add this after Location Type Select */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Facility Company (Optional)
+                  </label>
+                  <select
+                    value={form.facility_company_id || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleChange("facility_company_id", value ? parseInt(value) : null);
+                      setSelectedFacilityCompany(
+                        facilityCompanies.find((f) => f.id === parseInt(value)) || null
+                      );
+                    }}
+                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">-- No Facility Company --</option>
+                    {facilityCompanies.map((facility) => (
+                      <option key={facility.id} value={facility.id}>
+                        {facility.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedFacilityCompany && (
+                    <p className="mt-2 text-sm text-slate-600 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      Selected: {selectedFacilityCompany.name}
+                    </p>
+                  )}
+                  {facilityCompanies.length === 0 && (
+                    <p className="mt-2 text-sm text-amber-600">
+                      No facility companies available. Add one from the Facility Companies section.
+                    </p>
+                  )}
+                </div>
+
               </div>
 
               {/* Address Details */}
