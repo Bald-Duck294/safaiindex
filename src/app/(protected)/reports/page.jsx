@@ -17,7 +17,7 @@ import ReportsApi from "@/lib/api/reportsApi";
 import ReportTable from "./components/ReportTable";
 import { exportToPDF, exportToExcel } from "./components/ExportUtils";
 import Loader from "@/components/ui/Loader";
-
+import { generateProfessionalExcel } from "@/lib/utils/excelExport";
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
 
@@ -131,6 +131,15 @@ export default function ReportsPage() {
     setReportMetadata(null);
   };
 
+  const handleDownloadExcel = () => {
+    try {
+      generateProfessionalExcel(reportData, reportMetadata);
+      toast.success("Excel report downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading Excel:", error);
+      toast.error("Failed to download Excel report");
+    }
+  };
   return (
     <>
       <Toaster position="top-right" />
@@ -270,7 +279,7 @@ export default function ReportsPage() {
                   </button>
 
                   <button
-                    onClick={handleExportExcel}
+                    onClick={handleDownloadExcel}
                     disabled={isExporting}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >

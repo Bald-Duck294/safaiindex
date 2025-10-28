@@ -30,9 +30,8 @@ const ReportTable = ({ data, metadata }) => {
 
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusConfig[status] || statusConfig["No Reviews"]
-        }`}
+        className={`px-2 py-1 text-xs font-medium rounded-full ${statusConfig[status] || statusConfig["No Reviews"]
+          }`}
       >
         {status}
       </span>
@@ -152,6 +151,7 @@ const ReportTable = ({ data, metadata }) => {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {data.map((row, index) => (
+              console.log(row, "single row", index),
               <motion.tr
                 key={row.location_id}
                 initial={{ opacity: 0, y: 20 }}
