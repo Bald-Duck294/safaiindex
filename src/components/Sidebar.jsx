@@ -30,7 +30,8 @@ import {
   X,
   MapPin, // Locations
   Building,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -194,6 +195,26 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         //     },
         //   ],
         // },
+
+
+        {
+          icon: Building2,
+          label: "Facility Companies",
+          hasDropdown: true,
+          key: "facility-companies",
+          children: [
+            {
+              icon: List,
+              label: "View List",
+              href: `/facility-company?companyId=${companyId}`,
+            },
+            {
+              icon: PlusCircle,
+              label: "Add Facility",
+              href: `/facility-company/add?companyId=${companyId}`,
+            },
+          ],
+        },
         // locate on map
         {
           icon: MapPin,
@@ -211,6 +232,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           icon: MessageSquare,
           label: "User Review",
           href: `/user-activity?companyId=${companyId}`
+        },
+        {
+          icon: FileText,
+          label: "Reports",
+          href: `/reports?companyId=${companyId}`,
         },
       ];
     }
@@ -318,6 +344,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           icon: Building,
           label: "User Review",
           href: `/user-activity?companyId=${companyId}`
+        },
+
+        {
+          icon: FileText,
+          label: "Reports",
+          href: `/reports?companyId=${companyId}`,
         },
         // ✅ ADD REGISTERED USERS FOR ADMIN (Company-specific)
 
