@@ -235,7 +235,7 @@ export default function AddFacilityCompanyPage() {
         if (result.success) {
             toast.success("Facility company added successfully!");
             setTimeout(() => {
-                router.push(`/facility-company?companyId=$companyId=${companyId}`);
+                router.push(`/facility-company?companyId=${companyId}`);
             }, 1000);
         } else {
             toast.error(result.error || "Failed to add facility company");
