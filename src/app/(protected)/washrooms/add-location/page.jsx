@@ -1144,7 +1144,7 @@ export default function AddLocationPage() {
                         Choose Images
                       </button>
                       <p className="text-sm text-slate-500 mt-2">
-                        Select multiple images (max 10MB each)
+                        Select multiple images (max 2MB each)
                       </p>
                     </div>
                   </div>

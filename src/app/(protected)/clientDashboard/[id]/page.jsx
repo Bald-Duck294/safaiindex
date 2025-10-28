@@ -11,6 +11,8 @@ import {
   Activity,
   Wrench,
   UserCheck,
+  MessageSquare,
+  Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -21,6 +23,7 @@ import LocationsApi from "@/lib/api/LocationApi";
 import { CleanerReviewApi } from "@/lib/api/cleanerReviewApi";
 import { UsersApi } from "@/lib/api/usersApi"; // Add this import
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
+import { useGetUserReviewsQuery } from "@/store/slices/reviewSlice";
 
 // A reusable component for the star rating display
 const Rating = ({ value }) => {
@@ -45,11 +48,48 @@ export default function ClientDashboard() {
   });
   const [topLocations, setTopLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [isActivitiesLoading, setIsActivitiesLoading] = useState(true);
+
   const router = useRouter();
 
   const { companyId } = useCompanyId();
 
   console.log('in main dashboard page', companyId);
+
+
+  // Helper function to format time
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+      return diffInMinutes <= 1 ? "Just now" : `${diffInMinutes}m ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  };
+
+  // Get today's date range
+  const getTodayDateRange = () => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { startOfDay };
+  };
+
+  // Fetch user reviews using RTK Query
+  const { data: userReviewsData } = useGetUserReviewsQuery(
+    { limit: 50 }, // Fetch more to filter by date
+    { skip: !companyId || companyId === 'null' || companyId === null }
+  );
 
   // Fetch all data when the component mounts
   useEffect(() => {
@@ -65,6 +105,7 @@ export default function ClientDashboard() {
           CleanerReviewApi.getReviewsByStatus("ongoing", companyId),
           CleanerReviewApi.getReviewsByStatus("completed", companyId),
           UsersApi.getAllUsers(companyId), // Fetch all users
+          CleanerReviewApi.getAllCleanerReviews(companyId),
         ]);
 
         if (locationsRes.success) {
@@ -101,7 +142,7 @@ export default function ClientDashboard() {
           const cleaners = allUsers.filter(user => user.role_id === 5); // Filter cleaners
 
           console.log(allUsers, "all users")
-          console.log(cleaners , "cleaners");
+          console.log(cleaners, "cleaners");
           setStatsData((prev) => ({
             ...prev,
             totalCleaners: cleaners.length,
@@ -118,6 +159,80 @@ export default function ClientDashboard() {
 
     fetchDashboardData();
   }, [companyId]);
+
+  // NEW useEffect - Add this entire block
+  useEffect(() => {
+    if (!companyId || companyId === 'null' || companyId === null || companyId === 'undefined') {
+      console.log('Skipping recent activities - invalid companyId:', companyId);
+      setIsActivitiesLoading(false); // Set loading to false so UI doesn't hang
+      return;
+    }
+
+    const fetchRecentActivities = async () => {
+      setIsActivitiesLoading(true);
+      try {
+        const { startOfDay } = getTodayDateRange();
+
+        let cleanerActivities = [];
+        let userActivities = [];
+
+        // Get cleaner reviews from Promise.all result stored in state
+        // We'll create a new state for this or fetch it separately
+
+        console.log(companyId, "companyId before the call")
+        const cleanerReviewsRes = await CleanerReviewApi.getAllCleanerReviews({}, companyId);
+
+        console.log(cleanerReviewsRes, "review res");
+        // Filter and format cleaner reviews for today
+        if (cleanerReviewsRes.success) {
+          cleanerActivities = cleanerReviewsRes.data
+            .filter(review => new Date(review.created_at) >= startOfDay)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 2)
+            .map(review => ({
+              type: 'cleaner',
+              id: review.id,
+              text: `${review.cleaner_user?.name || 'Cleaner'} ${review.status === 'completed' ? 'completed' : 'started'
+                } cleaning at ${review.location?.name || 'location'}`,
+              timestamp: review.created_at,
+              status: review.status,
+              score: review.score,
+              activityType: review.status === 'completed' ? 'success' : 'info',
+            }));
+        }
+
+        // Filter and format user reviews for today
+        if (userReviewsData?.data) {
+          userActivities = userReviewsData.data
+            .filter(review => new Date(review.created_at) >= startOfDay)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 2)
+            .map(review => ({
+              type: 'user',
+              id: review.id,
+              text: `${review.name} submitted feedback for ${review.location?.name || 'location'}`,
+              timestamp: review.created_at,
+              rating: review.rating,
+              activityType: review.rating >= 7 ? 'success' : review.rating >= 5 ? 'warning' : 'update',
+            }));
+        }
+
+        // Combine and sort by timestamp (oldest first for bottom-up display)
+        const combined = [...cleanerActivities, ...userActivities]
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        setRecentActivities(combined);
+
+      } catch (error) {
+        console.error("Failed to fetch recent activities:", error);
+      } finally {
+        setIsActivitiesLoading(false);
+      }
+    };
+
+    fetchRecentActivities();
+  }, [companyId, userReviewsData]);
+
 
   // --- DYNAMIC DATA MAPPING ---
   const stats = [
@@ -158,19 +273,20 @@ export default function ClientDashboard() {
     },
   ];
 
-  const recentActivities = [
-    { text: "Cleaner A completed cleaning at Sitabuldi.", type: "success" },
-    { text: "Manager approved report for Dharampeth.", type: "info" },
-    { text: "New location added: Railway Station.", type: "update" },
-    { text: "User feedback submitted for Mankapur.", type: "warning" },
-  ];
+
 
   const activityColors = {
     success: "bg-emerald-500",
     info: "bg-sky-500",
     update: "bg-violet-500",
     warning: "bg-amber-500",
+    cleaner: <Sparkles className="w-4 h-4" />,
+    user: <MessageSquare className="w-4 h-4" />,
   };
+  const activityIcons = {
+    cleaner: <Sparkles className="w-4 h-4" />,
+    user: <MessageSquare className="w-4 h-4" />,
+  }
 
   const handleStatClick = (stat) => {
     console.log("in handle click");
@@ -249,28 +365,91 @@ export default function ClientDashboard() {
               </ul>
             )}
           </div>
-
-          {/* Right: Recent Activities */}
+          {/* Right: Recent Activities - REPLACE ENTIRE SECTION */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200/60">
             <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-slate-500" /> Recent Activities
+              <Activity className="w-5 h-5 text-slate-500" />
+              Today's Activities
             </h2>
-            <ul className="space-y-3">
-              {recentActivities.map((activity, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full mt-2 ${activityColors[activity.type]}`}
-                  />
-                  <span className="text-slate-600 text-sm leading-relaxed">{activity.text}</span>
-                </li>
-              ))}
-            </ul>
+
+            {isActivitiesLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader size="medium" color="#3b82f6" />
+              </div>
+            ) : recentActivities.length === 0 ? (
+              <div className="text-center py-12">
+                <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm">No activities today</p>
+              </div>
+            ) : (
+              <div className="h-64 overflow-y-auto flex flex-col-reverse custom-scrollbar">
+                <ul className="space-y-3">
+                  {recentActivities.map((activity) => (
+                    <motion.li
+                      key={`${activity.type}-${activity.id}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100"
+                    >
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`w-8 h-8 rounded-full ${activityColors[activity.activityType]} flex items-center justify-center text-white`}>
+                          {activityIcons[activity.type]}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-700 text-sm leading-relaxed">
+                          {activity.text}
+                        </p>
+
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-slate-400">
+                            {formatTime(activity.timestamp)}
+                          </span>
+
+                          {activity.score && (
+                            <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                              <Star className="w-3 h-3" fill="currentColor" />
+                              {activity.score.toFixed(1)}
+                            </span>
+                          )}
+
+                          {activity.rating && (
+                            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                              <Star className="w-3 h-3" fill="currentColor" />
+                              {activity.rating}/10
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      {/* Add custom scrollbar styling */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 }

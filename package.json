@@ -19,6 +19,8 @@
     "browser-image-compression": "^2.0.2",
     "country-state-city": "^3.2.1",
     "framer-motion": "^12.23.12",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
@@ -32,6 +34,7 @@
     "react-redux": "^9.2.0",
     "react-select": "^5.10.2",
     "recharts": "^3.1.2",
+    "xlsx": "^0.18.5",
     "zod": "^4.0.14"
   },
   "devDependencies": {

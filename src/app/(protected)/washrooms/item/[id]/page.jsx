@@ -783,7 +783,7 @@ const SingleLocation = () => {
 
         ]);
 
-        console.log(locationResult?.data?.ReviewData, "locatoin result");
+        console.log(locationResult, "locatoin result");
         console.log(locationsResult, "all loc")
         if (locationResult.success) {
           setLocation(locationResult.data);
