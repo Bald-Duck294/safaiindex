@@ -148,15 +148,50 @@ export const AssignmentsApi = {
   },
 
   // In assignmentsApi.js - Add this method if not already present
-  getAssignmentsByCleanerId: async (cleanerUserId, companyId) => {
-    try {
-      const params = new URLSearchParams();
-      if (companyId) {
-        params.append('company_id', companyId);
-      }
+  // getAssignmentsByCleanerId: async (cleanerUserId, companyId) => {
+  //   try {
+  //     const params = new URLSearchParams();
+  //     if (companyId) {
+  //       params.append('company_id', companyId);
+  //     }
 
+  //     const response = await axiosInstance.get(
+  //       `/assignments/cleaner-id/${cleanerUserId}?${params.toString()}`
+  //     );
+
+  //     return {
+  //       success: true,
+  //       data: response.data.data || []
+  //     };
+  //   } catch (error) {
+  //     console.error('Error fetching assignments by cleaner:', error);
+  //     return {
+  //       success: false,
+  //       error: error.response?.data?.message || error.message,
+  //       data: []
+  //     };
+  //   }
+  // },
+
+
+  // In assignmentsApi.js
+  getAssignmentsByCleanerId: async (cleanerUserId, companyId, includeAllStatuses = false) => {
+    console.log("in get assignments by cleaner", cleanerUserId, companyId);
+
+    // Build params object (same pattern as getAllLocations)
+    const params = { company_id: companyId };
+
+    // Only add parameter if true (same pattern as your locations API)
+    if (includeAllStatuses) {
+      params.include_all_statuses = 'true';
+    }
+
+    console.log(params, "from get assignments by cleaner");
+
+    try {
       const response = await axiosInstance.get(
-        `/assignments/cleaner-id/${cleanerUserId}?${params.toString()}`
+        `/assignments/cleaner-id/${cleanerUserId}`,
+        { params } // Pass params object to axios
       );
 
       return {
