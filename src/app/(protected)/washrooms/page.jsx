@@ -641,7 +641,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { MapPin, Navigation, Search, X, Plus, AlertTriangle, CheckCircle, Power, PowerOff, Users } from "lucide-react";
+import { MapPin, Navigation, Search, X, Plus, AlertTriangle, CheckCircle, Power, PowerOff, Users, EllipsisVertical } from "lucide-react";
 import LocationsApi from "@/lib/api/LocationApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import { useRouter } from "next/navigation";
@@ -662,6 +662,8 @@ function WashroomsPage() {
   const [togglingStatus, setTogglingStatus] = useState(null);
   const { companyId } = useCompanyId();
   const actionsMenuRef = useRef(null);
+  const [statusModal, setStatusModal] = useState({ open: false, location: null });
+
 
   const router = useRouter();
 
@@ -871,6 +873,50 @@ function WashroomsPage() {
     }
   };
 
+  const confirmStatusToggle = async () => {
+    if (!statusModal.location) return;
+
+    const location = statusModal.location;
+    setTogglingStatus(location.id);
+
+    try {
+      console.log('Toggle status for location:', location.id);
+      console.log('Current status before toggle:', location.status);
+
+      const response = await LocationsApi.toggleStautsLocations(location.id);
+
+      console.log('Full API response:', response);
+
+      if (response.success) {
+        let newStatus = null;
+
+        if (response.data?.data?.status !== undefined) {
+          newStatus = response.data.data.status;
+        } else if (response.data?.status !== undefined) {
+          newStatus = response.data.status;
+        } else {
+          newStatus = !(location.status === true || location.status === null);
+        }
+
+        toast.success(`Washroom ${newStatus ? 'enabled' : 'disabled'} successfully`);
+
+        setList(prevList =>
+          prevList.map(item =>
+            item.id === location.id ? { ...item, status: newStatus } : item
+          )
+        );
+
+        setStatusModal({ open: false, location: null });
+      } else {
+        toast.error(response.error || "Failed to toggle status");
+      }
+    } catch (error) {
+      console.error('Toggle status error:', error);
+      toast.error("Failed to toggle status");
+    } finally {
+      setTogglingStatus(null);
+    }
+  };
 
   const handleDelete = (location) => {
     setDeleteModal({ open: true, location });
@@ -1209,7 +1255,8 @@ function WashroomsPage() {
                           <div className="flex items-center justify-center gap-2">
                             {/* Status Button */}
                             <button
-                              onClick={() => handleToggleStatus(item)}
+                              // onClick={() => handleToggleStatus(item)}
+                              onClick={() => setStatusModal({ open: true, location: item })}
                               disabled={togglingStatus === item.id}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${(item.status === true || item.status === null)
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -1242,7 +1289,8 @@ function WashroomsPage() {
                                 className="cursor-pointer p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-150"
                                 title="More Actions"
                               >
-                                <Users className="h-4 w-4" />
+                                {/* <Users className="h-4 w-4" /> */}
+                                <EllipsisVertical className="h-4 w-4" />
                               </button>
 
                               {/* ✅ Dropdown Menu */}
@@ -1302,6 +1350,69 @@ function WashroomsPage() {
                   </button>
                 </div>
                 {renderAmenitiesList(amenitiesModal.location?.options)}
+              </div>
+            </div>
+          )}
+
+          {/* Status Confirmation Modal */}
+          {statusModal.open && (
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl sm:rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-xl">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                  <div className={`p-2 sm:p-3 rounded-full flex-shrink-0 ${(statusModal.location?.status === true || statusModal.location?.status === null)
+                      ? 'bg-red-100'
+                      : 'bg-green-100'
+                    }`}>
+                    {(statusModal.location?.status === true || statusModal.location?.status === null) ? (
+                      <PowerOff className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                    ) : (
+                      <Power className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">
+                      {(statusModal.location?.status === true || statusModal.location?.status === null)
+                        ? 'Disable Washroom'
+                        : 'Enable Washroom'}
+                    </h3>
+                    <p className="text-slate-600 text-xs sm:text-sm">
+                      Confirm status change
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-5 sm:mb-6">
+                  <p className="text-sm sm:text-base text-slate-700">
+                    Are you sure you want to {(statusModal.location?.status === true || statusModal.location?.status === null) ? 'disable' : 'enable'} "<strong>{statusModal.location?.name}</strong>"?
+                  </p>
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+                  <button
+                    onClick={() => setStatusModal({ open: false, location: null })}
+                    className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                    disabled={togglingStatus === statusModal.location?.id}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmStatusToggle}
+                    disabled={togglingStatus === statusModal.location?.id}
+                    className={`w-full sm:w-auto px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium ${(statusModal.location?.status === true || statusModal.location?.status === null)
+                        ? 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
+                        : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                      }`}
+                  >
+                    {togglingStatus === statusModal.location?.id && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {togglingStatus === statusModal.location?.id
+                      ? 'Processing...'
+                      : (statusModal.location?.status === true || statusModal.location?.status === null)
+                        ? 'Disable'
+                        : 'Enable'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

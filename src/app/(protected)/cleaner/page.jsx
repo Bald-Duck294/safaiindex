@@ -15,6 +15,7 @@ export default function CleanersPage() {
     const [deleteModal, setDeleteModal] = useState({ open: false, assignment: null });
     const [deleting, setDeleting] = useState(false);
     const [togglingStatus, setTogglingStatus] = useState(null); // ✅ Track which assignment is being toggled
+    const [statusModal, setStatusModal] = useState({ open: false, assignment: null });
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("");
@@ -121,6 +122,47 @@ export default function CleanersPage() {
                         a.id === assignment.id ? { ...a, status: newStatus } : a
                     )
                 );
+            } else {
+                toast.error(response.error || "Failed to update status");
+            }
+        } catch (error) {
+            console.error('Toggle status error:', error);
+            toast.error("Failed to update status");
+        } finally {
+            setTogglingStatus(null);
+        }
+    };
+
+
+    const confirmStatusToggle = async () => {
+        if (!statusModal.assignment) return;
+
+        const assignment = statusModal.assignment;
+        setTogglingStatus(assignment.id);
+
+        try {
+            const currentStatus = assignment.status?.toLowerCase() || 'unassigned';
+            const newStatus = currentStatus === 'assigned' ? 'unassigned' : 'assigned';
+
+            console.log(`Toggling status from ${currentStatus} to ${newStatus}`);
+
+            const updateData = {
+                status: newStatus,
+            };
+
+            const response = await AssignmentsApi.updateAssignment(assignment.id, updateData);
+
+            if (response.success) {
+                toast.success(`Status changed to ${newStatus}`);
+
+                setAssignments(prevAssignments =>
+                    prevAssignments.map(a =>
+                        a.id === assignment.id ? { ...a, status: newStatus } : a
+                    )
+                );
+
+                // Close modal
+                setStatusModal({ open: false, assignment: null });
             } else {
                 toast.error(response.error || "Failed to update status");
             }
@@ -353,21 +395,21 @@ export default function CleanersPage() {
                                                 <td className="py-4 px-6">
                                                     {/* ✅ Status Toggle Button */}
                                                     <button
-                                                        onClick={() => handleToggleStatus(assignment)}
+                                                        // onClick={() => handleToggleStatus(assignment)}
+                                                        onClick={() => setStatusModal({ open: true, assignment: assignment })}
                                                         disabled={togglingStatus === assignment.id}
-                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                                                            assignment.status?.toLowerCase() === 'assigned'
-                                                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                        className={`inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${assignment.status?.toLowerCase() === 'assigned'
+                                                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                                                         title="Click to toggle status"
                                                     >
                                                         {togglingStatus === assignment.id ? (
-                                                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                            <div className="  w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                                         ) : assignment.status?.toLowerCase() === 'assigned' ? (
-                                                            <ToggleRight className="w-3 h-3" />
+                                                            <ToggleRight className="w-3 h-3 cursor-pointer" />
                                                         ) : (
-                                                            <ToggleLeft className="w-3 h-3" />
+                                                            <ToggleLeft className="w-3 h-3 cursor-pointer" />
                                                         )}
                                                         {assignment.status || 'N/A'}
                                                     </button>
@@ -419,6 +461,75 @@ export default function CleanersPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Status Confirmation Modal */}
+                    {statusModal.open && (
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className={`p-3 rounded-full ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                            ? 'bg-gray-100'
+                                            : 'bg-green-100'
+                                        }`}>
+                                        {statusModal.assignment?.status?.toLowerCase() === 'assigned' ? (
+                                            <ToggleLeft className="h-6 w-6 text-gray-600" />
+                                        ) : (
+                                            <ToggleRight className="h-6 w-6 text-green-600" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                                            Change Assignment Status
+                                        </h3>
+                                        <p className="text-slate-600 text-sm">
+                                            Confirm status change for this cleaner
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <p className="text-slate-700">
+                                        Are you sure you want to change{" "}
+                                        <strong>{statusModal.assignment?.cleaner_user?.name}</strong>'s status to{" "}
+                                        <strong className={
+                                            statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                                ? 'text-gray-700'
+                                                : 'text-green-700'
+                                        }>
+                                            {statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                                ? 'Unassigned'
+                                                : 'Assigned'}
+                                        </strong>?
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 justify-end">
+                                    <button
+                                        onClick={() => setStatusModal({ open: false, assignment: null })}
+                                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                                        disabled={togglingStatus === statusModal.assignment?.id}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmStatusToggle}
+                                        disabled={togglingStatus === statusModal.assignment?.id}
+                                        className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                                ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
+                                                : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                                            }`}
+                                    >
+                                        {togglingStatus === statusModal.assignment?.id && (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        )}
+                                        {togglingStatus === statusModal.assignment?.id
+                                            ? 'Processing...'
+                                            : 'Confirm Change'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Delete Modal */}
                     {deleteModal.open && (
