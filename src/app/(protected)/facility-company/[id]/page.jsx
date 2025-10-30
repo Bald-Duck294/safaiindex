@@ -39,6 +39,16 @@ export default function ViewFacilityCompanyPage() {
     }
   }, [facilityCompanyId]);
 
+
+  const handleViewLocations = () => {
+    sessionStorage.setItem('selectedFacilityCompanyId', facilityCompanyId);
+    sessionStorage.setItem('selectedFacilityCompanyName', facilityCompany?.name)
+
+    router.push(`/washrooms?companyId=${companyId}`);
+
+  }
+
+
   const fetchFacilityCompany = async () => {
     setIsLoading(true);
     const result = await FacilityCompanyApi.getById(facilityCompanyId);
@@ -126,7 +136,32 @@ export default function ViewFacilityCompanyPage() {
                 </div>
               </div>
 
-              <button
+
+
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  onClick={handleViewLocations}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm"
+                >
+                  <MapPin className="w-4 h-4" />
+                  View Assigned Locations
+                </button>
+
+                <button
+                  onClick={() =>
+                    router.push(
+                      `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`
+                    )
+                  }
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Details
+                </button>
+              </div>
+
+
+              {/* <button
                 onClick={() =>
                   router.push(
                     `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`
@@ -136,7 +171,7 @@ export default function ViewFacilityCompanyPage() {
               >
                 <Edit className="w-4 h-4" />
                 Edit Details
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -330,7 +365,7 @@ export default function ViewFacilityCompanyPage() {
           </div>
 
           {/* Performance Metrics */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          {/* <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
             <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
               Performance & Additional Info
@@ -371,10 +406,10 @@ export default function ViewFacilityCompanyPage() {
                 </p>
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Assigned Locations */}
-          {facilityCompany.locations && facilityCompany.locations.length > 0 && (
+          {/* {facilityCompany.locations && facilityCompany.locations.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
               <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-blue-600" />
@@ -395,7 +430,7 @@ export default function ViewFacilityCompanyPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Metadata */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
