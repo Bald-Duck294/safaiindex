@@ -128,6 +128,7 @@ export default function RolePage() {
     if (!roleId) return;
 
     setLoading(true);
+    
     try {
       // ✅ Use the same API call as dashboard (getAllUsers)
       const response = await UsersApi.getAllUsers();

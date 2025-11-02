@@ -1093,6 +1093,13 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+
+import LocationsApi from '@/lib/api/LocationApi';
+import { fetchToiletFeaturesByName } from '@/lib/api/configurationsApi';
+import { useCompanyId } from '@/lib/providers/CompanyProvider';
+import Loader from "@/components/ui/Loader";
+import toast, { Toaster } from 'react-hot-toast';
+import { FacilityCompanyApi } from '@/lib/api/facilityCompanyApi';
 import {
   MapPin,
   Save,
@@ -1111,11 +1118,6 @@ import {
   Home,
   Building2
 } from 'lucide-react';
-import LocationsApi from '@/lib/api/LocationApi';
-import { fetchToiletFeaturesByName } from '@/lib/api/configurationsApi';
-import { useCompanyId } from '@/lib/providers/CompanyProvider';
-import Loader from "@/components/ui/Loader";
-import toast, { Toaster } from 'react-hot-toast';
 
 // ✅ Indian States List
 const INDIAN_STATES = [
@@ -1158,6 +1160,7 @@ const EditLocationPage = () => {
     state: '',
     dist: '',
     pincode: '',
+    facility_companiesId: null,
     options: {}
   });
 
@@ -1176,10 +1179,12 @@ const EditLocationPage = () => {
       try {
         setLoading(true);
 
-        const [locationResult, locationsResult, featuresResult] = await Promise.all([
+        const [locationResult, locationsResult, featuresResult, facilityCompaniesResult] = await Promise.all([
           LocationsApi.getLocationById(params.id, finalCompanyId),
           LocationsApi.getAllLocations(finalCompanyId),
-          fetchToiletFeaturesByName('Toilet_Features')
+          fetchToiletFeaturesByName('Toilet_Features'),
+          // FacilityCompanyApi.getAllFacilityCompanies(finalCompanyId)
+          FacilityCompanyApi.getAll(finalCompanyId)
         ]);
 
         if (locationResult.success) {
@@ -1197,12 +1202,18 @@ const EditLocationPage = () => {
           });
 
           setExistingImages(locationResult.data.images || []);
+          setSelectedFacilityCompany(locationResult.data.facility_companiesId);
+
         } else {
           setError(locationResult.error);
         }
 
         if (locationsResult.success) {
           setAllLocations(locationsResult.data);
+        }
+
+        if (facilityCompaniesResult.success) {
+          setFacilityCompanies(facilityCompaniesResult.data);
         }
 
         if (featuresResult) {
@@ -1362,6 +1373,7 @@ const EditLocationPage = () => {
         state: formData.state || null,
         dist: formData.dist.trim() || null,
         pincode: formData.pincode.trim() || null,
+        facility_companiesId: formData.facility_companiesId || null,
         options: formData.options
       };
 
@@ -1460,11 +1472,10 @@ const EditLocationPage = () => {
                 return (
                   <label
                     key={index}
-                    className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'bg-blue-50 border-blue-500'
-                        : 'bg-white border-slate-200 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected
+                      ? 'bg-blue-50 border-blue-500'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -1472,9 +1483,8 @@ const EditLocationPage = () => {
                       onChange={(e) => handleMultiselectChange(optionKey, value, e.target.checked)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className={`text-sm font-medium ${
-                      isSelected ? 'text-blue-700' : 'text-slate-700'
-                    }`}>
+                    <span className={`text-sm font-medium ${isSelected ? 'text-blue-700' : 'text-slate-700'
+                      }`}>
                       {label}
                     </span>
                   </label>
@@ -1685,7 +1695,7 @@ const EditLocationPage = () => {
   return (
     <>
       <Toaster position="top-right" />
-      
+
       <div className="min-h-screen bg-slate-50">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
@@ -1754,6 +1764,85 @@ const EditLocationPage = () => {
             </div>
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+
+              {/* ========== FACILITY COMPANY SECTION ========== */}
+              <div className="space-y-4 border-t border-slate-200 pt-6 mt-6">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  Facility Company Assignment
+                </h3>
+
+                {/* Current Assignment Display */}
+                {selectedFacilityCompany && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium">
+                      Current Assignment: {' '}
+                      <span className="font-bold">
+                        {facilityCompanies.find(fc => fc.id === selectedFacilityCompany)?.name || 'Unknown Company'}
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Current Status if null */}
+                {!selectedFacilityCompany && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800 font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      No facility company assigned
+                    </p>
+                  </div>
+                )}
+
+                {/* Facility Company Dropdown */}
+                <div className="space-y-2">
+                  <label className="block font-semibold text-slate-800">
+                    Select Facility Company
+                  </label>
+                  <select
+                    value={formData.facility_companiesId || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value === '' ? null : e.target.value;
+                      handleInputChange('facility_companiesId', newValue);
+                      setSelectedFacilityCompany(newValue);
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">-- No Facility Company --</option>
+                    {facilityCompanies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Change Indicator */}
+                {selectedFacilityCompany !== location?.facility_companiesId && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700 font-medium">
+                      {selectedFacilityCompany ? (
+                        <>
+                          ✓ Will change from{' '}
+                          <span className="font-bold">
+                            {location?.facility_companiesId
+                              ? facilityCompanies.find(fc => fc.id === location.facility_companiesId)?.name || 'Unknown'
+                              : 'None'
+                            }
+                          </span>
+                          {' to '}
+                          <span className="font-bold">
+                            {facilityCompanies.find(fc => fc.id === selectedFacilityCompany)?.name}
+                          </span>
+                        </>
+                      ) : (
+                        <>✓ Will remove facility company assignment</>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* ========== SECTION 1: BASIC INFORMATION ========== */}
               <div className="space-y-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3">

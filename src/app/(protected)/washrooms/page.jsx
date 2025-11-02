@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Loader from "@/components/ui/Loader";
 import toast, { Toaster } from "react-hot-toast";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
+import LocationActionsMenu from './components/LocationActionsMenu'
 function WashroomsPage() {
   const [list, setList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -688,8 +689,8 @@ function WashroomsPage() {
                           className="py-4 px-6 cursor-pointer hover:text-blue-600 transition-colors"
                           onClick={() => handleView(item.id)}
                         >
-                          <div className="font-medium text-slate-800">
-                            {item.name}
+                          <div className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer">
+                            {item?.name}
                           </div>
                         </td>
                         <td className="py-4 px-6">
@@ -745,18 +746,31 @@ function WashroomsPage() {
 
                               {/* ✅ Dropdown Menu */}
                               {actionsMenuOpen === item.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                                  <button
-                                    onClick={() => {
-                                      router.push(`/cleaner?companyId=${companyId}&locationId=${item.id}&locationName=${encodeURIComponent(item.name)}`);
-                                      setActionsMenuOpen(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                  >
-                                    <Users className="h-4 w-4 text-blue-600" />
-                                    View Cleaners
-                                  </button>
-                                </div>
+                                // <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
+                                //   <button
+                                //     onClick={() => {
+                                //       router.push(`/assignments/cleaner?companyId=${companyId}&locationId=${item.id}&locationName=${encodeURIComponent(item.name)}`);
+                                //       setActionsMenuOpen(null);
+                                //     }}
+                                //     className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                                //   >
+                                //     <Users className="h-4 w-4 text-blue-600" />
+                                //     View Cleaners
+                                //   </button>
+                                // </div>
+
+                                <LocationActionsMenu
+                                  item={item}
+                                  onClose={() => setActionsMenuOpen(null)}
+                                  onDelete={(location) => {
+                                    // Handle delete
+                                    setDeleteModal({ open: true, location });
+                                  }}
+                                  onEdit={(locationId) => {
+                                    // Handle edit
+                                    router.push(`/locations/${locationId}/edit`);
+                                  }}
+                                />
                               )}
                             </div>
                           </div>

@@ -8,10 +8,16 @@ export const reviewApi = createApi({
   endpoints: (builder) => ({
     // GET /api/reviews - Get all reviews with optional filters
     getUserReviews: builder.query({
-      query: ({ toilet_id, limit = 50 } = {}) => ({
+      query: ({ toilet_id, company_id, status, date, limit = 50 } = {}) => ({
         url: "/reviews",
         method: "GET",
-        params: { toilet_id, limit },
+        params: {
+          toilet_id,
+          limit,
+          company_id,  // Add company_id here
+          status,      // Optional: add status filter
+          date
+        },
       }),
       transformResponse: (response) => ({
         reviews: response.data,
@@ -20,12 +26,12 @@ export const reviewApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.reviews.map(({ id }) => ({ 
-                type: "UserReview", 
-                id 
-              })),
-              { type: "UserReview", id: "LIST" },
-            ]
+            ...result.reviews.map(({ id }) => ({
+              type: "UserReview",
+              id
+            })),
+            { type: "UserReview", id: "LIST" },
+          ]
           : [{ type: "UserReview", id: "LIST" }],
     }),
 

@@ -69,9 +69,11 @@ export default function UserReviewsPage() {
     error,
     refetch,
     isFetching
-  } = useGetUserReviewsQuery(
-    toiletId ? { toilet_id: toiletId, limit } : { limit }
-  );
+  } = useGetUserReviewsQuery({
+    ...(toiletId && { toilet_id: toiletId }), // Only include if toiletId exists
+    limit,
+    company_id: companyId, // ADD THIS - send company_id to backend
+  });
 
 
   console.log('data', data);

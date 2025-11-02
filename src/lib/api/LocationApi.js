@@ -3,13 +3,14 @@ import axios from "axios";
 import API_BASE_URL from "../utils/Constant";
 import axiosInstance from "../axiosInstance";
 import { success } from "zod";
+import { parseParameter } from "next/dist/shared/lib/router/utils/route-regex";
 
 
 
 
 export const LocationsApi = {
   // Get all locations
-  getAllLocations: async (company_id, includeUnavailable = false) => {
+  getAllLocations: async (company_id, includeUnavailable = false, facilityCompanyId = null) => {
     console.log("in get all locations", company_id);
     // options = {} add this in the parametere if the options becomes more 
     // const { includeUnavailable = false, type_id = null } = options; this is how to acesses it 
@@ -18,6 +19,10 @@ export const LocationsApi = {
 
     if (includeUnavailable) {
       params.include_unavailable = true;
+    }
+
+    if (facilityCompanyId) {
+      params.facilityCompanyId = facilityCompanyId
     }
     // if (type_id) {
     //   params.type_id = type_id;

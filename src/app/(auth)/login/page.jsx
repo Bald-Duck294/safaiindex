@@ -60,6 +60,10 @@ const AuthPage = () => {
             // Admin → Their company dashboard
             router.push(`/clientDashboard/${response.data.user?.company_id}`);
           }
+          else if (response.data.user?.role_id === 3 && response.data.user?.company_id) {
+            // Admin → Their company dashboard
+            router.push(`/clientDashboard/${response.data.user?.company_id}`);
+          }
           // router.push("/dashboard");
           // router.push('/dashboard');
         } else {

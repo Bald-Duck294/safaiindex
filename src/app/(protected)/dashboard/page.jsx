@@ -122,6 +122,13 @@ export default function DashboardPage() {
       href: "/role/cleaner",
       borderColor: "border-pink-400"
     },
+
+    {
+      label: "supervisor",
+      count: counts.supervisor,
+      href: "/role/supervisor",
+      borderColor: "border-purple-500"
+    }
     // {
     //   label: "Users",
     //   count: counts.users,

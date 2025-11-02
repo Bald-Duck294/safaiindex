@@ -946,6 +946,7 @@ export default function AddLocationPage() {
           cleaner_user_ids: selectedCleaners.map((cleaner) => cleaner.id),
           status: "assigned", // ✅ Always "assigned" by default
           company_id: companyId,
+          role_id: 5
         };
 
         console.log("📤 Assignment data:", assignmentData);

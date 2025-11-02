@@ -374,6 +374,78 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
       ];
     }
+    else if (hasCompanyContext && user?.role_id === 3) {
+      return [
+        // supervisor -dashboard
+        {
+          icon: Building,
+          label: "Dashboard",
+          href: `/clientDashboard/${companyId}`
+        },
+
+        // supervisor - washroom list
+        {
+          icon: Toilet,
+          label: "Washrooms",
+          hasDropdown: true,
+          key: "washrooms",
+          children: [
+            {
+              icon: List,
+              label: "Washrooms List",
+              href: `/washrooms?companyId=${companyId}`
+            },
+            // {
+            //   icon: PlusCircle,
+            //   label: "Add Washroom",
+            //   href: `/washrooms/add-location?companyId=${companyId}`
+            // },
+          ],
+        },
+        // locate on map
+        {
+          icon: MapPin,
+          label: "Locate On Map",
+          href: `/locations?companyId=${companyId}`
+        },
+        // cleaner activity
+        {
+          icon: ClipboardList,
+          label: "Cleaner Activity",
+          href: `/cleaner-review?companyId=${companyId}`
+        },
+        // admin - user -activity 
+        {
+          icon: Building,
+          label: "User Review",
+          href: `/user-activity?companyId=${companyId}`
+        },
+
+        {
+          icon: FileText,
+          label: "Reports",
+          href: `/reports?companyId=${companyId}`,
+        },
+        {
+          icon: ClipboardList,
+          label: "Cleaner Mapping",
+          hasDropdown: true,
+          key: "cleaner-assignments",
+          children: [
+            {
+              icon: List,
+              label: "Mapped List",
+              href: `/cleaner-assignments?companyId=${companyId}`,
+            },
+            {
+              icon: UserCog,
+              label: "Add Mapping",
+              href: `/cleaner-assignments/add?companyId=${companyId}`,
+            },
+          ],
+        },
+      ];
+    }
 
     // Fallback
     return [
