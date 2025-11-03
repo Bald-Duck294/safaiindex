@@ -1141,6 +1141,9 @@ const EditLocationPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [toiletFeatures, setToiletFeatures] = useState({});
+  const [selectedFacilityCompany, setSelectedFacilityCompany] = useState();
+  const [facilityCompanies, setFacilityCompanies] = useState([]);
+
 
   // ✅ Image states
   const [newImages, setNewImages] = useState([]);
@@ -1377,6 +1380,7 @@ const EditLocationPage = () => {
         options: formData.options
       };
 
+      // console.log(updateData, "data to be updated")
       // Handle image deletion first
       for (const imageUrl of imagesToDelete) {
         try {
@@ -2187,6 +2191,11 @@ const EditLocationPage = () => {
                       Save Changes
                     </>
                   )}
+
+                  {/* <>
+                    <Save className="w-5 h-5 mr-2" />
+                    Save Changes
+                  </> */}
                 </button>
               </div>
             </div>
