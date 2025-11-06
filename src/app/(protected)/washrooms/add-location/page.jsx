@@ -1024,7 +1024,7 @@ export default function AddLocationPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Location Name <span className="text-red-500">*</span>
+                    Washroom Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
