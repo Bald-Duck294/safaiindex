@@ -1017,7 +1017,7 @@ export default function AddLocationPage() {
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-2">
                 <MapPin className="h-5 w-5 text-blue-600" />
-                Location Information
+                Washroom Information
               </h2>
 
               {/* Basic Information */}
