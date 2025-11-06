@@ -1007,8 +1007,8 @@ export default function AddLocationPage() {
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
-            <h1 className="text-2xl font-bold text-white mb-2">Add New Location</h1>
-            <p className="text-blue-100 text-sm">Create a location and optionally assign cleaners</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Add New Washroom</h1>
+            <p className="text-blue-100 text-sm">Create a washroom and optionally assign cleaners</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
