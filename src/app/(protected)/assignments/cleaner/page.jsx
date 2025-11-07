@@ -72,7 +72,9 @@ export default function CleanersPage() {
             const response = await AssignmentsApi.getAssignmentsByLocation(locationId, companyId);
 
             if (response.success) {
-                setAssignments(response.data);
+
+                const filteredCleaners = response.data.filter((item) => item.role_id === 5)
+                setAssignments(filteredCleaners);
                 setFilteredAssignments(response.data);
             } else {
                 toast.error(response.error || "Failed to fetch assignments");
@@ -469,8 +471,8 @@ export default function CleanersPage() {
                             <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
                                 <div className="flex items-start gap-4 mb-4">
                                     <div className={`p-3 rounded-full ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                            ? 'bg-gray-100'
-                                            : 'bg-green-100'
+                                        ? 'bg-gray-100'
+                                        : 'bg-green-100'
                                         }`}>
                                         {statusModal.assignment?.status?.toLowerCase() === 'assigned' ? (
                                             <ToggleLeft className="h-6 w-6 text-gray-600" />
@@ -516,8 +518,8 @@ export default function CleanersPage() {
                                         onClick={confirmStatusToggle}
                                         disabled={togglingStatus === statusModal.assignment?.id}
                                         className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                                ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
-                                                : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                                            ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
+                                            : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
                                             }`}
                                     >
                                         {togglingStatus === statusModal.assignment?.id && (

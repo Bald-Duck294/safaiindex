@@ -4,12 +4,12 @@ import CreateForm from "../CreateForm";
 import TreeView from "../TreeView";
 import locationTypesApi from "@/lib/api/locationTypesApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
-import toast, { Toaster } from "react-hot-toast"; // ✅ Add this import
+import toast, { Toaster } from "react-hot-toast";
 
 export default function AddLocationTypesPage() {
   const [types, setTypes] = useState([]);
   const { companyId } = useCompanyId();
-  
+
   const fetchTypes = async () => {
     const data = await locationTypesApi.getAll(companyId);
     setTypes(data);
@@ -26,7 +26,7 @@ export default function AddLocationTypesPage() {
   return (
     <>
       {/* ✅ Add Toaster component here */}
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,

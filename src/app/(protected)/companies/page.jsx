@@ -53,7 +53,7 @@ export default function CompaniesPage() {
         // ✅ Handle different response structures
         const companiesData = response.data?.data || response.data || [];
         console.log('Companies data:', companiesData);
-        
+
         setCompanies(companiesData);
         setFilteredCompanies(companiesData);
       } else {
@@ -236,7 +236,7 @@ export default function CompaniesPage() {
     router.push(`/clientDashboard/${companyId}`);
   };
 
-if (isLoading || !hasInitialized) {
+  if (isLoading || !hasInitialized) {
     return (
       <>
         <Toaster position="top-center" />
@@ -252,10 +252,10 @@ if (isLoading || !hasInitialized) {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Organizations List</h1>
             </div>
             <div className="flex justify-center items-center h-64">
-              <Loader 
-                size="large" 
-                color="#3b82f6" 
-                message="Loading organizations..." 
+              <Loader
+                size="large"
+                color="#3b82f6"
+                message="Loading organizations..."
               />
             </div>
           </div>
@@ -284,7 +284,7 @@ if (isLoading || !hasInitialized) {
                 <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Manage and view all organizations</p>
               </div>
             </div>
-            
+
             {/* Action Buttons - Responsive Layout */}
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <button
@@ -327,7 +327,7 @@ if (isLoading || !hasInitialized) {
               </select>
               <span className="text-gray-600 whitespace-nowrap">entries</span>
             </div>
-            
+
             {/* Search Input */}
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <span className="text-gray-600 whitespace-nowrap">Search:</span>
@@ -396,7 +396,7 @@ if (isLoading || !hasInitialized) {
                         <td className="px-3 py-3">
                           <button
                             onClick={() => handleViewCompany(company.id)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm"
+                            className=" cursor-pointer text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm"
                           >
                             {company.name || 'N/A'}
                           </button>
@@ -407,11 +407,10 @@ if (isLoading || !hasInitialized) {
                         <td className="px-3 py-3">
                           <button
                             onClick={() => handleStatusToggle(company.id, company.status)}
-                            className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full transition-colors duration-200 hover:scale-105 ${
-                              company.status
-                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                : 'bg-red-100 text-red-800 hover:bg-red-200'
-                            }`}
+                            className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full transition-colors duration-200 hover:scale-105 ${company.status
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
                             title={`Click to ${company.status ? 'deactivate' : 'activate'}`}
                           >
                             {company.status ? 'Active' : 'Inactive'}
@@ -425,13 +424,13 @@ if (isLoading || !hasInitialized) {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-2">
-                            <button
+                            {/* <button
                               onClick={() => handleViewCompany(company.id)}
                               className="p-1 text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
                               title="View Company Dashboard"
                             >
                               <Eye size={16} />
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => router.push(`/companies/${company.id}`)}
                               className="p-1 text-gray-600 hover:text-green-600 transition-colors cursor-pointer"
@@ -483,14 +482,14 @@ if (isLoading || !hasInitialized) {
                   {searchTerm && ` (filtered from ${companies.length} total)`}
                 </span>
                 <div className="flex gap-2 mt-2 sm:mt-0">
-                  <button 
+                  <button
                     className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
                     disabled={true}
                   >
                     Previous
                   </button>
                   <button className="px-3 py-1 bg-blue-500 text-white rounded text-sm">1</button>
-                  <button 
+                  <button
                     className="px-3 py-1 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
                     disabled={filteredCompanies.length <= entriesPerPage}
                   >
@@ -505,8 +504,8 @@ if (isLoading || !hasInitialized) {
           <div className="md:hidden space-y-3">
             {filteredCompanies.length > 0 ? (
               filteredCompanies.slice(0, entriesPerPage).map((company, index) => (
-                <div 
-                  key={company.id} 
+                <div
+                  key={company.id}
                   className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
                 >
                   {/* Card Header */}
@@ -514,11 +513,10 @@ if (isLoading || !hasInitialized) {
                     <span className="text-xs font-medium text-gray-500">#{index + 1}</span>
                     <button
                       onClick={() => handleStatusToggle(company.id, company.status)}
-                      className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${
-                        company.status
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
+                      className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${company.status
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}
                     >
                       {company.status ? 'Active' : 'Inactive'}
                     </button>
@@ -531,7 +529,7 @@ if (isLoading || !hasInitialized) {
                       <label className="text-xs font-medium text-gray-500 block mb-0.5">Organization Name</label>
                       <button
                         onClick={() => handleViewCompany(company.id)}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline text-left break-words"
+                        className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline text-left break-words"
                       >
                         {company.name || 'N/A'}
                       </button>
@@ -611,7 +609,7 @@ if (isLoading || !hasInitialized) {
                   {searchTerm && ` (filtered from ${companies.length})`}
                 </div>
                 <div className="flex justify-center gap-2">
-                  <button 
+                  <button
                     className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={true}
                   >
@@ -620,7 +618,7 @@ if (isLoading || !hasInitialized) {
                   <button className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded">
                     1
                   </button>
-                  <button 
+                  <button
                     className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={filteredCompanies.length <= entriesPerPage}
                   >

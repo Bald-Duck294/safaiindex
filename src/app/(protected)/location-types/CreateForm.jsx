@@ -207,36 +207,56 @@
 import { useState } from "react";
 import locationTypesApi from "@/lib/api/locationTypesApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
-import toast from "react-hot-toast"; // ✅ Add this import
+import toast from "react-hot-toast";
 
 export default function CreateForm({ onCreated, allTypes }) {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Add loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { companyId } = useCompanyId();
+
+
+  const normalizeName = (name) => {
+    if (!name) return '';
+
+    return name
+      .trim()                          //  leading/trailing spaces
+      .replace(/\s+/g, ' ')            // Replace multiple spaces with single space
+      .toLowerCase();                  // Case insensitive comparison
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!name.trim()) {
-      toast.error("Location hirarchy name is required");
+    const normalizedName = normalizeName(name);
+
+    if (!normalizedName) {
+      toast.error("Location hierarchy name is required");
       return;
     }
 
-    // Check for duplicate names
-    const isDuplicate = allTypes?.some(
-      type => type.name.toLowerCase() === name.trim().toLowerCase()
-    );
+    const isDuplicate = allTypes?.some(type => {
+      const sameLevel = (!parentId && !type.parent_id) ||
+        (parentId && type.parent_id === parentId);
+
+      return sameLevel &&
+        normalizeName(type.name) === normalizedName;
+    });
 
     if (isDuplicate) {
-      toast.error("A location hirarchy with this name already exists");
+      const level = parentId ? "under this parent" : "at top level";
+      toast.error(`A location hierarchy with this name already exists ${level}`);
       return;
     }
+
+
+    // if (isDuplicate) {
+    //   toast.error("A location hirarchy with this name already exists");
+    //   return;
+    // }
 
     setIsSubmitting(true);
 
-    // ✅ Show loading toast
     const loadingToast = toast.loading("Creating location hirarchy...");
 
     try {
@@ -246,7 +266,6 @@ export default function CreateForm({ onCreated, allTypes }) {
         parent_id: parentId ? parseInt(parentId) : null,
       }, companyId);
 
-      // ✅ Dismiss loading and show success
       toast.success("Location Hierarchy created successfully!", {
         id: loadingToast,
       });
@@ -261,7 +280,6 @@ export default function CreateForm({ onCreated, allTypes }) {
     } catch (error) {
       console.error("Error creating location type:", error);
 
-      // ✅ Dismiss loading and show error
       const errorMessage = error.response?.data?.message ||
         error.message ||
         "Failed to create location type";

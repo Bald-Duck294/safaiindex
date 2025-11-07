@@ -1,20 +1,24 @@
 // src/store/store.js
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import { configurationApi } from './slices/configurationApi'; 
-import { reviewApi } from './slices/reviewSlice'; 
+import { configurationApi } from './slices/configurationApi';
+import { reviewApi } from './slices/reviewSlice';
+// import { shiftApi } from "./slices/shiftApi.js"
+import { shiftApi } from "./slices/shiftApi.js"
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     [configurationApi.reducerPath]: configurationApi.reducer,
-    [reviewApi.reducerPath]: reviewApi.reducer, 
+    [reviewApi.reducerPath]: reviewApi.reducer,
+    [shiftApi.reducerPath]: shiftApi.reducer
   },
 
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       configurationApi.middleware,
-      reviewApi.middleware
+      reviewApi.middleware,
+      shiftApi.middleware
     ),
 });
 

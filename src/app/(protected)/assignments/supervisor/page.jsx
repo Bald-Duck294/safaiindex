@@ -213,7 +213,7 @@ export default function SupervisorAssignmentsPage() {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden mb-6">
-                        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-6">
+                        <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-6">
                             <div className="flex items-center justify-between flex-wrap gap-4">
                                 <div className="flex items-center gap-4">
                                     <button
@@ -225,7 +225,7 @@ export default function SupervisorAssignmentsPage() {
                                     <div>
                                         <h1 className="text-2xl font-bold text-white">Assigned Supervisors</h1>
                                         {locationName && (
-                                            <p className="text-purple-300 text-sm mt-1">
+                                            <p className="text-gray-300 text-sm mt-1">
                                                 <MapPin className="inline h-4 w-4 mr-1" />
                                                 {locationName}
                                             </p>
@@ -241,7 +241,7 @@ export default function SupervisorAssignmentsPage() {
                                     </div>
                                     <button
                                         onClick={handleAddSupervisor}
-                                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-100 text-purple-600 rounded-lg font-medium transition-colors shadow-lg cursor-pointer"
+                                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-100 text-slate-600 rounded-lg font-medium transition-colors shadow-lg cursor-pointer"
                                     >
                                         <UserPlus className="h-4 w-4" />
                                         <span>Add Supervisor</span>
@@ -305,7 +305,7 @@ export default function SupervisorAssignmentsPage() {
                                 {assignments.length === 0 && (
                                     <button
                                         onClick={handleAddSupervisor}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors cursor-pointer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors cursor-pointer"
                                     >
                                         <UserPlus className="h-4 w-4" />
                                         Add First Supervisor

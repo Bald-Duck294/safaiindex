@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { State, City } from "country-state-city";
 import {
   ArrowLeft,
   Building2,
@@ -73,6 +74,12 @@ export default function EditFacilityCompanyPage() {
   const [stateSearch, setStateSearch] = useState("");
   const [showStateDropdown, setShowStateDropdown] = useState(false);
 
+
+  const [availableStates, setAvailableStates] = useState([]);
+  const [availableCities, setAvailableCities] = useState([]); // Add this
+  const [citySearch, setCitySearch] = useState(""); // Add this
+  const [showCityDropdown, setShowCityDropdown] = useState(false); // Add this
+
   // Form data
   const [formData, setFormData] = useState({
     name: "",
@@ -103,6 +110,14 @@ export default function EditFacilityCompanyPage() {
       fetchFacilityCompany();
     }
   }, [facilityCompanyId]);
+
+
+  useEffect(() => {
+    const indiaStates = State.getStatesOfCountry('IN');
+    const stateNames = indiaStates.map(state => state.name);
+    setAvailableStates(stateNames);
+  }, [])
+
 
   const fetchFacilityCompany = async () => {
     setIsLoading(true);
@@ -137,6 +152,19 @@ export default function EditFacilityCompanyPage() {
         status: data.status,
       });
       setStateSearch(data.state || "");
+
+      if (data.state) {
+        const indiaStates = State.getStatesOfCountry('IN');
+        const selectedState = indiaStates.find(s => s.name === data.state);
+
+        if (selectedState) {
+          const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+          const cityNames = cities.map(city => city.name);
+          setAvailableCities(cityNames);
+        }
+
+        setCitySearch(data.city || ""); // Set city search too
+      }
     } else {
       toast.error(result.error || "Failed to load facility company");
       setTimeout(() => {
@@ -168,8 +196,29 @@ export default function EditFacilityCompanyPage() {
       ...prev,
       state: state,
     }));
+
     setStateSearch(state);
+    setCitySearch(" ");
     setShowStateDropdown(false);
+    if (errors.state) {
+      setErrors((prev) => ({
+        ...prev,
+        state: "",
+      }));
+    }
+
+
+    const indiaStates = State.getStatesOfCountry('IN');
+    const selectedState = indiaStates.find(s => s.name === state);
+
+    if (selectedState) {
+      const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+      const cityNames = cities.map(city => city.name);
+      setAvailableCities(cityNames);
+    } else {
+      setAvailableCities([]);
+    }
+
     if (errors.state) {
       setErrors((prev) => ({
         ...prev,
@@ -178,10 +227,18 @@ export default function EditFacilityCompanyPage() {
     }
   };
 
-  // Filter states
-  const filteredStates = INDIAN_STATES.filter((state) =>
+
+
+
+  const filteredStates = availableStates.filter((state) =>
     state.toLowerCase().includes(stateSearch.toLowerCase())
   );
+
+  // ✅ Add this for cities
+  const filteredCities = availableCities.filter((city) =>
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
 
   // Validate form
   const validateForm = () => {
@@ -281,6 +338,22 @@ export default function EditFacilityCompanyPage() {
     }
   };
 
+  const handleCitySelect = (city) => {
+    setFormData((prev) => ({
+      ...prev,
+      city: city,
+    }));
+    setCitySearch(city);
+    setShowCityDropdown(false);
+
+    if (errors.city) {
+      setErrors((prev) => ({
+        ...prev,
+        city: "",
+      }));
+    }
+  };
+
   // Handle cancel
   const handleCancel = () => {
     if (
@@ -355,11 +428,10 @@ export default function EditFacilityCompanyPage() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Enter company name"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.name
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.name
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-600">{errors.name}</p>
@@ -379,11 +451,10 @@ export default function EditFacilityCompanyPage() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="company@example.com"
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.email
-                          ? "border-red-300 bg-red-50"
-                          : "border-slate-300"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.email
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                        }`}
                     />
                   </div>
                   {errors.email && (
@@ -405,11 +476,10 @@ export default function EditFacilityCompanyPage() {
                       onChange={handleChange}
                       placeholder="10-digit phone number"
                       maxLength="10"
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.phone
-                          ? "border-red-300 bg-red-50"
-                          : "border-slate-300"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.phone
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                        }`}
                     />
                   </div>
                   {errors.phone && (
@@ -458,11 +528,10 @@ export default function EditFacilityCompanyPage() {
                     value={formData.contact_person_name}
                     onChange={handleChange}
                     placeholder="Enter contact person name"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.contact_person_name
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.contact_person_name
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.contact_person_name && (
                     <p className="mt-1 text-sm text-red-600">
@@ -484,11 +553,10 @@ export default function EditFacilityCompanyPage() {
                       onChange={handleChange}
                       placeholder="10-digit phone number"
                       maxLength="10"
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.contact_person_phone
-                          ? "border-red-300 bg-red-50"
-                          : "border-slate-300"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.contact_person_phone
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                        }`}
                     />
                   </div>
                   {errors.contact_person_phone && (
@@ -510,11 +578,10 @@ export default function EditFacilityCompanyPage() {
                       value={formData.contact_person_email}
                       onChange={handleChange}
                       placeholder="person@example.com"
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.contact_person_email
-                          ? "border-red-300 bg-red-50"
-                          : "border-slate-300"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.contact_person_email
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                        }`}
                     />
                   </div>
                   {errors.contact_person_email && (
@@ -548,26 +615,6 @@ export default function EditFacilityCompanyPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    City <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="Enter city"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.city
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
-                  />
-                  {errors.city && (
-                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
-                  )}
-                </div>
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -583,11 +630,10 @@ export default function EditFacilityCompanyPage() {
                     }}
                     onFocus={() => setShowStateDropdown(true)}
                     placeholder="Search and select state"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.state
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.state
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.state && (
                     <p className="mt-1 text-sm text-red-600">{errors.state}</p>
@@ -609,6 +655,59 @@ export default function EditFacilityCompanyPage() {
                   )}
                 </div>
 
+
+                {/* City - Searchable Dropdown */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={citySearch || formData.city}
+                    onChange={(e) => {
+                      setCitySearch(e.target.value);
+                      setShowCityDropdown(true);
+                      if (!e.target.value) {
+                        setFormData((prev) => ({ ...prev, city: "" }));
+                      }
+                    }}
+                    onFocus={() => {
+                      if (formData.state) {
+                        setShowCityDropdown(true);
+                      }
+                    }}
+                    placeholder={formData.state ? "Search and select city" : "Select state first"}
+                    disabled={!formData.state}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.city
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      } ${!formData.state ? "bg-slate-100 cursor-not-allowed" : ""}`}
+                  />
+                  {errors.city && (
+                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                  )}
+                  {!formData.state && (
+                    <p className="mt-1 text-xs text-slate-500">Please select a state first</p>
+                  )}
+
+                  {/* City Dropdown */}
+                  {showCityDropdown && filteredCities.length > 0 && formData.state && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredCities.map((city) => (
+                        <button
+                          key={city}
+                          type="button"
+                          onClick={() => handleCitySelect(city)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors text-sm"
+                        >
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Pincode <span className="text-red-500">*</span>
@@ -620,11 +719,10 @@ export default function EditFacilityCompanyPage() {
                     onChange={handleChange}
                     placeholder="6-digit pincode"
                     maxLength="6"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.pincode
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.pincode
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.pincode && (
                     <p className="mt-1 text-sm text-red-600">
@@ -653,11 +751,10 @@ export default function EditFacilityCompanyPage() {
                     value={formData.registration_number}
                     onChange={handleChange}
                     placeholder="Enter GST number"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.registration_number
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.registration_number
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.registration_number && (
                     <p className="mt-1 text-sm text-red-600">
@@ -677,11 +774,10 @@ export default function EditFacilityCompanyPage() {
                     onChange={handleChange}
                     placeholder="ABCDE1234F"
                     maxLength="10"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.pan_number
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.pan_number
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-300"
+                      }`}
                   />
                   {errors.pan_number && (
                     <p className="mt-1 text-sm text-red-600">
@@ -813,12 +909,16 @@ export default function EditFacilityCompanyPage() {
       </div>
 
       {/* Click outside to close state dropdown */}
-      {showStateDropdown && (
+      {(showStateDropdown || showCityDropdown) && (
         <div
           className="fixed inset-0 z-0"
-          onClick={() => setShowStateDropdown(false)}
+          onClick={() => {
+            setShowStateDropdown(false);
+            setShowCityDropdown(false);
+          }}
         />
       )}
+
     </>
   );
 }

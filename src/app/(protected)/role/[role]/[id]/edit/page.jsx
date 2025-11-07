@@ -16,7 +16,7 @@ const roleTitleMap = {
   superadmin: "Superadmin",
   admin: "Admin",
   supervisor: "Supervisor",
-  user: "User"
+  cleaner: "Cleaner"
 };
 
 export default function EditUserPage() {
@@ -185,12 +185,13 @@ export default function EditUserPage() {
           {/* Header */}
           <div className="bg-white rounded-lg shadow-sm border mb-6 p-4 sm:p-6">
             <div className="flex items-center gap-3">
-              <Link
-                href={`/role/${role}/${id}${companyId ? `?companyId=${companyId}` : ''}`}
+              <button
+                // href={`/role/${role}/${id}${companyId ? `?companyId=${companyId}` : ''}`}
+                onClick={() => router.back()}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Link>
+                <ArrowLeft className="cursor-pointer w-5 h-5 text-gray-600" />
+              </button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Edit {title}</h1>
                 <p className="text-sm text-gray-500 mt-1">

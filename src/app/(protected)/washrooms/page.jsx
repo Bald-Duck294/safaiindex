@@ -9,6 +9,7 @@ import Loader from "@/components/ui/Loader";
 import toast, { Toaster } from "react-hot-toast";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import LocationActionsMenu from './components/LocationActionsMenu'
+import { useSelector } from "react-redux";
 function WashroomsPage() {
   const [list, setList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -33,6 +34,11 @@ function WashroomsPage() {
 
 
   const router = useRouter();
+
+  const user = useSelector((state) => state.auth.user);
+  const userRoleId = user?.role_id;
+  const isPermitted = userRoleId === 1 || userRoleId === 2 ;
+
 
   // ✅ Close menu when clicking outside
   useEffect(() => {
@@ -563,14 +569,19 @@ function WashroomsPage() {
                   </div>
 
                 </div>
-                <button
-                  onClick={handleAddToilet}
-                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
-                >
-                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden xs:inline">Add Washroom</span>
-                  <span className="xs:hidden">Add</span>
-                </button>
+
+
+                {isPermitted && (
+                  <button
+                    onClick={handleAddToilet}
+                    className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
+                  >
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Add Washroom</span>
+                    <span className="xs:hidden">Add</span>
+                  </button>
+                )
+                }
               </div>
             </div>
 
@@ -734,6 +745,7 @@ function WashroomsPage() {
                             </button>
 
                             {/* Actions Menu - Dropdown */}
+
                             <div className="relative" ref={actionsMenuOpen === item.id ? actionsMenuRef : null}>
                               <button
                                 onClick={() => setActionsMenuOpen(actionsMenuOpen === item.id ? null : item.id)}

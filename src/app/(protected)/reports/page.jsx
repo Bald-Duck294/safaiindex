@@ -18,6 +18,7 @@ import ReportTable from "./components/ReportTable";
 import { exportToPDF, exportToExcel } from "./components/ExportUtils";
 import Loader from "@/components/ui/Loader";
 import { generateProfessionalExcel } from "@/lib/utils/excelExport";
+import { useSelector } from "react-redux";
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
 
@@ -33,6 +34,12 @@ export default function ReportsPage() {
   const [reportMetadata, setReportMetadata] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+
+  const user = useSelector((state) => state.auth.user);
+  const userRoleId = user?.role_id;
+  const isPermitted = userRoleId === 1 || userRoleId === 2;
+
 
   // Fetch zones on mount
   useEffect(() => {
@@ -174,25 +181,27 @@ export default function ReportsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Zone Filter */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-1" />
-                  Zone / Location Type
-                </label>
-                <select
-                  value={selectedZone}
-                  onChange={(e) => setSelectedZone(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value="">All Zones</option>
-                  {zones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
+              {isPermitted && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Zone / Location Hierarchy
+                  </label>
+                  <select
+                    value={selectedZone}
+                    onChange={(e) => setSelectedZone(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="">All Zones</option>
+                    {zones.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {/* Start Date */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">

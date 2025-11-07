@@ -128,7 +128,7 @@ export default function RolePage() {
     if (!roleId) return;
 
     setLoading(true);
-    
+
     try {
       // ✅ Use the same API call as dashboard (getAllUsers)
       const response = await UsersApi.getAllUsers();
@@ -216,7 +216,7 @@ export default function RolePage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.back()}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
@@ -316,10 +316,10 @@ export default function RolePage() {
                           </td>
                         </tr>
                       ) : (
-                        filteredUsers.map((user) => (
+                        filteredUsers.map((user, index) => (
                           <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              #{user.id}
+                              {index + 1}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export default function RolePage() {
                                 </Link>
                                 <button
                                   onClick={() => handleDelete(user.id, user.name)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                                  className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                   Delete
@@ -390,7 +390,7 @@ export default function RolePage() {
                       {searchTerm && (
                         <button
                           onClick={() => setSearchTerm('')}
-                          className="text-sm text-blue-600 hover:text-blue-800"
+                          className=" cursor-pointer text-sm text-blue-600 hover:text-blue-800"
                         >
                           Clear search
                         </button>

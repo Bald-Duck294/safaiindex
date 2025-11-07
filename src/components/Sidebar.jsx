@@ -31,7 +31,8 @@ import {
   MapPin, // Locations
   Building,
   MessageSquare,
-  FileText
+  FileText,
+  CalendarClock
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -197,6 +198,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         // },
 
 
+        // facility management 
         {
           icon: Building2,
           label: "Facility Companies",
@@ -215,6 +217,28 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
+
+
+        // shift management
+        {
+          icon: CalendarClock,
+          label: "Shift Management",
+          hasDropdown: true,
+          key: "shift-management",
+          children: [
+            {
+              icon: List,
+              label: "Shift List",
+              href: `/shifts?companyId=${companyId}`,
+            },
+            {
+              icon: UserPlus,
+              label: "Add Shift",
+              href: `/shifts/add?companyId=${companyId}`,
+            },
+          ],
+        },
+
         // locate on map
         {
           icon: MapPin,
@@ -333,6 +357,32 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           label: "Locate On Map",
           href: `/locations?companyId=${companyId}`
         },
+        {
+          icon: List,
+          label: "shift",
+          href: `/shift?companyId=${companyId}`
+        },
+
+        // shift management
+        {
+          icon: CalendarClock,
+          label: "Shift Management",
+          hasDropdown: true,
+          key: "shift-management",
+          children: [
+            {
+              icon: List,
+              label: "Shift List",
+              href: `/shift?companyId=${companyId}`,
+            },
+            {
+              icon: UserPlus,
+              label: "Add Shift",
+              href: `/shift/add?companyId=${companyId}`,
+            },
+          ],
+        },
+
         // cleaner activity
         {
           icon: ClipboardList,
@@ -401,6 +451,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             //   href: `/washrooms/add-location?companyId=${companyId}`
             // },
           ],
+        },
+
+        {
+          icon: UserCheck,
+          label: "Cleaner List",
+          href: `/users/cleaner?companyId=${companyId}`
         },
         // locate on map
         {

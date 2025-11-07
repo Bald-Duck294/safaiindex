@@ -139,13 +139,13 @@ export default function UserDetailPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">User Not Found</h2>
           <p className="text-gray-600 mb-4">The user you're looking for doesn't exist.</p>
-          <Link
-            href={`/role/${role}`}
+          <button
+            onClick={(e) => router.back()}
             className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to {title} List
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -160,12 +160,13 @@ export default function UserDetailPage() {
           <div className="bg-white rounded-lg shadow-sm border mb-6 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Link
-                  href={`/role/${role}${companyId ? `?companyId=${companyId}` : ''}`}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                <button
+                  // href={`/role/${role}${companyId ? `?companyId=${companyId}` : ''}`}
+                  onClick={(e) => router.back()}
+                  className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
-                </Link>
+                </button>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
                   <p className="text-sm text-gray-500 mt-1">

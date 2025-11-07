@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
@@ -18,55 +18,20 @@ import toast, { Toaster } from "react-hot-toast";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import Loader from "@/components/ui/Loader";
-
-// Indian States
-const INDIAN_STATES = [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-    "Andaman and Nicobar Islands",
-    "Chandigarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
-    "Jammu and Kashmir",
-    "Ladakh",
-    "Lakshadweep",
-    "Puducherry",
-];
+import { State, City } from 'country-state-city'; // ✅ Add this import
 
 export default function AddFacilityCompanyPage() {
     const router = useRouter();
     const { companyId } = useCompanyId();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // State filter
+    // ✅ State and City dropdowns
+    const [availableStates, setAvailableStates] = useState([]);
+    const [availableCities, setAvailableCities] = useState([]);
     const [stateSearch, setStateSearch] = useState("");
+    const [citySearch, setCitySearch] = useState("");
     const [showStateDropdown, setShowStateDropdown] = useState(false);
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
 
     // Form data
     const [formData, setFormData] = useState({
@@ -106,6 +71,13 @@ export default function AddFacilityCompanyPage() {
     // Errors
     const [errors, setErrors] = useState({});
 
+    // ✅ Load Indian states on mount
+    useEffect(() => {
+        const indiaStates = State.getStatesOfCountry('IN');
+        const stateNames = indiaStates.map(state => state.name);
+        setAvailableStates(stateNames);
+    }, []);
+
     // Handle input change
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -123,14 +95,29 @@ export default function AddFacilityCompanyPage() {
         }
     };
 
-    // Handle state selection
+    // ✅ Handle state selection - updates cities when state changes
     const handleStateSelect = (state) => {
         setFormData((prev) => ({
             ...prev,
             state: state,
+            city: "" // ✅ Reset city when state changes
         }));
         setStateSearch(state);
+        setCitySearch(""); // ✅ Reset city search
         setShowStateDropdown(false);
+
+        // ✅ Load cities for selected state
+        const indiaStates = State.getStatesOfCountry('IN');
+        const selectedState = indiaStates.find(s => s.name === state);
+
+        if (selectedState) {
+            const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+            const cityNames = cities.map(city => city.name);
+            setAvailableCities(cityNames);
+        } else {
+            setAvailableCities([]);
+        }
+
         if (errors.state) {
             setErrors((prev) => ({
                 ...prev,
@@ -139,9 +126,31 @@ export default function AddFacilityCompanyPage() {
         }
     };
 
-    // Filter states
-    const filteredStates = INDIAN_STATES.filter((state) =>
+    // ✅ Handle city selection
+    const handleCitySelect = (city) => {
+        setFormData((prev) => ({
+            ...prev,
+            city: city,
+        }));
+        setCitySearch(city);
+        setShowCityDropdown(false);
+
+        if (errors.city) {
+            setErrors((prev) => ({
+                ...prev,
+                city: "",
+            }));
+        }
+    };
+
+    // ✅ Filter states
+    const filteredStates = availableStates.filter((state) =>
         state.toLowerCase().includes(stateSearch.toLowerCase())
+    );
+
+    // ✅ Filter cities
+    const filteredCities = availableCities.filter((city) =>
+        city.toLowerCase().includes(citySearch.toLowerCase())
     );
 
     // Validate form
@@ -476,27 +485,6 @@ export default function AddFacilityCompanyPage() {
                                     />
                                 </div>
 
-                                {/* City */}
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        City <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="city"
-                                        value={formData.city}
-                                        onChange={handleChange}
-                                        placeholder="Enter city"
-                                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.city
-                                            ? "border-red-300 bg-red-50"
-                                            : "border-slate-300"
-                                            }`}
-                                    />
-                                    {errors.city && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.city}</p>
-                                    )}
-                                </div>
-
                                 {/* State - Searchable Dropdown */}
                                 <div className="relative">
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -508,7 +496,10 @@ export default function AddFacilityCompanyPage() {
                                         onChange={(e) => {
                                             setStateSearch(e.target.value);
                                             setShowStateDropdown(true);
-                                            setFormData((prev) => ({ ...prev, state: "" }));
+                                            if (!e.target.value) {
+                                                setFormData((prev) => ({ ...prev, state: "", city: "" }));
+                                                setAvailableCities([]);
+                                            }
                                         }}
                                         onFocus={() => setShowStateDropdown(true)}
                                         placeholder="Search and select state"
@@ -521,7 +512,7 @@ export default function AddFacilityCompanyPage() {
                                         <p className="mt-1 text-sm text-red-600">{errors.state}</p>
                                     )}
 
-                                    {/* Dropdown */}
+                                    {/* State Dropdown */}
                                     {showStateDropdown && filteredStates.length > 0 && (
                                         <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                             {filteredStates.map((state) => (
@@ -538,8 +529,59 @@ export default function AddFacilityCompanyPage() {
                                     )}
                                 </div>
 
+                                {/* City - Searchable Dropdown (dependent on state) */}
+                                <div className="relative">
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        City <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={citySearch || formData.city}
+                                        onChange={(e) => {
+                                            setCitySearch(e.target.value);
+                                            setShowCityDropdown(true);
+                                            if (!e.target.value) {
+                                                setFormData((prev) => ({ ...prev, city: "" }));
+                                            }
+                                        }}
+                                        onFocus={() => {
+                                            if (formData.state) {
+                                                setShowCityDropdown(true);
+                                            }
+                                        }}
+                                        placeholder={formData.state ? "Search and select city" : "Select state first"}
+                                        disabled={!formData.state}
+                                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.city
+                                            ? "border-red-300 bg-red-50"
+                                            : "border-slate-300"
+                                            } ${!formData.state ? "bg-slate-100 cursor-not-allowed" : ""}`}
+                                    />
+                                    {errors.city && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                                    )}
+                                    {!formData.state && (
+                                        <p className="mt-1 text-xs text-slate-500">Please select a state first</p>
+                                    )}
+
+                                    {/* City Dropdown */}
+                                    {showCityDropdown && filteredCities.length > 0 && formData.state && (
+                                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            {filteredCities.map((city) => (
+                                                <button
+                                                    key={city}
+                                                    type="button"
+                                                    onClick={() => handleCitySelect(city)}
+                                                    className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors text-sm"
+                                                >
+                                                    {city}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Pincode */}
-                                <div>
+                                <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
                                         Pincode <span className="text-red-500">*</span>
                                     </label>
@@ -737,11 +779,14 @@ export default function AddFacilityCompanyPage() {
                 </div>
             </div>
 
-            {/* Click outside to close state dropdown */}
-            {showStateDropdown && (
+            {/* Click outside to close dropdowns */}
+            {(showStateDropdown || showCityDropdown) && (
                 <div
                     className="fixed inset-0 z-0"
-                    onClick={() => setShowStateDropdown(false)}
+                    onClick={() => {
+                        setShowStateDropdown(false);
+                        setShowCityDropdown(false);
+                    }}
                 />
             )}
         </>

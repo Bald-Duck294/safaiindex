@@ -35,6 +35,7 @@ export default function CleanerViewPage() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
+     const cleanerUserId = searchParams.get('assignemtn') 
     const { companyId } = useCompanyId();
 
     const assignmentId = params.id; // This is actually the assignment ID
@@ -55,7 +56,7 @@ export default function CleanerViewPage() {
             // First, get the assignment to extract cleaner_user_id
             const allAssignments = await AssignmentsApi.getAllAssignments(companyId);
 
-            console.log(allAssignments?.data?.data, "all assignemtns");
+            console.log(allAssignments, "all assignemtns 22 ");
             if (allAssignments.success) {
                 const assignment = allAssignments.data?.data.find(a => a.id === assignmentId);
                 if (!assignment) {
@@ -63,12 +64,16 @@ export default function CleanerViewPage() {
                     setLoading(false);
                     return;
                 }
+                console.log(assignment, "assignment");
 
                 const cleanerUserId = assignment.cleaner_user_id;
                 setCleanerData(assignment.user); // User details from assignment
 
                 // Fetch assigned locations
                 const assignmentsRes = await AssignmentsApi.getAssignmentsByCleanerId(cleanerUserId, companyId);
+
+                console.log(assignmentsRes, "Sing assignment response")
+
                 if (assignmentsRes.success) {
                     setAssignedLocations(assignmentsRes.data);
                 }

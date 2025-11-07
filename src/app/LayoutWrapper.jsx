@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import Header from "../components/Header"
 import dynamic from "next/dynamic";
 
-
 const Sidebar = dynamic(() => import('../components/Sidebar'), { ssr: false });
 
 import { Suspense } from "react";
@@ -30,7 +29,7 @@ export default function LayoutWrapper({ children }) {
 
         {/* Main content */}
         <div className="flex flex-col flex-grow h-full">
-         <Header />
+          <Header />
           <div className="bg-gray-50 flex-grow overflow-y-auto">{children}</div>
         </div>
       </div>

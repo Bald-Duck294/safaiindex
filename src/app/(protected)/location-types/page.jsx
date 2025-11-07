@@ -6,7 +6,7 @@ import locationTypesApi from "@/lib/api/locationTypesApi";
 import TreeView from "./TreeView";
 // import useCompanyId from "@/lib/utils/getCompanyId";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
-import toast, { Toaster } from "react-hot-toast"; // ✅ Add Toaster
+import toast, { Toaster } from "react-hot-toast"; 
 
 import {
   Plus,
