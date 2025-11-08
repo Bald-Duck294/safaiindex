@@ -37,7 +37,7 @@ function WashroomsPage() {
 
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
-  const isPermitted = userRoleId === 1 || userRoleId === 2 ;
+  const isPermitted = userRoleId === 1 || userRoleId === 2;
 
 
   // ✅ Close menu when clicking outside
@@ -683,6 +683,7 @@ function WashroomsPage() {
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Washroom Name</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Rating</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Amenities</th>
+                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Zone</th>
                       <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Created At</th>
                       <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Status & Actions</th>
                     </tr>
@@ -709,6 +710,9 @@ function WashroomsPage() {
                         </td>
                         <td className="py-4 px-6">
                           {renderAmenitiesBadge(item.options)}
+                        </td>
+                        <td className="py-4 px-6">
+                          {item?.location_types?.name}
                         </td>
                         <td className="py-4 px-6 text-sm text-slate-600">
                           {new Date(item.created_at).toLocaleDateString()}

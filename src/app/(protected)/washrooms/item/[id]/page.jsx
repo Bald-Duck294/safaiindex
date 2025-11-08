@@ -1348,8 +1348,23 @@ const SingleLocation = () => {
             <div className="mt-8">
               {renderLocationOptions(location.options)}
             </div>
+
+            {/* Photo Upload Notice */}
+            {location.no_of_photos && (
+              <div className="flex items-start gap-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                <Camera className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">Photo Upload Limit</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Minimum <span className="font-bold">{location.no_of_photos}</span> photos can be uploaded for this location
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
+
 
         {/* Assigned Cleaners */}
         <div className="bg-white rounded-lg shadow mb-8 p-6">
