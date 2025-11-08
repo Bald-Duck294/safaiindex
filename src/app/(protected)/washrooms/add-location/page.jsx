@@ -976,6 +976,11 @@ export default function AddLocationPage() {
 
       // ✅ Step 3: Navigate ONLY after both operations complete
       console.log("✅ All operations complete, redirecting...");
+      // Step 3: Navigate after successful operations
+      console.log("All operations complete, redirecting...");
+      setTimeout(() => {
+        router.push(`/washrooms?companyId=${companyId}`);
+      }, 1500);
 
     } catch (error) {
       console.error("❌ Submission error:", error);
