@@ -1,0 +1,51 @@
+{
+  "name": "safaiindex",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@coffeebeanslabs/country_state_district": "^1.0.1",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@emotion/react": "^11.14.0",
+    "@hookform/resolvers": "^5.2.1",
+    "@react-google-maps/api": "^2.20.7",
+    "@reduxjs/toolkit": "^2.8.2",
+    "@tabler/icons-react": "^3.35.0",
+    "axios": "^1.10.0",
+    "browser-image-compression": "^2.0.2",
+    "country-state-city": "^3.2.1",
+    "framer-motion": "^12.23.12",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.525.0",
+    "next": "15.3.5",
+    "next-navigation": "^1.0.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.60.0",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^5.0.0",
+    "react-redux": "^9.2.0",
+    "react-select": "^5.10.2",
+    "recharts": "^3.1.2",
+    "xlsx": "^0.18.5",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "24.5.2",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.5",
+    "tailwindcss": "^4"
+  }
+}

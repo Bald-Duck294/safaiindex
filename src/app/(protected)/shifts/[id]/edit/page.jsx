@@ -1,0 +1,475 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useGetShiftByIdQuery, useUpdateShiftMutation } from "@/store/slices/shiftApi";
+import Loader from "@/components/ui/Loader";
+import toast, { Toaster } from "react-hot-toast";
+import { useCompanyId } from "@/lib/providers/CompanyProvider";
+
+
+export default function EditShift() {
+    const router = useRouter();
+    const params = useParams();
+    const shiftId = params.id;
+    const { companyId } = useCompanyId();
+
+    const [formData, setFormData] = useState({
+        name: "",
+        description: "",
+        startTime: "09:00",
+        endTime: "17:00",
+        company_id: companyId,
+    });
+
+    const [durationHours, setDurationHours] = useState(0);
+    const [errors, setErrors] = useState({});
+
+    // ✅ Only fetch if companyId exists
+    const { data: shiftData, isLoading: isFetching, isError, error } = useGetShiftByIdQuery(
+        {
+            id: shiftId,
+            company_id: companyId,
+            include_unavailable: true,
+        },
+        {
+            skip: !companyId || !shiftId, // ✅ Skip query if companyId or shiftId is missing
+        }
+    );
+
+    const [updateShift, { isLoading: isUpdating }] = useUpdateShiftMutation();
+
+    // ✅ Helper function to convert 24-hour to 12-hour format
+    const formatTo12Hour = (timeStr) => {
+        if (!timeStr) return "";
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const period = hours >= 12 ? "PM" : "AM";
+        const displayHours = hours % 12 || 12;
+        const paddedHours = displayHours < 10 ? `0${displayHours}` : displayHours;
+        return `${paddedHours}:${String(minutes).padStart(2, "0")} ${period}`;
+    };
+
+    // ✅ Helper function to convert 12-hour format to 24-hour
+    const convertTo24Hour = (hours, minutes, period) => {
+        let h = parseInt(hours);
+        if (period === "PM" && h !== 12) h += 12;
+        if (period === "AM" && h === 12) h = 0;
+        return `${String(h).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    };
+
+    // ✅ Helper function to parse time string to hours, minutes, period
+    const parseTime12Hour = (timeStr) => {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const period = hours >= 12 ? "PM" : "AM";
+        const displayHours = hours % 12 || 12;
+        return {
+            hours: String(displayHours).padStart(2, "0"),
+            minutes: String(minutes).padStart(2, "0"),
+            period: period,
+        };
+    };
+
+    // ✅ Generate hours array
+    const getHoursArray = () => {
+        return Array.from({ length: 12 }, (_, i) => {
+            const hour = i + 1;
+            return String(hour).padStart(2, "0");
+        });
+    };
+
+    // ✅ Generate minutes array
+    const getMinutesArray = () => {
+        return Array.from({ length: 60 }, (_, i) =>
+            String(i).padStart(2, "0")
+        );
+    };
+
+    // // Format time
+    // const formatTime = (dateStr) => {
+    //     if (!dateStr) return "";
+    //     const date = new Date(dateStr);
+    //     return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    // };
+
+    // ✅ Populate form when shift data is loaded
+    useEffect(() => {
+        if (shiftData) {
+            // ✅ Use the time string directly - it's already in HH:MM format
+            const startTime = shiftData.startTime || "09:00";
+            const endTime = shiftData.endTime || "17:00";
+
+            setFormData({
+                name: shiftData.name || "",
+                description: shiftData.description || "",
+                startTime: startTime,  // "00:00", "09:00", "22:00", etc.
+                endTime: endTime,
+                company_id: companyId,
+            });
+
+            // Calculate duration
+            calculateDuration(startTime, endTime);
+        }
+    }, [shiftData, companyId]);
+
+    // ✅ Calculate duration
+    const calculateDuration = (startTime, endTime) => {
+        const parseTime = (timeStr) => {
+            const [hours, minutes] = timeStr.split(":").map(Number);
+            return hours * 3600 + minutes * 60;
+        };
+
+        let startSec = parseTime(startTime);
+        let endSec = parseTime(endTime);
+
+        if (endSec <= startSec) {
+            endSec += 24 * 3600;
+        }
+
+        const duration = (endSec - startSec) / 3600;
+        setDurationHours(parseFloat(duration.toFixed(2)));
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+    };
+
+    // ✅ Handle time change with dropdowns
+    const handleTimeSelectChange = (field, type, value) => {
+        const currentTime = field === "startTime" ? formData.startTime : formData.endTime;
+        const [currentHours, currentMinutes] = currentTime.split(":").map(Number);
+        const currentPeriod = currentHours >= 12 ? "PM" : "AM";
+        const currentDisplayHours = currentHours % 12 || 12;
+
+        let newHours = currentDisplayHours;
+        let newMinutes = currentMinutes;
+        let newPeriod = currentPeriod;
+
+        if (type === "hours") {
+            newHours = parseInt(value);
+        } else if (type === "minutes") {
+            newMinutes = parseInt(value);
+        } else if (type === "period") {
+            newPeriod = value;
+        }
+
+        const time24Hour = convertTo24Hour(newHours, newMinutes, newPeriod);
+
+        setFormData((prev) => ({ ...prev, [field]: time24Hour }));
+
+        // Recalculate duration
+        const startTime = field === "startTime" ? time24Hour : formData.startTime;
+        const endTime = field === "endTime" ? time24Hour : formData.endTime;
+
+        calculateDuration(startTime, endTime);
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = "Shift name is required";
+        }
+        if (!formData.startTime) {
+            newErrors.startTime = "Start time is required";
+        }
+        if (!formData.endTime) {
+            newErrors.endTime = "End time is required";
+        }
+        if (
+            formData.startTime &&
+            formData.endTime &&
+            formData.startTime === formData.endTime
+        ) {
+            newErrors.endTime = "End time must be different from start time";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            toast.error("Please fix the errors in the form");
+            return;
+        }
+
+        try {
+            await updateShift({
+                id: shiftId,
+                name: formData.name.trim(),
+                description: formData.description.trim(),
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                company_id: companyId,
+            }).unwrap();
+
+            toast.success("Shift updated successfully 🎉");
+            router.push(`/shifts?companyId=${companyId}`);
+        } catch (error) {
+            toast.error(error?.data?.message || "Failed to update shift");
+            console.error("Error:", error);
+        }
+    };
+
+    // ✅ Get current values
+    const startTimeParts = parseTime12Hour(formData.startTime);
+    const endTimeParts = parseTime12Hour(formData.endTime);
+
+    // ✅ Show loading state while fetching
+    if (isFetching) {
+        return (
+            <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+                <Loader />
+            </div>
+        );
+    }
+
+    // ✅ Show error state
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                        <p className="font-bold">Error loading shift</p>
+                        <p>{error?.data?.message || "Could not fetch shift details"}</p>
+                    </div>
+                    <button
+                        onClick={() => router.back()}
+                        className="mt-4 text-blue-600 hover:text-blue-900 font-medium"
+                    >
+                        ← Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ Show error if companyId is not available
+    if (!companyId) {
+        return (
+            <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+                        <p>Loading company information...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <Toaster />
+
+            <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-2xl mx-auto">
+                    {/* Header */}
+                    <div className="mb-8">
+                        <button
+                            onClick={() => router.back()}
+                            className="cursor-pointer text-blue-600 hover:text-blue-900 mb-4 font-medium"
+                        >
+                            ← Back
+                        </button>
+                        <h1 className="text-3xl font-bold text-gray-900">Edit Shift</h1>
+                        <p className="mt-2 text-sm text-gray-600">Update shift details</p>
+                    </div>
+
+                    {/* Form */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Shift Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
+                                    Shift Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Morning Shift"
+                                    className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.name ? "border-red-500" : "border-gray-300"
+                                        }`}
+                                />
+                                {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
+                            </div>
+
+                            {/* Time Section */}
+                            <div className="border-t border-gray-200 pt-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Shift Timing</h3>
+
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    {/* Start Time */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                                            Start Time *
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={startTimeParts.hours}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("startTime", "hours", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.startTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                {getHoursArray().map((hour) => (
+                                                    <option key={hour} value={hour}>
+                                                        {hour}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <select
+                                                value={startTimeParts.minutes}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("startTime", "minutes", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.startTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                {getMinutesArray().map((min) => (
+                                                    <option key={min} value={min}>
+                                                        {min}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <select
+                                                value={startTimeParts.period}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("startTime", "period", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.startTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                <option value="AM">AM</option>
+                                                <option value="PM">PM</option>
+                                            </select>
+                                        </div>
+                                        {errors.startTime && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.startTime}</p>
+                                        )}
+                                    </div>
+
+                                    {/* End Time */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                                            End Time *
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={endTimeParts.hours}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("endTime", "hours", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.endTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                {getHoursArray().map((hour) => (
+                                                    <option key={hour} value={hour}>
+                                                        {hour}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <select
+                                                value={endTimeParts.minutes}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("endTime", "minutes", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.endTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                {getMinutesArray().map((min) => (
+                                                    <option key={min} value={min}>
+                                                        {min}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <select
+                                                value={endTimeParts.period}
+                                                onChange={(e) =>
+                                                    handleTimeSelectChange("endTime", "period", e.target.value)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.endTime ? "border-red-500" : "border-gray-300"
+                                                    }`}
+                                            >
+                                                <option value="AM">AM</option>
+                                                <option value="PM">PM</option>
+                                            </select>
+                                        </div>
+                                        {errors.endTime && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.endTime}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Duration Display */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                                    <p className="text-sm text-gray-600 mb-2">
+                                        <span className="font-medium">Shift Timing:</span> {formatTo12Hour(formData.startTime)} to{" "}
+                                        {formatTo12Hour(formData.endTime)}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Duration: <span className="font-bold text-blue-600">{durationHours} hours</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Submit Buttons */}
+                            <div className="border-t border-gray-200 pt-6 flex gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => router.back()}
+                                    className="cursor-pointer px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isUpdating}
+                                    className="cursor-pointer px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin h-4 w-4"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            <span>Updating...</span>
+                                        </>
+                                    ) : (
+                                        "Update Shift"
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
