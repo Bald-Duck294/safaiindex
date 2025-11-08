@@ -7,6 +7,7 @@ import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import Loader from "@/components/ui/Loader";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
 
 export default function CleanersPage() {
     const [assignments, setAssignments] = useState([]);
@@ -27,6 +28,12 @@ export default function CleanersPage() {
 
     const locationId = searchParams.get('locationId');
     const locationName = searchParams.get('locationName');
+
+
+    const user = useSelector((state) => state.auth.user);
+    const userRoleId = user?.role_id;
+    const isPermitted = userRoleId === 1 || userRoleId === 2;
+
 
     useEffect(() => {
         if (!locationId || !companyId) {
@@ -269,13 +276,16 @@ export default function CleanersPage() {
                                             <span className="ml-1">of {assignments.length}</span>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={handleAddCleaner}
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
-                                    >
-                                        <UserPlus className="h-4 w-4" />
-                                        <span>Add Cleaner</span>
-                                    </button>
+
+                                    {isPermitted &&
+                                        <button
+                                            onClick={handleAddCleaner}
+                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+                                        >
+                                            <UserPlus className="h-4 w-4" />
+                                            <span>Add Cleaner</span>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -434,13 +444,16 @@ export default function CleanersPage() {
                                                             <Eye className="h-4 w-4" />
                                                         </button>
                                                         {/* Removed Edit button since we're toggling status directly */}
-                                                        <button
-                                                            onClick={() => handleDelete(assignment)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Remove Assignment"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
+
+                                                        {isPermitted && (
+                                                            <button
+                                                                onClick={() => handleDelete(assignment)}
+                                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Remove Assignment"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>)
+                                                        }
                                                     </div>
                                                 </td>
                                             </tr>

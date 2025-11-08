@@ -212,7 +212,7 @@ export const LocationsApi = {
       const fieldsToSend = [
         'name', 'parent_id', 'type_id', 'latitude', 'longitude',
         'address', 'pincode', 'state', 'city', 'dist', 'status', 'options'
-        , 'facility_company_id' // ✅ ADD THIS LINE ONLY
+        , 'facility_company_id' , 'no_of_photos'
       ];
 
       fieldsToSend.forEach(key => {

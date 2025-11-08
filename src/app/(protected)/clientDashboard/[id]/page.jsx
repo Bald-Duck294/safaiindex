@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -269,7 +269,7 @@ export default function ClientDashboard() {
       value: statsData.totalCleaners,
       color: "text-indigo-600 bg-indigo-50",
       icon: <UserCheck className="w-6 h-6 text-indigo-500" />,
-      redirectUrl: `/users?companyId=${companyId}`, // Updated to use your role system
+      redirectUrl: `/users/cleaner?companyId=${companyId}`, // Updated to use your role system
     },
   ];
 

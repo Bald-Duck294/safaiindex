@@ -701,6 +701,7 @@ export default function AddLocationPage() {
     dist: "",
     status: true,
     options: {},
+    no_of_photos: null
   });
 
   // ✅ Load Indian states on mount
@@ -975,9 +976,6 @@ export default function AddLocationPage() {
 
       // ✅ Step 3: Navigate ONLY after both operations complete
       console.log("✅ All operations complete, redirecting...");
-      setTimeout(() => {
-        router.push(`/washrooms?companyId=${companyId}`);
-      }, 1500);
 
     } catch (error) {
       console.error("❌ Submission error:", error);
@@ -1044,7 +1042,6 @@ export default function AddLocationPage() {
                   />
                 </div>
 
-                {/* Add this after Location Type Select */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Facility Company (Optional)
@@ -1078,6 +1075,27 @@ export default function AddLocationPage() {
                       No facility companies available. Add one from the Facility Companies section.
                     </p>
                   )}
+                </div>
+
+                {/* Number of Photos Field - ADD THIS */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Number of Photos
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Enter number of photos"
+                    value={form.no_of_photos || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleChange("no_of_photos", value ? parseInt(value) : null);
+                    }}
+                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                  {/* <p className="text-xs text-slate-500 mt-1">
+                    Optional: Specify how many photos should be taken at this location
+                  </p> */}
                 </div>
 
               </div>

@@ -699,6 +699,8 @@
 
 
 
+
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -784,7 +786,7 @@ const SingleLocation = () => {
         ]);
 
         console.log(locationResult, "locatoin result");
-        console.log(locationsResult, "all loc")
+        // console.log(locationsResult, "all loc")
         if (locationResult.success) {
           setLocation(locationResult.data);
         } else {

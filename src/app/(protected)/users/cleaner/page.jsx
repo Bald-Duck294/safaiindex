@@ -16,6 +16,7 @@ const ROLE_HIERARCHY = {
     5: { name: 'Cleaner', level: 5 }
 };
 
+
 // Skeleton Loader Component for table rows
 const TableRowSkeleton = () => (
     <tr className="animate-pulse">
@@ -34,6 +35,11 @@ export default function UsersPage() {
     // Get current user from Redux store
     const currentUser = useSelector((state) => state.auth.user);
     const { companyId } = useCompanyId();
+
+
+    const user = useSelector((state) => state.auth.user);
+    const userRoleId = user?.role_id;
+    const isPermitted = userRoleId === 1 || userRoleId === 2;
 
     // Get current user's role level for filtering
     const currentUserRoleId = parseInt(currentUser?.role_id || 4);
@@ -203,13 +209,18 @@ export default function UsersPage() {
                 </p> */}
                             </div>
                         </div>
-                        <a
-                            href={`/users/add?companyId=${companyId}`}
-                            className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-transform transform hover:scale-105 cursor-pointer"
-                        >
-                            <Plus size={20} />
-                            Add User
-                        </a>
+
+                        {/* {
+                            isPermitted &&
+                            (
+                                <a
+                                    href={`/users/add?companyId=${companyId}`}
+                                    className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-transform transform hover:scale-105 cursor-pointer"
+                                >
+                                    <Plus size={20} />
+                                    Add User
+                                </a>)
+                        } */}
                     </div>
 
                     {/* Role Filter Info */}
