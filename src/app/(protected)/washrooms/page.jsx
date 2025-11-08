@@ -10,6 +10,7 @@ import toast, { Toaster } from "react-hot-toast";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import LocationActionsMenu from './components/LocationActionsMenu'
 import { useSelector } from "react-redux";
+import locationTypesApi from "@/lib/api/locationTypesApi";
 function WashroomsPage() {
   const [list, setList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -25,6 +26,9 @@ function WashroomsPage() {
   const { companyId } = useCompanyId();
   const actionsMenuRef = useRef(null);
   const [statusModal, setStatusModal] = useState({ open: false, location: null });
+  const [locationTypes, setLocationTypes] = useState([]);
+  const [selectedLocationTypeId, setSelectedLocationTypeId] = useState("");
+
 
 
   // Add these new states for facility company filtering
@@ -50,6 +54,25 @@ function WashroomsPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+
+  // Fetch location types for dropdown
+  useEffect(() => {
+    const fetchLocationTypes = async () => {
+      try {
+        const response = await locationTypesApi.getAll(companyId);
+        if (response.success) {
+          setLocationTypes(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching location types:", error);
+      }
+    };
+
+    if (companyId && companyId !== 'null' && companyId !== null) {
+      fetchLocationTypes();
+    }
+  }, [companyId]);
 
   const fetchList = async () => {
     setLoading(true);
@@ -78,6 +101,12 @@ function WashroomsPage() {
   useEffect(() => {
     let filtered = [...list];
 
+  
+    if (selectedLocationTypeId) {
+      filtered = filtered.filter((item) => {
+        return String(item.type_id) === String(selectedLocationTypeId);
+      });
+    }
     if (facilityCompanyId) {
       filtered = filtered.filter((item) => {
         // Compare as strings since IDs might be strings or numbers
@@ -365,6 +394,7 @@ function WashroomsPage() {
     setSortOrder("desc");
     setFacilityCompanyId("");
     setFacilityCompanyName("");
+    setSelectedLocationTypeId("");
 
     // Clear from sessionStorage
     sessionStorage.removeItem('selectedFacilityCompanyId');
@@ -602,6 +632,18 @@ function WashroomsPage() {
 
                 <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
 
+                  <select
+                    className="px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-300 rounded-lg sm:rounded-xl text-xs sm:text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 w-full sm:w-auto"
+                    value={selectedLocationTypeId}
+                    onChange={(e) => setSelectedLocationTypeId(e.target.value)}
+                  >
+                    <option value="">All Location Types</option>
+                    {locationTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
                   <select
                     className="px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-300 rounded-lg sm:rounded-xl text-xs sm:text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 w-full sm:w-auto"
                     value={facilityCompanyId}

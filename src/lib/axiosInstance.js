@@ -6,7 +6,8 @@ import { store } from "@/store/store";
 
 // const API_BASE_URL = "http://localhost:8000/api";
 const API_BASE_URL = "https://saaf-ai-backend.onrender.com/api";
-
+// const API_BASE_URL = "https://safai-ai-651690228479.asia-south1.run.app/api"
+// const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
 });
@@ -20,7 +21,7 @@ axiosInstance.interceptors.request.use(
     // console.log(token, "token");
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; 
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
