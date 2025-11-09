@@ -188,7 +188,7 @@ export default function ClientDashboard() {
           cleanerActivities = cleanerReviewsRes.data
             .filter(review => new Date(review.created_at) >= startOfDay)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 2)
+            .slice(0, 5)
             .map(review => ({
               type: 'cleaner',
               id: review.id,

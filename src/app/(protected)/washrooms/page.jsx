@@ -61,9 +61,9 @@ function WashroomsPage() {
     const fetchLocationTypes = async () => {
       try {
         const response = await locationTypesApi.getAll(companyId);
-        if (response.success) {
-          setLocationTypes(response.data);
-        }
+        console.log(response, "loc-type res");
+
+        setLocationTypes(response);
       } catch (error) {
         console.error("Error fetching location types:", error);
       }
@@ -101,9 +101,12 @@ function WashroomsPage() {
   useEffect(() => {
     let filtered = [...list];
 
-  
+
     if (selectedLocationTypeId) {
       filtered = filtered.filter((item) => {
+        console.log(item.type_id === String(selectedLocationTypeId), "loc type condition")
+        console.log(item.type_id, String(selectedLocationTypeId), "filter values")
+        console.log(selectedLocationTypeId, "raw selcted loc")
         return String(item.type_id) === String(selectedLocationTypeId);
       });
     }
@@ -174,7 +177,7 @@ function WashroomsPage() {
     });
 
     setFilteredList(filtered);
-  }, [searchQuery, minRating, sortOrder, list, facilityCompanyId]);
+  }, [searchQuery, minRating, sortOrder, list, facilityCompanyId, selectedLocationTypeId]);
 
 
   // Read facility company from sessionStorage on mount

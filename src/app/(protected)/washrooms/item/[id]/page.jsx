@@ -703,7 +703,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   MapPin,
@@ -720,6 +720,7 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  Layers,
   ThumbsUp,
   Share2,
   Car,
@@ -770,6 +771,17 @@ const SingleLocation = () => {
 
   const urlCompanyId = searchParams.get('companyId');
   const finalCompanyId = companyId || urlCompanyId;
+
+  const userReviewAverage = useMemo(() => {
+    if (!location?.ReviewData || location?.ReviewData.length === 0) return null;
+
+    const totalRating = location?.ReviewData.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return (totalRating / location?.ReviewData.length).toFixed(1);
+  }, [location?.ReviewData]);
+
+
+  const userReviewCount = location?.ReviewData?.length || 0;
+  const cleanerReviewCount = cleanerReviews.length || 0;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1051,10 +1063,26 @@ const SingleLocation = () => {
 
     return (
       <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <UserCheck className="w-4 h-4" />
-          Assigned Cleaners ({assignedCleaners.length})
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <UserCheck className="w-4 h-4" />
+            Assigned Cleaners ({assignedCleaners.length})
+          </h3>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams({
+                companyId: finalCompanyId,
+                locationId: location.id,
+                locationName: location.name
+              });
+              router.push(`/assignments/cleaner?${params.toString()}`);
+            }}
+            className="cursor-pointer text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+          >
+            View All
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
         <div className="space-y-3">
           {assignedCleaners.map((assignment) => (
             <div key={assignment.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
@@ -1097,6 +1125,7 @@ const SingleLocation = () => {
       </div>
     );
   };
+
 
   const renderImageGallery = (images) => {
     if (!images || images.length === 0) return null;
@@ -1193,8 +1222,7 @@ const SingleLocation = () => {
   }
 
   const navigationInfo = getNavigationInfo();
-  const userReviewCount = location.ReviewData?.length || 0;
-  const cleanerReviewCount = cleanerReviews.length || 0; // ✅ Use state instead of location data
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1291,6 +1319,25 @@ const SingleLocation = () => {
                         <span>{location.address}</span>
                       </div>
                     )}
+                    {/* Location Type / Zone Hierarchy */}
+                    {location.location_types && (
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 px-4 py-3 rounded-lg shadow-sm">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <Layers className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                            Location Hierarchy / Zone
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900 mt-0.5">
+                            {location.location_types.name}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
 
                     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                       {location.city && (
@@ -1376,6 +1423,7 @@ const SingleLocation = () => {
           <div className="p-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
               {/* User Reviews */}
               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                 <div className="flex-shrink-0">
@@ -1384,15 +1432,26 @@ const SingleLocation = () => {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    {renderStars(location.averageRating || 0)}
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {location.averageRating ? location.averageRating.toFixed(1) : 'N/A'}
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    {userReviewCount} User {userReviewCount === 1 ? 'Review' : 'Reviews'}
-                  </p>
+                  {userReviewAverage ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-1">
+                        {renderStars(parseFloat(userReviewAverage))}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {userReviewAverage}/10
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {userReviewCount} User {userReviewCount === 1 ? 'Review' : 'Reviews'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold text-gray-900">N/A</div>
+                      <p className="text-xs text-gray-600">
+                        {userReviewCount} User {userReviewCount === 1 ? 'Review' : 'Reviews'}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1404,29 +1463,57 @@ const SingleLocation = () => {
                   </div>
                 </div>
                 <div className="flex-1">
-                  {cleanerReviewStats?.average_score && (
-                    <div className="flex items-center gap-2 mb-1">
-                      {renderStars(parseFloat(cleanerReviewStats.average_score))}
-                    </div>
-                  )}
-                  <div className="text-2xl font-bold text-gray-900">
-                    {cleanerReviewCount}
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    Cleaner {cleanerReviewCount === 1 ? 'Review' : 'Reviews'}
-                  </p>
-                  {cleanerReviewStats?.average_score && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Avg: {cleanerReviewStats.average_score}/10
-                    </p>
+                  {cleanerReviewStats?.average_score ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-1">
+                        {renderStars(parseFloat(cleanerReviewStats.average_score))}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {cleanerReviewStats.average_score}/10
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Cleaner {cleanerReviewCount === 1 ? 'Review' : 'Reviews'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold text-gray-900">N/A</div>
+                      <p className="text-xs text-gray-600">
+                        {cleanerReviewCount} Cleaner {cleanerReviewCount === 1 ? 'Review' : 'Reviews'}
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
+
             </div>
+
+            {/* Overall Hygiene Score - Keep as is */}
+            {/* {location.averageRating && (
+              <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                      <Star className="w-5 h-5 text-white fill-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Overall Hygiene Score</p>
+                      <div className="flex items-center gap-2">
+                        {renderStars(location.averageRating)}
+                        <span className="text-lg font-bold text-gray-900">
+                          {location.averageRating.toFixed(1)}/10
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Based on {location.ratingCount} hygiene inspection{location.ratingCount !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
           </div>
         </div>
-
-
 
         {/* Reviews Section with Tabs */}
         <div className="bg-white rounded-lg shadow">
