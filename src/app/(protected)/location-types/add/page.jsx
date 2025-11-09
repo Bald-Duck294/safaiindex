@@ -23,6 +23,8 @@ export default function AddLocationTypesPage() {
     fetchTypes();
   }, [companyId]);
 
+  console.log(types, "loc-types");
+
   return (
     <>
       {/* ✅ Add Toaster component here */}

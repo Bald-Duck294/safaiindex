@@ -39,7 +39,10 @@ import { useState } from "react";
 export default function TreeView({ types, onUpdate, flag }) {
 
   // const [read , setRead] = useState( flag == false? true :false )
-  console.log(flag, "flag");
+  // console.log(flag, "flag");
+  console.log("flag:", flag);
+  console.log("types:", types);
+  // console.log(types, "types")
   const buildTree = () => {
     const tree = [];
     const map = {};
