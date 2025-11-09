@@ -220,24 +220,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
 
         // shift management
-        {
-          icon: CalendarClock,
-          label: "Shift Management",
-          hasDropdown: true,
-          key: "shift-management",
-          children: [
-            {
-              icon: List,
-              label: "Shift List",
-              href: `/shifts?companyId=${companyId}`,
-            },
-            {
-              icon: UserPlus,
-              label: "Add Shift",
-              href: `/shifts/add?companyId=${companyId}`,
-            },
-          ],
-        },
+        // {
+        //   icon: CalendarClock,
+        //   label: "Shift Management",
+        //   hasDropdown: true,
+        //   key: "shift-management",
+        //   children: [
+        //     {
+        //       icon: List,
+        //       label: "Shift List",
+        //       href: `/shifts?companyId=${companyId}`,
+        //     },
+        //     {
+        //       icon: UserPlus,
+        //       label: "Add Shift",
+        //       href: `/shifts/add?companyId=${companyId}`,
+        //     },
+        //   ],
+        // },
 
         // locate on map
         {
@@ -364,24 +364,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
 
         // shift management
-        {
-          icon: CalendarClock,
-          label: "Shift Management",
-          hasDropdown: true,
-          key: "shift-management",
-          children: [
-            {
-              icon: List,
-              label: "Shift List",
-              href: `/shift?companyId=${companyId}`,
-            },
-            {
-              icon: UserPlus,
-              label: "Add Shift",
-              href: `/shift/add?companyId=${companyId}`,
-            },
-          ],
-        },
+        // {
+        //   icon: CalendarClock,
+        //   label: "Shift Management",
+        //   hasDropdown: true,
+        //   key: "shift-management",
+        //   children: [
+        //     {
+        //       icon: List,
+        //       label: "Shift List",
+        //       href: `/shift?companyId=${companyId}`,
+        //     },
+        //     {
+        //       icon: UserPlus,
+        //       label: "Add Shift",
+        //       href: `/shift/add?companyId=${companyId}`,
+        //     },
+        //   ],
+        // },
 
         // cleaner activity
         {
