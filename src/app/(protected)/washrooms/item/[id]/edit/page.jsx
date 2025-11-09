@@ -1267,6 +1267,7 @@ const EditLocationPage = () => {
     setAvailableStates(stateNames);
   }, []);
 
+
   // ✅ Image handling functions
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
