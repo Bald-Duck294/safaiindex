@@ -1116,8 +1116,13 @@ import {
   Image as ImageIcon,
   Trash2,
   Home,
-  Building2
+  Building2,
+  Camera
 } from 'lucide-react';
+
+import { Country, State, City } from 'country-state-city';
+// import SearchableSelect from './components/SearchableSelect';
+import SearchableSelect from '../../../add-location/components/SearchableSelect';
 
 // ✅ Indian States List
 const INDIAN_STATES = [
@@ -1152,6 +1157,10 @@ const EditLocationPage = () => {
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [availableStates, setAvailableStates] = useState([]);
+  const [availableCities, setAvailableCities] = useState([]);
+  const [availableDistricts, setAvailableDistricts] = useState([]);
 
   // ✅ Updated formData with new fields
   const [formData, setFormData] = useState({
@@ -1190,6 +1199,8 @@ const EditLocationPage = () => {
           FacilityCompanyApi.getAll(finalCompanyId)
         ]);
 
+        console.log(locationResult, "locatoin result");
+
         if (locationResult.success) {
           setLocation(locationResult.data);
           setFormData({
@@ -1201,11 +1212,22 @@ const EditLocationPage = () => {
             state: locationResult.data.state || '',
             dist: locationResult.data.dist || '',
             pincode: locationResult.data.pincode || '',
+            no_of_photos: locationResult.data.no_of_photos,
             options: locationResult.data.options || {}
           });
 
           setExistingImages(locationResult.data.images || []);
           setSelectedFacilityCompany(locationResult.data.facility_companiesId);
+
+          if (locationResult.state) {
+            const indiaStates = State.getStatesOfCountry('IN');
+            const selectedState = indiaStates.find(s => s.name === locationData.state);
+            if (selectedState) {
+              const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+              const cityNames = cities.map(city => city.name);
+              setAvailableCities(cityNames);
+            }
+          }
 
         } else {
           setError(locationResult.error);
@@ -1236,6 +1258,14 @@ const EditLocationPage = () => {
 
     fetchData();
   }, [params.id, finalCompanyId]);
+
+
+  // Load Indian states on mount
+  useEffect(() => {
+    const indiaStates = State.getStatesOfCountry('IN');
+    const stateNames = indiaStates.map(state => state.name);
+    setAvailableStates(stateNames);
+  }, []);
 
   // ✅ Image handling functions
   const handleFileSelect = (e) => {
@@ -1340,11 +1370,30 @@ const EditLocationPage = () => {
     };
   };
 
+  // const handleInputChange = (field, value) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     [field]: value
+  //   }));
+  // };
+
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    // ✅ Handle state change to update available cities
+    if (field === 'state') {
+      const indiaStates = State.getStatesOfCountry('IN');
+      const selectedState = indiaStates.find(s => s.name === value);
+      if (selectedState) {
+        const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+        const cityNames = cities.map(city => city.name);
+        setAvailableCities(cityNames);
+      } else {
+        setAvailableCities([]);
+      }
+      // Reset city when state changes
+      setFormData(prev => ({ ...prev, city: '' }));
+    }
   };
 
   const handleOptionChange = (optionKey, value) => {
@@ -1376,6 +1425,7 @@ const EditLocationPage = () => {
         state: formData.state || null,
         dist: formData.dist.trim() || null,
         pincode: formData.pincode.trim() || null,
+        no_of_photos: formData.no_of_photos || null,
         facility_companiesId: formData.facility_companiesId || null,
         options: formData.options
       };
@@ -1910,78 +1960,93 @@ const EditLocationPage = () => {
                 </div>
               </div>
 
+              {/* Number of Photos Field - Simple Version */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Maximum Photos Allowed
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.no_of_photos}
+                  onChange={(e) => handleInputChange('no_of_photos', parseInt(e.target.value))}
+                  className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Enter number (1-20)"
+                />
+              </div>
+
+
               {/* ========== SECTION 2: ADDRESS DETAILS ========== */}
+              {/* Address Details */}
               <div className="space-y-6 border-t border-slate-200 pt-8">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3">
-                  <Home className="w-6 h-6 text-blue-600" />
+                  <MapPin className="w-6 h-6 text-blue-600" />
                   Address Details
                 </h2>
 
-                {/* Full Address */}
-                <div className="space-y-2">
-                  <label className="block font-semibold text-slate-800">Full Address</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter complete address"
-                    rows={3}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* State */}
+                  <SearchableSelect
+                    options={availableStates}
+                    value={formData.state}
+                    onChange={(value) => handleInputChange('state', value)}
+                    placeholder="Select or type state"
+                    label="State"
+                    allowCustom={true}
                   />
-                </div>
 
-                {/* City, State, District, Pincode */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <label className="block font-semibold text-slate-800">State</label>
-                    <select
-                      value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select State</option>
-                      {INDIAN_STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* City */}
+                  <SearchableSelect
+                    options={availableCities}
+                    value={formData.city}
+                    onChange={(value) => handleInputChange('city', value)}
+                    placeholder="Select or type city"
+                    label="City"
+                    allowCustom={true}
+                  />
 
-                  <div className="space-y-2">
-                    <label className="block font-semibold text-slate-800">District</label>
+                  {/* District */}
+                  <SearchableSelect
+                    options={[]}
+                    value={formData.dist}
+                    onChange={(value) => handleInputChange('dist', value)}
+                    placeholder="Enter district name"
+                    label="District"
+                    allowCustom={true}
+                  />
+
+                  {/* Pincode */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Pincode
+                    </label>
                     <input
                       type="text"
-                      value={formData.dist}
-                      onChange={(e) => handleInputChange('dist', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter district"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block font-semibold text-slate-800">City</label>
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter city"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block font-semibold text-slate-800">Pincode</label>
-                    <input
-                      type="text"
+                      placeholder="Enter 6-digit pincode"
                       value={formData.pincode}
                       onChange={(e) => handleInputChange('pincode', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., 400001"
                       maxLength={6}
+                      className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     />
                   </div>
                 </div>
+
+                {/* Full Address */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Full Address
+                  </label>
+                  <textarea
+                    placeholder="Enter complete address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    rows={3}
+                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                  />
+                </div>
               </div>
+
 
               {/* ========== SECTION 3: IMAGES ========== */}
               <div className="space-y-6 border-t border-slate-200 pt-8">
