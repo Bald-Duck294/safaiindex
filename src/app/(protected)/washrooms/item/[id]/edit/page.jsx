@@ -1219,9 +1219,9 @@ const EditLocationPage = () => {
           setExistingImages(locationResult.data.images || []);
           setSelectedFacilityCompany(locationResult.data.facility_companiesId);
 
-          if (locationResult.state) {
+          if (locationResult.data?.state) {
             const indiaStates = State.getStatesOfCountry('IN');
-            const selectedState = indiaStates.find(s => s.name === locationData.state);
+            const selectedState = indiaStates.find(s => s.name === locationResult?.data?.state);
             if (selectedState) {
               const cities = City.getCitiesOfState('IN', selectedState.isoCode);
               const cityNames = cities.map(city => city.name);
@@ -1378,12 +1378,11 @@ const EditLocationPage = () => {
   // };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-
-    // ✅ Handle state change to update available cities
+    // ✅ If state is changing, update cities and reset city in one go
     if (field === 'state') {
       const indiaStates = State.getStatesOfCountry('IN');
       const selectedState = indiaStates.find(s => s.name === value);
+
       if (selectedState) {
         const cities = City.getCitiesOfState('IN', selectedState.isoCode);
         const cityNames = cities.map(city => city.name);
@@ -1391,8 +1390,16 @@ const EditLocationPage = () => {
       } else {
         setAvailableCities([]);
       }
-      // Reset city when state changes
-      setFormData(prev => ({ ...prev, city: '' }));
+
+      // ✅ Update state AND reset city in single update
+      setFormData(prev => ({
+        ...prev,
+        state: value,
+        city: '' // Reset city when state changes
+      }));
+    } else {
+      // ✅ Normal update for other fields
+      setFormData(prev => ({ ...prev, [field]: value }));
     }
   };
 
