@@ -398,9 +398,11 @@ export default function ClientDashboard() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-slate-700 text-sm leading-relaxed">
+
+                        <p className="cursor-pointer text-slate-700 hover:underline hover:text-blue-700  text-sm leading-relaxed" onClick={(e) => router.push(`/cleaner-review/${activity.id}?companyId=${companyId}`)}>
                           {activity.text}
                         </p>
+
 
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs text-slate-400">
