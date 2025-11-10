@@ -3,10 +3,10 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import Header from "../components/Header"
+import Header from "../components/Header";
 import dynamic from "next/dynamic";
 
-const Sidebar = dynamic(() => import('../components/Sidebar'), { ssr: false });
+const Sidebar = dynamic(() => import("../components/Sidebar"), { ssr: false });
 
 import { Suspense } from "react";
 export default function LayoutWrapper({ children }) {
@@ -14,7 +14,7 @@ export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
 
   // Pages to exclude layout
-  const hideLayoutFor = ["/login", "/register"]; // add more routes if needed
+  const hideLayoutFor = ["/", "/login", "/register"]; // add more routes if needed
   const shouldHideLayout = hideLayoutFor.includes(pathname);
 
   if (shouldHideLayout) {

@@ -1,10 +1,10 @@
+import AuthPage from "./(auth)/login/page";
 
-import Home from "./pages/Home";
 
 export default function Page() {
   return (
     <>
-      <Home/>
+      <AuthPage/>
     </>
   );
 }

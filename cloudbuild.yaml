@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/safai-ai-frontend-repo/safai-ai-frontend:$COMMIT_SHA',
+      '.'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'asia-southeast1-docker.pkg.dev/$PROJECT_ID/safai-ai-frontend-repo/safai-ai-frontend:$COMMIT_SHA'
+    ]
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: [
+      'run', 'deploy', 'safai-ai-frontend',
+      '--image', 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/safai-ai-frontend-repo/safai-ai-frontend:$COMMIT_SHA',
+      '--region', 'asia-southeast1',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--quiet'
+    ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
