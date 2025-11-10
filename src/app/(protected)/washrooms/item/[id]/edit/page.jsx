@@ -1121,8 +1121,11 @@ import {
 } from 'lucide-react';
 
 import { Country, State, City } from 'country-state-city';
+import GoogleMapPicker from '@/app/(protected)/add-location/components/GoogleMapPicker';
+import LatLongInput from '@/app/(protected)/add-location/components/LatLongInput';
 // import SearchableSelect from './components/SearchableSelect';
 import SearchableSelect from '../../../add-location/components/SearchableSelect';
+import locationTypesApi from '@/lib/api/locationTypesApi';
 
 // ✅ Indian States List
 const INDIAN_STATES = [
@@ -1150,7 +1153,12 @@ const EditLocationPage = () => {
   const [facilityCompanies, setFacilityCompanies] = useState([]);
 
 
-  // ✅ Image states
+  // location type select dropdown
+  const [selectedLocationType, setSelectedLocationType] = useState();
+  const [locationTypes, setLocationTypes] = useState([]);
+
+
+  //  Image states
   const [newImages, setNewImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -1173,6 +1181,7 @@ const EditLocationPage = () => {
     dist: '',
     pincode: '',
     facility_companiesId: null,
+    type_id: null,
     options: {}
   });
 
@@ -1191,15 +1200,17 @@ const EditLocationPage = () => {
       try {
         setLoading(true);
 
-        const [locationResult, locationsResult, featuresResult, facilityCompaniesResult] = await Promise.all([
+        const [locationResult, locationsResult, featuresResult, facilityCompaniesResult, locationTypesResult] = await Promise.all([
           LocationsApi.getLocationById(params.id, finalCompanyId),
           LocationsApi.getAllLocations(finalCompanyId),
           fetchToiletFeaturesByName('Toilet_Features'),
           // FacilityCompanyApi.getAllFacilityCompanies(finalCompanyId)
-          FacilityCompanyApi.getAll(finalCompanyId)
+          FacilityCompanyApi.getAll(finalCompanyId),
+          locationTypesApi.getAll(finalCompanyId)
         ]);
 
         console.log(locationResult, "locatoin result");
+        console.log(locationTypesResult, "location tyeps result");
 
         if (locationResult.success) {
           setLocation(locationResult.data);
@@ -1218,6 +1229,7 @@ const EditLocationPage = () => {
 
           setExistingImages(locationResult.data.images || []);
           setSelectedFacilityCompany(locationResult.data.facility_companiesId);
+          setSelectedLocationType(locationResult.data?.type_id);
 
           if (locationResult.data?.state) {
             const indiaStates = State.getStatesOfCountry('IN');
@@ -1241,6 +1253,9 @@ const EditLocationPage = () => {
           setFacilityCompanies(facilityCompaniesResult.data);
         }
 
+        if (locationTypesResult) {
+          setLocationTypes(locationTypesResult);
+        }
         if (featuresResult) {
           const features = {};
           featuresResult?.data[0]?.description.forEach(feature => {
@@ -1378,8 +1393,33 @@ const EditLocationPage = () => {
   //   }));
   // };
 
+  // const handleInputChange = (field, value) => {
+  //   if (field === 'state') {
+  //     const indiaStates = State.getStatesOfCountry('IN');
+  //     const selectedState = indiaStates.find(s => s.name === value);
+
+  //     if (selectedState) {
+  //       const cities = City.getCitiesOfState('IN', selectedState.isoCode);
+  //       const cityNames = cities.map(city => city.name);
+  //       setAvailableCities(cityNames);
+  //     } else {
+  //       setAvailableCities([]);
+  //     }
+
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       state: value,
+  //       city: '' // Reset city when state changes
+  //     }));
+  //   } else {
+
+  //     setFormData(prev => ({ ...prev, [field]: value }));
+  //   }
+  // };
+
+
   const handleInputChange = (field, value) => {
-    // ✅ If state is changing, update cities and reset city in one go
+    // Handle state change separately
     if (field === 'state') {
       const indiaStates = State.getStatesOfCountry('IN');
       const selectedState = indiaStates.find(s => s.name === value);
@@ -1392,16 +1432,31 @@ const EditLocationPage = () => {
         setAvailableCities([]);
       }
 
-      // ✅ Update state AND reset city in single update
       setFormData(prev => ({
         ...prev,
         state: value,
         city: '' // Reset city when state changes
       }));
-    } else {
-      // ✅ Normal update for other fields
-      setFormData(prev => ({ ...prev, [field]: value }));
+      return; // Exit early for state
     }
+
+    // Validate coordinates
+    if (field === 'latitude') {
+      const lat = parseFloat(value);
+      if (value && (isNaN(lat) || lat < -90 || lat > 90)) {
+        toast.error('Latitude must be between -90 and 90');
+      }
+    }
+
+    if (field === 'longitude') {
+      const lng = parseFloat(value);
+      if (value && (isNaN(lng) || lng < -180 || lng > 180)) {
+        toast.error('Longitude must be between -180 and 180');
+      }
+    }
+
+    // Update form data for all other fields
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleOptionChange = (optionKey, value) => {
@@ -1435,6 +1490,7 @@ const EditLocationPage = () => {
         pincode: formData.pincode.trim() || null,
         no_of_photos: formData.no_of_photos || null,
         facility_companiesId: formData.facility_companiesId || null,
+        type_id: formData.type_id || null,
         options: formData.options
       };
 
@@ -1879,6 +1935,85 @@ const EditLocationPage = () => {
                   </select>
                 </div>
 
+                {/* ========== LOCATION HIERARCHY SECTION ========== */}
+                <div className="space-y-4 border-t border-slate-200 pt-6 mt-6">
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-blue-600" />
+                    Location Hierarchy
+                  </h3>
+
+                  {/* Current Assignment Display */}
+                  {selectedLocationType && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium">
+                        Current Type: {' '}
+                        <span className="font-bold">
+                          {locationTypes.find(lt => lt.id === selectedLocationType)?.name || 'Unknown Type'}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Current Status if null */}
+                  {!selectedLocationType && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-amber-800 font-medium flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        No location type assigned
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Location Type Dropdown */}
+                  <div className="space-y-2">
+                    <label className="block font-semibold text-slate-800">
+                      Select Location Type
+                    </label>
+                    <select
+                      value={formData.type_id || ''}
+                      onChange={(e) => {
+                        const newValue = e.target.value === '' ? null : e.target.value;
+                        handleInputChange('type_id', newValue);
+                        setSelectedLocationType(newValue);
+                      }}
+                      className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">-- No Location Type --</option>
+                      {locationTypes.map((locationType) => (
+                        <option key={locationType.id} value={locationType.id}>
+                          {locationType.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Change Indicator */}
+                  {selectedLocationType !== location?.type_id && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700 font-medium">
+                        {selectedLocationType ? (
+                          <>
+                            ✓ Will change from{' '}
+                            <span className="font-bold">
+                              {location?.type_id
+                                ? locationTypes.find(lt => lt.id === location.type_id)?.name || 'Unknown'
+                                : 'None'
+                              }
+                            </span>
+                            {' to '}
+                            <span className="font-bold">
+                              {locationTypes.find(lt => lt.id === selectedLocationType)?.name}
+                            </span>
+                          </>
+                        ) : (
+                          <>✓ Will remove location type assignment</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+
                 {/* Change Indicator */}
                 {selectedFacilityCompany !== location?.facility_companiesId && (
                   <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -1928,7 +2063,7 @@ const EditLocationPage = () => {
                 </div>
 
                 {/* Coordinates Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <label className="block font-semibold text-slate-800">Latitude</label>
                     <input
@@ -1965,6 +2100,73 @@ const EditLocationPage = () => {
                       Open in Maps
                     </button>
                   </div>
+                </div> */}
+
+                {/* ========== LOCATION COORDINATES WITH MAP ========== */}
+                <div className="space-y-4 border-t border-slate-200 pt-6 mt-6">
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    Location Coordinates
+                  </h3>
+
+                  {/* Info Banner */}
+                  {/* <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <span className="font-semibold">Interactive Map:</span> Click on the map to select a new location,
+                      or manually enter coordinates below. Changes are synchronized automatically.
+                    </p>
+                  </div> */}
+
+                  {/* Google Map Picker - Interactive Map */}
+                  <div className="bg-white p-2 border-2 border-slate-300 overflow-hidden">
+                    <GoogleMapPicker
+                      lat={formData.latitude ? parseFloat(formData.latitude) : null}
+                      lng={formData.longitude ? parseFloat(formData.longitude) : null}
+                      onSelect={(lat, lng) => {
+                        handleInputChange('latitude', lat?.toString() || '');
+                        handleInputChange('longitude', lng?.toString() || '');
+                      }}
+                    />
+                  </div>
+
+                  {/* Manual Lat/Long Input */}
+                  <LatLongInput
+                    lat={formData.latitude ? parseFloat(formData.latitude) : null}
+                    lng={formData.longitude ? parseFloat(formData.longitude) : null}
+                    onChange={(lat, lng) => {
+                      handleInputChange('latitude', lat?.toString() || '');
+                      handleInputChange('longitude', lng?.toString() || '');
+                    }}
+                  />
+
+                  {/* Current Coordinates Display */}
+                  {(formData.latitude && formData.longitude) && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                        <Navigation className="w-4 h-4" />
+                        Current Coordinates:
+                        <span className="font-mono">
+                          {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                        </span>
+                      </p>
+                      {(formData.latitude !== location?.latitude?.toString() ||
+                        formData.longitude !== location?.longitude?.toString()) && (
+                          <p className="text-xs text-green-700 mt-2">
+                            ✓ Coordinates have been modified
+                          </p>
+                        )}
+                    </div>
+                  )}
+
+                  {/* No Coordinates Warning */}
+                  {(!formData.latitude || !formData.longitude) && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-amber-800 font-medium flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        No coordinates set. Click on the map or enter coordinates manually.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
