@@ -48,8 +48,8 @@ export default function DashboardPage() {
           UsersApi.getAllUsers()
         ]);
 
-        console.log(companiesResponse, "companies");
-        console.log(usersResponse, "users");
+        // console.log(companiesResponse, "companies");
+        // console.log(usersResponse, "users");
 
         let newCounts = {
           companies: 0,

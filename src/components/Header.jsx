@@ -26,10 +26,10 @@ const Header = ({ pageTitle }) => {
     const queryCompanyId = searchParams.get('companyId');
 
     // console.log("cope query params", queryCompanyId)
-    console.log("both paras ", Boolean(params && queryCompanyId))
+    // console.log("both paras ", Boolean(params && queryCompanyId))
     // Priority 1: Check dynamic route parameter (e.g., /clientDashboard/17)
     if (params && queryCompanyId) {
-      console.log("returned company id ")
+      // console.log("returned company id ")
       return queryCompanyId;
     }
 
@@ -50,7 +50,7 @@ const Header = ({ pageTitle }) => {
 
   const companyId = getCompanyId();
 
-  console.log("Company ID from URL:", companyId);
+  // console.log("Company ID from URL:", companyId);
   // console.log("Params (dynamic):", params);
   // console.log("Search Params (query):", searchParams.get('companyId'));
 
@@ -64,7 +64,7 @@ const Header = ({ pageTitle }) => {
     }
 
     const fetchCompany = async () => {
-      console.log('Fetching company with ID:', companyId);
+      // console.log('Fetching company with ID:', companyId);
 
       try {
         setLoadingCompany(true);

@@ -1,4 +1,4 @@
-  "use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -55,7 +55,7 @@ export default function ClientDashboard() {
 
   const { companyId } = useCompanyId();
 
-  console.log('in main dashboard page', companyId);
+  // console.log('in main dashboard page', companyId);
 
 
   // Helper function to format time
@@ -141,8 +141,8 @@ export default function ClientDashboard() {
           const allUsers = usersRes.data || [];
           const cleaners = allUsers.filter(user => user.role_id === 5); // Filter cleaners
 
-          console.log(allUsers, "all users")
-          console.log(cleaners, "cleaners");
+          // console.log(allUsers, "all users")
+          // console.log(cleaners, "cleaners");
           setStatsData((prev) => ({
             ...prev,
             totalCleaners: cleaners.length,
@@ -179,10 +179,10 @@ export default function ClientDashboard() {
         // Get cleaner reviews from Promise.all result stored in state
         // We'll create a new state for this or fetch it separately
 
-        console.log(companyId, "companyId before the call")
+        // console.log(companyId, "companyId before the call")
         const cleanerReviewsRes = await CleanerReviewApi.getAllCleanerReviews({}, companyId);
 
-        console.log(cleanerReviewsRes, "review res");
+        // console.log(cleanerReviewsRes, "review res");
         // Filter and format cleaner reviews for today
         if (cleanerReviewsRes.success) {
           cleanerActivities = cleanerReviewsRes.data
@@ -289,7 +289,7 @@ export default function ClientDashboard() {
   }
 
   const handleStatClick = (stat) => {
-    console.log("in handle click");
+    // console.log("in handle click");
     if (stat.filterKey) {
       // For ongoing/completed tasks
       router.push(`/cleaner-review?companyId=${companyId}&status=${stat.filterKey}`);
