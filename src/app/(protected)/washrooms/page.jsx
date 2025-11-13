@@ -433,7 +433,7 @@ function WashroomsPage() {
     );
   };
 
-  // ✅ UPDATED: Show first 2 amenities with badge
+  // UPDATED: Show first 2 amenities with badge
   const renderAmenitiesBadge = (options) => {
     if (!options || Object.keys(options).length === 0) {
       return <span className="text-xs text-slate-400">No amenities</span>;
@@ -709,153 +709,194 @@ function WashroomsPage() {
             </div>
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
+          {/* Responsive Table - Works on All Screens */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-x-auto">
+            {/* Desktop Table Header */}
+            <div className="hidden min-w-[640px] sm:grid sm:grid-cols-[auto_2fr_1fr_1.5fr_1fr_auto] gap-3 bg-gradient-to-r from-slate-700 to-slate-800 text-white px-4 py-3 text-sm font-semibold sticky top-0">
+              <div className="text-center">S.No</div>
+              <div>Washroom Name</div>
+              <div>Zone/Type</div>
+              <div>Amenities</div>
+              <div className="text-center">Rating</div>
+              <div className="text-center">Actions</div>
+            </div>
+
+            {/* Table Body - Responsive */}
+            <div className="divide-y divide-slate-200 min-w-[320px]">
               {filteredList.length === 0 ? (
-                <div className="p-12 text-center">
+                <div className="p-8 text-center">
                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MapPin className="h-8 w-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-600 mb-2">No washrooms found</h3>
-                  <p className="text-slate-500">Try adjusting your filters or add a new washroom</p>
+                  <h3 className="text-lg font-semibold text-slate-600 mb-2">No washrooms found</h3>
+                  <p className="text-sm text-slate-500">Try adjusting your search filters</p>
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-200">
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Sr. No.</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Washroom Name</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Rating</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Amenities</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Zone</th>
-                      <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Created At</th>
-                      <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Status & Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredList.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-150"
-                      >
-                        <td className="py-4 px-6 text-sm text-slate-600 font-medium">
-                          {index + 1}
-                        </td>
-                        <td
-                          className="py-4 px-6 cursor-pointer hover:text-blue-600 transition-colors"
+                filteredList.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-1 sm:grid-cols-[auto_2fr_1fr_1.5fr_1fr_auto] gap-3 px-3 sm:px-4 py-4 hover:bg-slate-50 transition-colors items-center"
+                  >
+                    {/* Mobile Header - Shows on Small Screens */}
+                    <div className="sm:hidden flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-slate-700 text-white text-xs font-bold rounded">
+                          #{index + 1}
+                        </span>
+                        <h3
                           onClick={() => handleView(item.id)}
+                          className="font-bold text-slate-800 text-sm cursor-pointer hover:text-blue-600"
                         >
-                          <div className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer">
-                            {item?.name}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          {renderEmojiRating(item.averageRating, item.ratingCount)}
-                        </td>
-                        <td className="py-4 px-6">
-                          {renderAmenitiesBadge(item.options)}
-                        </td>
-                        <td className="py-4 px-6">
+                          {item?.name}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => setStatusModal({ open: true, location: item })}
+                        disabled={togglingStatus === item.id}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold shrink-0 ${(item.status === true || item.status === null)
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                          } disabled:opacity-50`}
+                      >
+                        {togglingStatus === item.id ? (
+                          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (item.status === true || item.status === null) ? (
+                          <Power className="w-3 h-3" />
+                        ) : (
+                          <PowerOff className="w-3 h-3" />
+                        )}
+                        {(item.status === true || item.status === null) ? 'Active' : 'Disabled'}
+                      </button>
+                    </div>
+
+                    {/* Desktop S.No */}
+                    <div className="hidden sm:flex justify-center">
+                      <span className="px-2 py-1 bg-slate-700 text-white text-sm font-bold rounded">
+                        {index + 1}
+                      </span>
+                    </div>
+
+                    {/* Desktop Name */}
+                    <div className="hidden sm:block">
+                      <div
+                        onClick={() => handleView(item.id)}
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                      >
+                        <p className="font-semibold text-slate-800 text-sm mb-1">{item?.name}</p>
+                        <p className="text-xs text-slate-500">
+                          Created: {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Zone/Type */}
+                    <div className="flex items-center gap-2">
+                      <span className="sm:hidden text-xs font-medium text-slate-600">Zone:</span>
+                      {item?.location_types?.name ? (
+                        <span className="inline-flex items-center gap-1 text-xs sm:text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
+                          <MapPin className="w-3 h-3" />
                           {item?.location_types?.name}
-                        </td>
-                        <td className="py-4 px-6 text-sm text-slate-600">
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center justify-center gap-2">
-                            {/* Status Button */}
-                            <button
-                              // onClick={() => handleToggleStatus(item)}
-                              onClick={() => setStatusModal({ open: true, location: item })}
-                              disabled={togglingStatus === item.id}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${(item.status === true || item.status === null)
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                              {togglingStatus === item.id ? (
-                                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                              ) : (item.status === true || item.status === null) ? (
-                                <Power className="w-3 h-3" />
-                              ) : (
-                                <PowerOff className="w-3 h-3" />
-                              )}
-                              {(item.status === true || item.status === null) ? 'Active' : 'Disabled'}
-                            </button>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">N/A</span>
+                      )}
+                    </div>
 
-                            {/* Navigate Icon */}
-                            <button
-                              onClick={() => handleViewLocation(item.latitude, item.longitude)}
-                              className="cursor-pointer p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors duration-150"
-                              title="Locate"
-                            >
-                              <Navigation className="h-4 w-4" />
-                            </button>
+                    {/* Amenities */}
+                    <div>
+                      <span className="sm:hidden text-xs font-medium text-slate-600 block mb-2">Amenities:</span>
+                      {renderAmenitiesBadge(item.options)}
+                    </div>
 
-                            {/* Actions Menu - Dropdown */}
+                    {/* Rating */}
+                    <div>
+                      <span className="sm:hidden text-xs font-medium text-slate-600 block mb-2">Rating:</span>
+                      <div className="flex justify-start sm:justify-center">
+                        {renderEmojiRating(item.averageRating, item.ratingCount)}
+                      </div>
+                    </div>
 
-                            <div className="relative" ref={actionsMenuOpen === item.id ? actionsMenuRef : null}>
-                              <button
-                                onClick={() => setActionsMenuOpen(actionsMenuOpen === item.id ? null : item.id)}
-                                className="cursor-pointer p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-150"
-                                title="More Actions"
-                              >
-                                {/* <Users className="h-4 w-4" /> */}
-                                <EllipsisVertical className="h-4 w-4" />
-                              </button>
+                    {/* Actions */}
+                    <div>
+                      <span className="sm:hidden text-xs font-medium text-slate-600 block mb-2">Actions:</span>
+                      <div className="flex items-center justify-start sm:justify-center gap-2 flex-wrap">
+                        {/* Desktop Status Toggle */}
+                        <button
+                          onClick={() => setStatusModal({ open: true, location: item })}
+                          disabled={togglingStatus === item.id}
+                          className={`hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${(item.status === true || item.status === null)
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                            } disabled:opacity-50`}
+                        >
+                          {togglingStatus === item.id ? (
+                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (item.status === true || item.status === null) ? (
+                            <>
+                              <Power className="w-3 h-3" />
+                              Active
+                            </>
+                          ) : (
+                            <>
+                              <PowerOff className="w-3 h-3" />
+                              Disabled
+                            </>
+                          )}
+                        </button>
 
-                              {/* ✅ Dropdown Menu */}
-                              {actionsMenuOpen === item.id && (
-                                // <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                                //   <button
-                                //     onClick={() => {
-                                //       router.push(`/assignments/cleaner?companyId=${companyId}&locationId=${item.id}&locationName=${encodeURIComponent(item.name)}`);
-                                //       setActionsMenuOpen(null);
-                                //     }}
-                                //     className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                //   >
-                                //     <Users className="h-4 w-4 text-blue-600" />
-                                //     View Cleaners
-                                //   </button>
-                                // </div>
+                        <button
+                          onClick={() => handleView(item.id)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors"
+                          title="View Details"
+                        >
+                          <MapPin className="w-3 h-3" />
+                          <span>View</span>
+                        </button>
 
-                                <LocationActionsMenu
-                                  item={item}
-                                  onClose={() => setActionsMenuOpen(null)}
-                                  onDelete={(location) => {
-                                    // Handle delete
-                                    setDeleteModal({ open: true, location });
-                                  }}
-                                  onEdit={(locationId) => {
-                                    // Handle edit
-                                    router.push(`/locations/${locationId}/edit`);
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        <button
+                          onClick={() => handleViewLocation(item.latitude, item.longitude)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Navigate"
+                        >
+                          <Navigation className="h-4 w-4" />
+                        </button>
+
+                        <div className="relative" ref={actionsMenuOpen === item.id ? actionsMenuRef : null}>
+                          <button
+                            onClick={() => setActionsMenuOpen(actionsMenuOpen === item.id ? null : item.id)}
+                            className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="More Actions"
+                          >
+                            <EllipsisVertical className="h-4 w-4" />
+                          </button>
+
+                          {actionsMenuOpen === item.id && (
+                            <LocationActionsMenu
+                              item={item}
+                              onClose={() => setActionsMenuOpen(null)}
+                              onDelete={(location) => {
+                                setDeleteModal({ open: true, location });
+                              }}
+                              onEdit={(locationId) => {
+                                router.push(`/locations/${locationId}/edit`);
+                              }}
+                            />
+                          )}
+                        </div>
+
+                        {/* Mobile Created Date */}
+                        <div className="sm:hidden w-full text-xs text-slate-500 pt-3 border-t border-slate-100 mt-3">
+                          Created: {new Date(item.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
-            </div>
-
-            <div className="bg-slate-50/30 px-6 py-4 border-t border-slate-200">
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span className="font-medium">
-                  Showing {filteredList.length} of {list.length} washrooms
-                </span>
-                <span>
-                  Last updated: {new Date().toLocaleTimeString()}
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* ✅ UPDATED: Amenities Modal with Blur Background */}
+          {/* Amenities Modal with Blur Background */}
           {amenitiesModal.open && (
             <div
               className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"

@@ -117,7 +117,7 @@ export const CleanerReviewApi = {
 
   getAllCleanerReviews: async (params = {}, company_id) => {
 
-    
+
     console.log('in get all cleaner review ', company_id)
     try {
       const queryParams = new URLSearchParams();
@@ -153,11 +153,17 @@ export const CleanerReviewApi = {
     }
   },
 
-  getReviewsByStatus: async (status, companyId) => {
+  getReviewsByStatus: async (status, companyId, date = null) => {
+    console.log('get review by status', status, companyId, date);
 
-    console.log('get review by stat', status, companyId)
     try {
-      const response = await axiosInstance.get(`/cleaner-reviews?status=${status}&company_id=${companyId}`);
+      let url = `/cleaner-reviews?status=${status}&company_id=${companyId}`;
+
+      if (date) {
+        url += `&date=${date}`;
+      }
+
+      const response = await axiosInstance.get(url);
       return {
         success: true,
         data: response.data,
@@ -255,4 +261,29 @@ export const CleanerReviewApi = {
     }
   },
 
+
+  updateReviewScore: async (reviewId, newScore) => {
+
+    try {
+      const response = await axiosInstance.patch(
+        `/cleaner-reviews/${reviewId}/score`,
+        {
+          score: newScore
+        }
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error updating score:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
 };
+
+

@@ -5,46 +5,80 @@ import {
   Filter,
   Download,
   FileText,
-  Table as TableIcon,
   Calendar,
   MapPin,
   RefreshCw,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import ReportsApi from "@/lib/api/reportsApi";
-import ReportTable from "./components/ReportTable";
-import { exportToPDF, exportToExcel } from "./components/ExportUtils";
+import ReportModal from "./components/ReportModal";
 import Loader from "@/components/ui/Loader";
-import { generateProfessionalExcel } from "@/lib/utils/excelExport";
 import { useSelector } from "react-redux";
+
+// ✅ Report type configurations
+const REPORT_TYPES = [
+  {
+    value: "daily_task",
+    label: "Daily Task Report",
+    description: "View cleaner tasks with AI scores and compliance",
+    endpoint: "daily-task",
+  },
+  {
+    value: "zone_wise",
+    label: "Zone-wise Report",
+    description: "Location-wise cleaner activity and scores",
+    endpoint: "zone-wise",
+  },
+  {
+    value: "ai_scoring",
+    label: "AI Scoring Report",
+    description: "Track the average AI hygiene score and improvement trend for each location.",
+    endpoint: "ai-scoring",
+  },
+  {
+    value: "cleaner_performance_summary",
+    label: "Cleaner Performance Summary",
+    description: "Aggregate performance metrics for cleaners.",
+    endpoint: "cleaner-performance-summary",
+  }
+];
+
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
-
-  // Filter states
-  const [zones, setZones] = useState([]);
-  const [selectedZone, setSelectedZone] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [reviewFilter, setReviewFilter] = useState("all");
-
-  // Data states
-  const [reportData, setReportData] = useState([]);
-  const [reportMetadata, setReportMetadata] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-
-
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
   const isPermitted = userRoleId === 1 || userRoleId === 2;
 
+  // ✅ Report type selection
+  const [selectedReportType, setSelectedReportType] = useState("daily_task");
 
-  // Fetch zones on mount
+  // ✅ Common filter states
+  const [zones, setZones] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [cleaners, setCleaners] = useState([]);
+
+  const [selectedZone, setSelectedZone] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedCleaner, setSelectedCleaner] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // ✅ Data states
+  const [reportData, setReportData] = useState([]);
+  const [reportMetadata, setReportMetadata] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  // ✅ Fetch dropdown data on mount
   useEffect(() => {
     if (companyId) {
       fetchZones();
+      fetchLocations();
+      fetchCleaners();
     }
   }, [companyId]);
 
@@ -56,11 +90,33 @@ export default function ReportsPage() {
       }
     } catch (error) {
       console.error("Error fetching zones:", error);
-      toast.error("Failed to load zones");
     }
   };
 
-  const fetchReport = async () => {
+  const fetchLocations = async () => {
+    try {
+      const response = await ReportsApi.getLocationsForReport(companyId);
+      if (response.success) {
+        setLocations(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    }
+  };
+
+  const fetchCleaners = async () => {
+    try {
+      const response = await ReportsApi.getCleanersForReport(companyId);
+      if (response.success) {
+        setCleaners(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching cleaners:", error);
+    }
+  };
+
+  // ✅ Generate report based on selected type
+  const generateReport = async () => {
     if (!companyId) {
       toast.error("Company ID is required");
       return;
@@ -68,85 +124,78 @@ export default function ReportsPage() {
 
     setIsLoading(true);
     try {
-      const params = {
+      const selectedReport = REPORT_TYPES.find(
+        (r) => r.value === selectedReportType
+      );
+
+      let effectiveStartDate = startDate;
+      let effectiveEndDate = endDate;
+      // Build params based on report type
+      let params = {
         company_id: companyId,
-        ...(selectedZone && { type_id: selectedZone }),
         ...(startDate && { start_date: startDate }),
         ...(endDate && { end_date: endDate }),
-        ...(reviewFilter !== "all" && { review_filter: reviewFilter }),
       };
 
-      const response = await ReportsApi.getZoneWiseReport(params);
+      if (selectedReportType === "daily_task") {
+        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        if (!effectiveStartDate) effectiveStartDate = today;
+        if (!effectiveEndDate) effectiveEndDate = today;
+      }
 
-      if (response.success) {
+      // Add report-specific filters
+      if (selectedReportType === "daily_task") {
+        params = {
+          ...params,
+          ...(selectedLocation && { location_id: selectedLocation }),
+          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+          ...(statusFilter !== "all" && { status_filter: statusFilter }),
+          ...(effectiveStartDate && { start_date: effectiveStartDate }),
+          ...(effectiveEndDate && { end_date: effectiveEndDate }),
+        };
+      } else if (selectedReportType === "zone_wise") {
+        params = {
+          ...params,
+          ...(selectedZone && { type_id: selectedZone }),
+          // ...(reviewFilter !== "all" && { review_filter: reviewFilter }), // ✅ Commented out
+        };
+      }
+
+      console.log("Generating report with params:", params);
+
+      const response = await ReportsApi.getReport(
+        selectedReport.endpoint,
+        params
+      );
+
+      if (response.success || response.status === "success") {
         setReportData(response.data);
         setReportMetadata(response.metadata);
+        setShowModal(true);
         toast.success("Report generated successfully!");
       } else {
         toast.error(response.error || "Failed to generate report");
       }
     } catch (error) {
-      console.error("Error fetching report:", error);
+      console.error("Error generating report:", error);
       toast.error("Failed to generate report");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleExportPDF = () => {
-    if (!reportData || reportData.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      exportToPDF(reportData, reportMetadata);
-      toast.success("PDF exported successfully!");
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      toast.error("Failed to export PDF");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportExcel = () => {
-    if (!reportData || reportData.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      exportToExcel(reportData, reportMetadata);
-      toast.success("Excel exported successfully!");
-    } catch (error) {
-      console.error("Error exporting Excel:", error);
-      toast.error("Failed to export Excel");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const handleReset = () => {
     setSelectedZone("");
+    setSelectedLocation("");
+    setSelectedCleaner("");
     setStartDate("");
     setEndDate("");
-    setReviewFilter("all");
+    setStatusFilter("all");
     setReportData([]);
     setReportMetadata(null);
+    setShowModal(false);
   };
 
-  const handleDownloadExcel = () => {
-    try {
-      generateProfessionalExcel(reportData, reportMetadata);
-      toast.success("Excel report downloaded successfully!");
-    } catch (error) {
-      console.error("Error downloading Excel:", error);
-      toast.error("Failed to download Excel report");
-    }
-  };
   return (
     <>
       <Toaster position="top-right" />
@@ -162,13 +211,46 @@ export default function ReportsPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-slate-800">
-                    Zone-wise Reports
+                    Reports Dashboard
                   </h1>
                   <p className="text-sm text-slate-500 mt-1">
-                    Generate and export detailed cleaner activity reports
+                    Generate and export detailed reports
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Report Type Selector */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                <FileText className="w-4 h-4 inline mr-1" />
+                Select Report Type
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedReportType}
+                  onChange={(e) => {
+                    setSelectedReportType(e.target.value);
+                    handleReset(); // Reset filters when changing report type
+                  }}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white pr-10"
+                >
+                  {REPORT_TYPES.map((report) => (
+                    <option key={report.value} value={report.value}>
+                      {report.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {
+                  REPORT_TYPES.find((r) => r.value === selectedReportType)
+                    ?.description
+                }
+              </p>
             </div>
           </div>
 
@@ -180,13 +262,12 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Zone Filter */}
-
-              {isPermitted && (
+              {/* Zone Filter - Only for Zone-wise report */}
+              {selectedReportType === "zone_wise" && isPermitted && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     <MapPin className="w-4 h-4 inline mr-1" />
-                    Zone / Location Hierarchy
+                    Zone / Location Type
                   </label>
                   <select
                     value={selectedZone}
@@ -202,6 +283,50 @@ export default function ReportsPage() {
                   </select>
                 </div>
               )}
+
+              {/* ✅ Location Filter - For Daily Task Report */}
+              {selectedReportType === "daily_task" && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Location / Washroom
+                  </label>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="">All Locations</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* ✅ Cleaner Filter - For Daily Task Report */}
+              {selectedReportType === "daily_task" && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Cleaner
+                  </label>
+                  <select
+                    value={selectedCleaner}
+                    onChange={(e) => setSelectedCleaner(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="">All Cleaners</option>
+                    {cleaners.map((cleaner) => (
+                      <option key={cleaner.id} value={cleaner.id}>
+                        {cleaner.name} {cleaner.phone && `(${cleaner.phone})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Start Date */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -230,28 +355,29 @@ export default function ReportsPage() {
                 />
               </div>
 
-              {/* Review Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <TableIcon className="w-4 h-4 inline mr-1" />
-                  Review Status
-                </label>
-                <select
-                  value={reviewFilter}
-                  onChange={(e) => setReviewFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value="all">All Locations</option>
-                  <option value="with_reviews">With Reviews Only</option>
-                  <option value="without_reviews">Without Reviews Only</option>
-                </select>
-              </div>
+              {/* ✅ Status Filter - For Daily Task Report */}
+              {selectedReportType === "daily_task" && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="ongoing">Ongoing</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 mt-6">
               <button
-                onClick={fetchReport}
+                onClick={generateReport}
                 disabled={isLoading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
@@ -275,39 +401,22 @@ export default function ReportsPage() {
                 <RefreshCw className="w-4 h-4" />
                 Reset Filters
               </button>
-
-              {reportData.length > 0 && (
-                <>
-                  <button
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ml-auto"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export PDF
-                  </button>
-
-                  <button
-                    onClick={handleDownloadExcel}
-                    disabled={isExporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export Excel
-                  </button>
-                </>
-              )}
             </div>
           </div>
 
-          {/* Report Table */}
-          {isLoading ? (
+          {/* Loading State */}
+          {isLoading && (
             <div className="flex justify-center items-center h-96 bg-white rounded-lg border border-slate-200">
-              <Loader size="large" color="#3b82f6" message="Generating report..." />
+              <Loader
+                size="large"
+                color="#3b82f6"
+                message="Generating report..."
+              />
             </div>
-          ) : reportData.length > 0 ? (
-            <ReportTable data={reportData} metadata={reportMetadata} />
-          ) : (
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !showModal && (
             <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
               <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-500 text-lg">No report generated yet</p>
@@ -318,6 +427,16 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
+
+      {/* ✅ Report Modal */}
+      {showModal && reportData && reportMetadata && (
+        <ReportModal
+          reportType={selectedReportType}
+          data={reportData}
+          metadata={reportMetadata}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </>
   );
 }

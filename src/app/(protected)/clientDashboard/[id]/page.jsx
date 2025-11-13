@@ -36,6 +36,16 @@ const Rating = ({ value }) => {
   );
 };
 
+
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+
 export default function ClientDashboard() {
   // State to hold all the dynamic dashboard data
   const [statsData, setStatsData] = useState({
@@ -99,11 +109,12 @@ export default function ClientDashboard() {
     }
 
     const fetchDashboardData = async () => {
+      const todayDate = getTodayDate();
       try {
         const [locationsRes, ongoingRes, completedRes, usersRes] = await Promise.all([
           LocationsApi.getAllLocations(companyId),
-          CleanerReviewApi.getReviewsByStatus("ongoing", companyId),
-          CleanerReviewApi.getReviewsByStatus("completed", companyId),
+          CleanerReviewApi.getReviewsByStatus("ongoing", companyId, todayDate),
+          CleanerReviewApi.getReviewsByStatus("completed", companyId, todayDate),
           UsersApi.getAllUsers(companyId), // Fetch all users
           CleanerReviewApi.getAllCleanerReviews(companyId),
         ]);

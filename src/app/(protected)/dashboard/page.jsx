@@ -38,6 +38,7 @@ export default function DashboardPage() {
     users: 0,
     cleaner: 0
   });
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -128,6 +129,13 @@ export default function DashboardPage() {
       count: counts.supervisor,
       href: "/role/supervisor",
       borderColor: "border-purple-500"
+    }
+    ,
+    {
+      label: "Score Management",
+      count: "-",
+      href: "/score-management",
+      borderColor: "border-magenta-500"
     }
     // {
     //   label: "Users",

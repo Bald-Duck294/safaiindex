@@ -10,26 +10,19 @@ import { CompanyApi } from "../lib/api/companyApi";
 const Header = ({ pageTitle }) => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const params = useParams(); // For dynamic routes like /clientDashboard/[id]
-  const searchParams = useSearchParams(); // For query params like ?companyId=87
+  const params = useParams();
+  const searchParams = useSearchParams();
 
-  // Get the user object from the Redux store
   const { user } = useSelector((state) => state.auth);
 
-  // State for company information
   const [company, setCompany] = useState(null);
   const [loadingCompany, setLoadingCompany] = useState(false);
 
-  // ✅ Get company_id from BOTH sources (params OR searchParams)
+  // Get company_id from BOTH sources (params OR searchParams)
   const getCompanyId = () => {
-
     const queryCompanyId = searchParams.get('companyId');
 
-    // console.log("cope query params", queryCompanyId)
-    // console.log("both paras ", Boolean(params && queryCompanyId))
-    // Priority 1: Check dynamic route parameter (e.g., /clientDashboard/17)
     if (params && queryCompanyId) {
-      // console.log("returned company id ")
       return queryCompanyId;
     }
 
@@ -37,41 +30,28 @@ const Header = ({ pageTitle }) => {
       return params.id;
     }
 
-    // Priority 2: Check query parameter (e.g., ?companyId=87)
     if (queryCompanyId) {
       return queryCompanyId;
     }
 
-
-
-    // No company ID found
     return null;
   };
 
   const companyId = getCompanyId();
 
-  // console.log("Company ID from URL:", companyId);
-  // console.log("Params (dynamic):", params);
-  // console.log("Search Params (query):", searchParams.get('companyId'));
-
   // Fetch company information when companyId changes
   useEffect(() => {
-
     if (!companyId || companyId === 'null' || companyId === null) {
-      // console.log('Skipping fetch - companyId not ready:', companyId);
       setCompany(null);
       return;
     }
 
     const fetchCompany = async () => {
-      // console.log('Fetching company with ID:', companyId);
-
       try {
         setLoadingCompany(true);
         const response = await CompanyApi.getCompanyById(companyId);
 
         if (response.success) {
-          // console.log('✅ Company fetched successfully:', response.data.name);
           setCompany(response.data);
         } else {
           console.error('❌ Failed to fetch company:', response.error);
@@ -116,56 +96,70 @@ const Header = ({ pageTitle }) => {
 
   const userRole = getRoleText();
 
-  // Function to get header title - EITHER company name OR dashboard
+  // ✅ Smart truncation: Show first and last characters for very long names
+  const truncateCompanyName = (name, maxLength = 40) => {
+    if (!name || name.length <= maxLength) return name;
+
+    const firstPart = name.substring(0, Math.floor(maxLength / 2) - 2);
+    const lastPart = name.substring(name.length - Math.floor(maxLength / 2) + 2);
+
+    return `${firstPart}...${lastPart}`;
+  };
+
+  // ✅ Function to get header title - EITHER company name OR dashboard
   const getHeaderTitle = () => {
-    // If companyId exists, show company name or loading
     if (companyId) {
       if (loadingCompany) {
         return (
-          <div className="flex items-center space-x-2">
-            <Building className="w-5 h-5 text-slate-600 animate-pulse" />
-            <span>Loading...</span>
-          </div>
+          <>
+            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 animate-pulse flex-shrink-0" />
+            <span className="truncate">Loading...</span>
+          </>
         );
       }
 
       if (company) {
         return (
-          <div className="flex items-center space-x-2">
-            <Building className="w-5 h-5 text-blue-600" />
-            <span>{company.name}</span>
-          </div>
+          <>
+            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+            <span
+              className="truncate"
+              title={company.name}
+            >
+              {truncateCompanyName(company.name)}
+            </span>
+          </>
         );
       }
 
-      // Fallback if company fetch failed
       return (
-        <div className="flex items-center space-x-2">
-          <Building className="w-5 h-5 text-slate-600" />
-          <span>Company #{companyId}</span>
-        </div>
+        <>
+          <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 flex-shrink-0" />
+          <span className="truncate">Loading...</span>
+        </>
       );
     }
 
-    // No companyId - show Dashboard
-    return "Dashboard";
+    return <span className="truncate">Dashboard</span>;
   };
 
   return (
-    <header className="h-[6.7rem] bg-white border-b border-slate-200 flex items-center justify-between px-6">
-      {/* Header Title - EITHER Company Name OR Dashboard */}
-      <h2 className="text-xl font-semibold text-slate-800 pl-[2.3rem]">
-        {getHeaderTitle()}
-      </h2>
+    <header className="h-16 bg-white shrink-0 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 lg:px-8">
+      {/* Header Title - Centered on mobile, Left-aligned on desktop */}
+      <div className="flex-1 flex items-center justify-center md:justify-start min-w-0 md:pr-4">
+        <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-slate-800 flex items-center gap-2 max-w-full">
+          {getHeaderTitle()}
+        </h2>
+      </div>
 
-      {/* User Info and Logout Section */}
-      <div className="flex items-center space-x-4">
-        {/* User Name and Role - Hidden on screens smaller than 650px */}
-        <div className="text-right hidden sm:block">
-          <span className="font-semibold text-sm text-slate-700">
+      {/* User Info and Logout Section - Right aligned */}
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0 absolute right-4 md:right-6 lg:right-8 md:relative md:right-0">
+        {/* User Name and Role */}
+        <div className="text-right hidden md:block">
+          <span className="font-semibold text-xs md:text-sm text-slate-700 block truncate max-w-[120px] lg:max-w-[180px]">
             {user?.name || "Guest"}
           </span>
-          <span className="block text-xs text-red-600 font-bold uppercase tracking-wider">
+          <span className="block text-[10px] md:text-xs text-red-600 font-bold uppercase tracking-wider">
             {userRole}
           </span>
         </div>
@@ -173,12 +167,12 @@ const Header = ({ pageTitle }) => {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="px-4 py-2 text-sm font-medium text-white bg-slate-800 
+          className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 
           rounded-lg hover:bg-slate-900 
-          transition-colors flex items-center gap-2 cursor-pointer"
+          transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
         >
-          <LogOut size={16} />
-          <span>Logout</span>
+          <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
     </header>

@@ -215,29 +215,27 @@ export default function ReviewDetails() {
 
             {/* ✅ Improved Responsive Header */}
             <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-                <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
-                    Cleaning Review -{review?.cleaner_user?.name}
+              {/* Modify your existing h1 section */}
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                    Cleaning Review - {review?.cleaner_user?.name}
                   </h1>
-                  <p className="flex items-center gap-2 text-slate-600 text-sm sm:text-base">
-                    <MapPin size={16} />
-                    <span className="break-words">{review?.location?.name || "No address provided"}</span>
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap ${review?.status === "completed"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-800"
-                    }`}
-                >
-                  {review?.status === "completed" ? (
-                    <CheckCircle size={16} />
-                  ) : (
-                    <Clock size={16} />
+
+                  {/* Inline Score */}
+                  {review.score !== null && review.score !== undefined && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm font-bold ${review.score >= 8 ? 'bg-green-500 text-white' :
+                      review.score >= 5 ? 'bg-orange-500 text-white' :
+                        'bg-red-500 text-white'
+                      }`}>
+                      {review.score}/10
+                    </span>
                   )}
-                  {String(review?.status || '').toUpperCase()}
-                </span>
+                </div>
+                <p className="flex items-center gap-2 mb-4 text-slate-600 text-sm sm:text-base">
+                  <MapPin size={16} />
+                  <span className="break-words">{review?.location?.name || "No address provided"}</span>
+                </p>
               </div>
 
               {/* ✅ Responsive Cleaner Details */}
@@ -328,10 +326,10 @@ export default function ReviewDetails() {
                     Task Details
                   </h3>
                   <div className="space-y-2 text-sm text-slate-600">
-                    <p><strong>Location ID:</strong> {review.location_id || 'N/A'}</p>
+                    {/* <p><strong>Location ID:</strong> {review.location_id || 'N/A'}</p>
                     {review.company_id && (
                       <p><strong>Company ID:</strong> {review.company_id}</p>
-                    )}
+                    )} */}
                     {review.tasks && Array.isArray(review.tasks) && review.tasks.length > 0 && (
                       <div>
                         <p className="font-semibold mb-2">Tasks Completed:</p>

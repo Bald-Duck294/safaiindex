@@ -251,6 +251,13 @@ const getCompletionTime = (startTime, endTime) => {
   return `Completed in ${minutes}m`;
 };
 
+const getScoreColor = (score) => {
+  if (score >= 8) return "bg-green-100 text-green-700 border-green-300";
+  if (score >= 5) return "bg-orange-100 text-orange-700 border-orange-300";
+  return "bg-red-100 text-red-700 border-red-300";
+};
+
+
 // Skeleton component for loading state
 const ReviewCardSkeleton = () => (
   <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 animate-pulse">
@@ -462,6 +469,19 @@ export default function ReviewContent({ companyId }) {
                               </span>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* Score - Dot Indicator */}
+                      {review.score !== null && review.score !== undefined && (
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <div className={`w-2 h-2 rounded-full ${review.score >= 8 ? 'bg-green-500' :
+                              review.score >= 5 ? 'bg-orange-500' :
+                                'bg-red-500'
+                            }`}></div>
+                          <span className="text-xs text-slate-600">
+                           Curr Score: <span className="font-semibold text-slate-800">{review.score}/10</span>
+                          </span>
                         </div>
                       )}
 
