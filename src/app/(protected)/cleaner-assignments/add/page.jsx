@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import { UsersApi } from "@/lib/api/usersApi";
-// import  LocationsApi  from '../../lib/api/LocationApi'
 import LocationsApi from "@/lib/api/LocationApi";
 import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
@@ -15,19 +14,24 @@ import {
   Search,
   ChevronDown,
   X,
+  CheckSquare,
+  Square,
+  Users,
+  AlertCircle,
+  Loader,
 } from "lucide-react";
-// import { useRouter } from "next/navigation";
 
 const AddAssignmentPage = () => {
   // --- STATE MANAGEMENT ---
-  const [cleanerUserId, setCleanerUserId] = useState("");
+  const [assignmentMode, setAssignmentMode] = useState("multi");
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
-  const [status, setStatus] = useState("assigned");
-
-  // const router = useRouter();
+  const [singleUser, setSingleUser] = useState("");
 
   const [allUsers, setAllUsers] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [userAssignedLocations, setUserAssignedLocations] = useState([]);
 
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [locationSearchTerm, setLocationSearchTerm] = useState("");
@@ -35,36 +39,30 @@ const AddAssignmentPage = () => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingAssignments, setIsFetchingAssignments] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const { user: loggedInUser } = useSelector((state) => state.auth);
-
   const { companyId } = useCompanyId();
-  //   const companyId = loggedInUser?.company_id;
-  // const companyId = 2;
 
   const userDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
 
   // --- DATA FETCHING ---
-
   useEffect(() => {
-    console.log("entered use effect");
     if (!companyId) return;
 
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        console.log("in try block ");
         const userRes = await UsersApi.getAllUsers(companyId);
-        console.log("✅ userRes", userRes);
-
         const locationRes = await LocationsApi.getAllLocations(companyId);
-        console.log("✅ locationRes", locationRes);
 
         if (userRes.success) setAllUsers(userRes.data || []);
         if (locationRes.success) setAllLocations(locationRes.data || []);
       } catch (err) {
         console.error("❌ Error while fetching:", err);
+        toast.error("Failed to load data");
       } finally {
         setIsLoading(false);
       }
@@ -73,9 +71,85 @@ const AddAssignmentPage = () => {
     fetchData();
   }, [companyId]);
 
-  // --- EVENT HANDLERS for closing dropdowns on outside click ---
+  // --- FETCH ASSIGNED LOCATIONS FOR SINGLE USER MODE ---
   useEffect(() => {
-    console.log("in the normal use effect");
+    if (assignmentMode === "single" && singleUser) {
+      fetchUserAssignments(singleUser);
+    } else {
+      setAvailableLocations(allLocations);
+    }
+  }, [singleUser, assignmentMode, allLocations]);
+
+  const fetchUserAssignments = async (userId) => {
+    setIsFetchingAssignments(true);
+    try {
+      const response = await AssignmentsApi.getAssignmentsByCleanerId(
+        userId,
+        companyId
+      );
+
+      if (response.success) {
+        const assignedLocationIds = response.data.map((a) => a.location_id);
+        setUserAssignedLocations(assignedLocationIds);
+
+        const unassignedLocations = allLocations.filter(
+          (loc) => !assignedLocationIds.includes(loc.id)
+        );
+        setAvailableLocations(unassignedLocations);
+      }
+    } catch (error) {
+      console.error("Error fetching user assignments:", error);
+      toast.error("Failed to load user assignments");
+      setAvailableLocations(allLocations);
+    } finally {
+      setIsFetchingAssignments(false);
+    }
+  };
+
+  // --- VALIDATE ASSIGNMENTS BEFORE SUBMIT ---
+  const validateAssignments = async () => {
+    setIsValidating(true);
+    const conflicts = [];
+
+    try {
+      const usersToCheck = assignmentMode === "multi" 
+        ? selectedUsers 
+        : [allUsers.find(u => u.id === singleUser)];
+
+      // Check each user's existing assignments
+      for (const user of usersToCheck) {
+        const response = await AssignmentsApi.getAssignmentsByCleanerId(
+          user.id,
+          companyId
+        );
+
+        if (response.success) {
+          const assignedLocationIds = response.data.map((a) => a.location_id);
+          
+          // Find conflicts
+          const userConflicts = selectedLocations.filter((loc) =>
+            assignedLocationIds.includes(loc.id)
+          );
+
+          if (userConflicts.length > 0) {
+            conflicts.push({
+              userName: user.name,
+              locations: userConflicts.map((loc) => loc.name),
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error validating assignments:", error);
+    } finally {
+      setIsValidating(false);
+    }
+
+    return conflicts;
+  };
+
+  // --- CLOSE DROPDOWNS ON OUTSIDE CLICK ---
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         userDropdownRef.current &&
@@ -94,6 +168,33 @@ const AddAssignmentPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // --- HANDLERS ---
+  const handleModeToggle = () => {
+    const newMode = assignmentMode === "multi" ? "single" : "multi";
+    setAssignmentMode(newMode);
+
+    setSelectedUsers([]);
+    setSingleUser("");
+    setSelectedLocations([]);
+    setUserSearchTerm("");
+    setLocationSearchTerm("");
+  };
+
+  const handleUserSelect = (user) => {
+    if (assignmentMode === "multi") {
+      setSelectedUsers((prev) =>
+        prev.some((u) => u.id === user.id)
+          ? prev.filter((u) => u.id !== user.id)
+          : [...prev, user]
+      );
+    } else {
+      setSingleUser(user.id);
+      setUserSearchTerm(user.name);
+      setIsUserDropdownOpen(false);
+      setSelectedLocations([]);
+    }
+  };
+
   const handleLocationSelect = (location) => {
     setSelectedLocations((prev) =>
       prev.some((loc) => loc.id === location.id)
@@ -102,142 +203,555 @@ const AddAssignmentPage = () => {
     );
   };
 
+  const handleSelectAllLocations = () => {
+    const locationsToUse =
+      assignmentMode === "single" ? availableLocations : allLocations;
+
+    if (selectedLocations.length === locationsToUse.length) {
+      setSelectedLocations([]);
+    } else {
+      setSelectedLocations(locationsToUse);
+    }
+  };
+
+  const handleSelectAllUsers = () => {
+    if (selectedUsers.length === allUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(allUsers);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!cleanerUserId || selectedLocations.length === 0) {
-      return toast.error("Please select a cleaner and at least one location.");
+
+    // Validation
+    if (assignmentMode === "multi") {
+      if (selectedUsers.length === 0 || selectedLocations.length === 0) {
+        return toast.error("Please select at least one user and one location.");
+      }
+    } else {
+      if (!singleUser || selectedLocations.length === 0) {
+        return toast.error("Please select a user and at least one location.");
+      }
     }
+
+    // Check for conflicts
+    const conflicts = await validateAssignments();
+
+    if (conflicts.length > 0) {
+      // Create detailed error message
+      const errorMessages = conflicts.map((conflict) => {
+        const locationList = conflict.locations.join(", ");
+        return `• ${conflict.userName} is already assigned to: ${locationList}`;
+      });
+
+      // Show detailed error in a custom toast
+      toast.error(
+        (t) => (
+          <div className="max-w-md">
+            <div className="flex items-start gap-2 mb-2">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800 mb-1">
+                  Assignment Conflicts Found
+                </p>
+                <div className="text-sm text-red-700 space-y-1">
+                  {errorMessages.map((msg, idx) => (
+                    <p key={idx}>{msg}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="mt-2 w-full px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        ),
+        {
+          duration: Infinity, // Don't auto-dismiss
+          style: {
+            maxWidth: "500px",
+          },
+        }
+      );
+
+      return; // Don't proceed with submission
+    }
+
     setIsLoading(true);
 
-    const assignmentData = {
-      cleaner_user_id: cleanerUserId,
-      location_ids: selectedLocations.map((loc) => loc.id), // Send only IDs
-      status: status,
-      company_id: companyId,
-    };
+    try {
+      let successCount = 0;
+      let failureCount = 0;
+      const errors = [];
 
-    const response = await AssignmentsApi.createAssignment(assignmentData);
+      if (assignmentMode === "multi") {
+        // Multi mode: Create assignments for multiple users and locations
+        const promises = selectedUsers.map(async (user) => {
+          try {
+            const response = await AssignmentsApi.createAssignment({
+              cleaner_user_id: user.id,
+              location_ids: selectedLocations.map((loc) => loc.id),
+              status: "assigned",
+              company_id: companyId,
+            });
 
-    if (response.success) {
-      toast.success(
-        response.data.message || "Assignments created successfully!"
+            if (response.success) {
+              successCount += response.data?.data?.created || 0;
+              return { success: true, user: user.name };
+            } else {
+              failureCount++;
+              errors.push(`${user.name}: ${response.error}`);
+              return { success: false, user: user.name, error: response.error };
+            }
+          } catch (error) {
+            failureCount++;
+            errors.push(`${user.name}: ${error.message}`);
+            return { success: false, user: user.name, error: error.message };
+          }
+        });
+
+        await Promise.all(promises);
+      } else {
+        // Single mode
+        const response = await AssignmentsApi.createAssignment({
+          cleaner_user_id: singleUser,
+          location_ids: selectedLocations.map((loc) => loc.id),
+          status: "assigned",
+          company_id: companyId,
+        });
+
+        if (response.success) {
+          successCount = response.data?.data?.created || 0;
+        } else {
+          failureCount++;
+          errors.push(response.error);
+        }
+      }
+
+      // Show results
+      if (successCount > 0 && failureCount === 0) {
+        toast.success(
+          `Successfully created ${successCount} assignment${
+            successCount !== 1 ? "s" : ""
+          }!`
+        );
+
+        // Reset form and redirect
+        setSelectedUsers([]);
+        setSingleUser("");
+        setSelectedLocations([]);
+        setUserSearchTerm("");
+        setLocationSearchTerm("");
+
+        setTimeout(() => {
+          window.location.href = `/cleaner-assignments?companyId=${companyId}`;
+        }, 1000);
+      } else if (successCount > 0 && failureCount > 0) {
+        toast(
+          (t) => (
+            <div className="max-w-md">
+              <div className="flex items-start gap-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-yellow-800 mb-1">
+                    Partial Success
+                  </p>
+                  <p className="text-sm text-yellow-700 mb-2">
+                    Created {successCount} assignment{successCount !== 1 ? "s" : ""}, but {failureCount} failed:
+                  </p>
+                  <div className="text-sm text-yellow-700 space-y-1">
+                    {errors.slice(0, 3).map((error, idx) => (
+                      <p key={idx}>• {error}</p>
+                    ))}
+                    {errors.length > 3 && (
+                      <p>• ...and {errors.length - 3} more</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="mt-2 w-full px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            style: { maxWidth: "500px" },
+          }
+        );
+      } else {
+        // All failed
+        toast.error(
+          (t) => (
+            <div className="max-w-md">
+              <div className="flex items-start gap-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-red-800 mb-1">
+                    Assignment Failed
+                  </p>
+                  <div className="text-sm text-red-700 space-y-1">
+                    {errors.slice(0, 3).map((error, idx) => (
+                      <p key={idx}>• {error}</p>
+                    ))}
+                    {errors.length > 3 && (
+                      <p>• ...and {errors.length - 3} more errors</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="mt-2 w-full px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            style: { maxWidth: "500px" },
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error creating assignments:", error);
+      toast.error(
+        (t) => (
+          <div>
+            <p className="font-semibold mb-1">Failed to create assignments</p>
+            <p className="text-sm">{error.message}</p>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="mt-2 w-full px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        ),
+        { duration: Infinity }
       );
-      setCleanerUserId("");
-      setSelectedLocations([]);
-      setUserSearchTerm("");
-      setTimeout(() => {
-        window.location.href = `/cleaner-assignments?companyId=${companyId}`;
-      }, 800);
-    } else {
-      toast.error(response.error || "Failed to create assignments.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // --- FILTERING LOGIC ---
   const filteredUsers = allUsers.filter((user) =>
     user.name.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
-  const filteredLocations = allLocations.filter((loc) =>
+
+  const filteredLocations = (
+    assignmentMode === "single" ? availableLocations : allLocations
+  ).filter((loc) =>
     loc.name.toLowerCase().includes(locationSearchTerm.toLowerCase())
   );
 
-  const selectedUserName =
-    allUsers.find((u) => u.id === cleanerUserId)?.name || "Select a cleaner...";
+  const locationsToShow =
+    assignmentMode === "single" ? availableLocations : allLocations;
+  const allLocationsSelected =
+    selectedLocations.length === locationsToShow.length &&
+    locationsToShow.length > 0;
+  const allUsersSelected =
+    selectedUsers.length === allUsers.length && allUsers.length > 0;
 
   // --- RENDER ---
   return (
     <>
-      <Toaster position="top-center" />
-      <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-200/60">
-          <div className="flex items-center gap-4 mb-8">
-            <ClipboardPlus className="w-8 h-8 text-indigo-600" />
-            <h1 className="text-3xl font-bold text-slate-800">
-              Assign Locations
-            </h1>
+      <Toaster position="top-right" />
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+        <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
+            <div className="flex items-center gap-3 md:gap-4">
+              <ClipboardPlus className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-indigo-600 flex-shrink-0" />
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800">
+                  Create Assignments
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
+                  Assign locations to cleaners
+                </p>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* 1. Select Cleaner with Search */}
-            <div ref={userDropdownRef}>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Select Cleaner
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="w-full flex justify-between items-center text-left px-4 py-2 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg"
+          {/* Mode Toggle - SMALLER VERSION */}
+          <div className="mb-6 md:mb-8 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex-1">
+                <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-1">
+                  Assignment Mode
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {assignmentMode === "multi"
+                    ? "Assign multiple users to multiple locations"
+                    : "Assign single user to unassigned locations only"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleModeToggle}
+                className={`relative inline-flex h-8 w-16 sm:h-9 sm:w-[4.5rem] items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
+                  assignmentMode === "multi" ? "bg-indigo-600" : "bg-green-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-transform shadow-sm ${
+                    assignmentMode === "multi"
+                      ? "translate-x-1"
+                      : "translate-x-8 sm:translate-x-9"
+                  }`}
                 >
-                  <span className="truncate">{selectedUserName}</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform ${isUserDropdownOpen ? "rotate-180" : ""
+                  {assignmentMode === "multi" ? (
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 m-1 text-indigo-600" />
+                  ) : (
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 m-1 text-green-600" />
+                  )}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {/* User Selection - Multi or Single based on mode */}
+            {assignmentMode === "multi" ? (
+              // Multi-select Users
+              <div ref={userDropdownRef}>
+                <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
+                  Select Users ({selectedUsers.length} selected)
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    className="w-full flex justify-between items-center text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 bg-slate-50 border border-slate-300 rounded-lg hover:border-indigo-400 transition-colors"
+                  >
+                    <span className="truncate">
+                      {selectedUsers.length > 0
+                        ? `${selectedUsers.length} user${
+                            selectedUsers.length !== 1 ? "s" : ""
+                          } selected`
+                        : "Click to select users..."}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                        isUserDropdownOpen ? "rotate-180" : ""
                       }`}
-                  />
-                </button>
-                {isUserDropdownOpen && (
-                  <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 flex flex-col">
-                    <div className="p-2 border-b">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                          type="text"
-                          placeholder="Search for a cleaner..."
-                          value={userSearchTerm}
-                          onChange={(e) => setUserSearchTerm(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 text-sm border-slate-300 rounded-md"
-                        />
+                    />
+                  </button>
+
+                  {isUserDropdownOpen && (
+                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-64 sm:max-h-80 flex flex-col">
+                      {/* Search */}
+                      <div className="p-2 sm:p-3 border-b border-slate-200">
+                        <div className="relative">
+                          <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Search users..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Select All Button */}
+                      <div className="p-2 border-b border-slate-200">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllUsers}
+                          className="w-full flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                        >
+                          {allUsersSelected ? (
+                            <>
+                              <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                              <span>Deselect All</span>
+                            </>
+                          ) : (
+                            <>
+                              <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                              <span>Select All ({allUsers.length})</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* User List */}
+                      <div className="overflow-y-auto p-2">
+                        {filteredUsers.length > 0 ? (
+                          filteredUsers.map((user) => (
+                            <label
+                              key={user.id}
+                              className="flex items-center p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer group"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedUsers.some(
+                                  (u) => u.id === user.id
+                                )}
+                                onChange={() => handleUserSelect(user)}
+                                className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">
+                                {user.name}
+                              </span>
+                            </label>
+                          ))
+                        ) : (
+                          <p className="text-xs sm:text-sm text-slate-500 text-center py-4">
+                            No users found
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="overflow-y-auto p-2">
-                      {filteredUsers.map((user) => (
-                        <div
-                          key={user.id}
-                          onClick={() => {
-                            setCleanerUserId(user.id);
-                            setUserSearchTerm(user.name);
-                            setIsUserDropdownOpen(false);
-                          }}
-                          className="p-2 rounded-md hover:bg-slate-100 cursor-pointer text-sm text-slate-700"
+                  )}
+                </div>
+
+                {/* Selected Users Display */}
+                {selectedUsers.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
+                    {selectedUsers.map((user) => (
+                      <span
+                        key={user.id}
+                        className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium"
+                      >
+                        <span className="truncate max-w-[150px]">{user.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleUserSelect(user)}
+                          className="hover:text-indigo-900 flex-shrink-0"
                         >
-                          {user.name}
-                        </div>
-                      ))}
-                    </div>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              // Single User Select
+              <div ref={userDropdownRef}>
+                <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
+                  Select User
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    className="w-full flex justify-between items-center text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 bg-slate-50 border border-slate-300 rounded-lg hover:border-green-400 transition-colors"
+                  >
+                    <span className="truncate">
+                      {singleUser
+                        ? allUsers.find((u) => u.id === singleUser)?.name ||
+                          "Select a user..."
+                        : "Select a user..."}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                        isUserDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-            {/* 2. Select Locations (Multi-select with Search) */}
+                  {isUserDropdownOpen && (
+                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-64 sm:max-h-80 flex flex-col">
+                      <div className="p-2 sm:p-3 border-b border-slate-200">
+                        <div className="relative">
+                          <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Search users..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="overflow-y-auto p-2">
+                        {filteredUsers.map((user) => (
+                          <div
+                            key={user.id}
+                            onClick={() => handleUserSelect(user)}
+                            className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer text-xs sm:text-sm transition-colors ${
+                              singleUser === user.id
+                                ? "bg-green-50 text-green-700 font-medium"
+                                : "text-slate-700"
+                            }`}
+                          >
+                            {user.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Location Selection */}
             <div ref={locationDropdownRef}>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
                 Select Locations ({selectedLocations.length} selected)
+                {assignmentMode === "single" && singleUser && (
+                  <span className="ml-2 text-xs text-slate-500">
+                    ({availableLocations.length} unassigned)
+                  </span>
+                )}
               </label>
+
+              {assignmentMode === "single" && !singleUser && (
+                <p className="text-xs sm:text-sm text-amber-600 mb-2">
+                  Please select a user first to see available locations
+                </p>
+              )}
+
+              {isFetchingAssignments && (
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-indigo-600 mb-2">
+                  <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                  <span>Loading available locations...</span>
+                </div>
+              )}
+
               <div className="relative">
                 <button
                   type="button"
                   onClick={() =>
                     setIsLocationDropdownOpen(!isLocationDropdownOpen)
                   }
-                  className="w-full flex justify-between items-center text-left px-4 py-2 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg"
+                  disabled={assignmentMode === "single" && !singleUser}
+                  className="w-full flex justify-between items-center text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 bg-slate-50 border border-slate-300 rounded-lg hover:border-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>
+                  <span className="truncate">
                     {selectedLocations.length > 0
-                      ? `${selectedLocations.length} locations selected`
-                      : "Click to select..."}
+                      ? `${selectedLocations.length} location${
+                          selectedLocations.length !== 1 ? "s" : ""
+                        } selected`
+                      : "Click to select locations..."}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform ${isLocationDropdownOpen ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                      isLocationDropdownOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
+
                 {isLocationDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 flex flex-col">
-                    <div className="p-2 border-b">
+                  <div className="absolute z-10 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-64 sm:max-h-80 flex flex-col">
+                    {/* Search */}
+                    <div className="p-2 sm:p-3 border-b border-slate-200">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
                         <input
                           type="text"
                           placeholder="Search locations..."
@@ -245,64 +759,121 @@ const AddAssignmentPage = () => {
                           onChange={(e) =>
                             setLocationSearchTerm(e.target.value)
                           }
-                          className="w-full pl-9 pr-4 py-1.5 text-sm border-slate-300 rounded-md"
+                          className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                     </div>
+
+                    {/* Select All Button */}
+                    <div className="p-2 border-b border-slate-200">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllLocations}
+                        className="w-full flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                      >
+                        {allLocationsSelected ? (
+                          <>
+                            <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span>Deselect All</span>
+                          </>
+                        ) : (
+                          <>
+                            <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span>Select All ({locationsToShow.length})</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Location List */}
                     <div className="overflow-y-auto p-2">
-                      {filteredLocations.map((location) => (
-                        <label
-                          key={location.id}
-                          className="flex items-center p-2 rounded-md hover:bg-slate-100 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedLocations.some(
-                              (loc) => loc.id === location.id
-                            )}
-                            onChange={() => handleLocationSelect(location)}
-                            className="h-4 w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
-                          />
-                          <span className="ml-3 text-sm text-slate-700">
-                            {location.name}
-                          </span>
-                        </label>
-                      ))}
+                      {filteredLocations.length > 0 ? (
+                        filteredLocations.map((location) => (
+                          <label
+                            key={location.id}
+                            className="flex items-center p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer group"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedLocations.some(
+                                (loc) => loc.id === location.id
+                              )}
+                              onChange={() => handleLocationSelect(location)}
+                              className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                            />
+                            <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">
+                              {location.name}
+                            </span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs sm:text-sm text-slate-500 text-center py-4">
+                          {assignmentMode === "single" && singleUser
+                            ? "All locations are already assigned to this user"
+                            : "No locations found"}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* 3. Select Status */}
-            <div>
-              <label
-                htmlFor="status"
-                className="block text-sm font-semibold text-slate-700 mb-2"
-              >
-                Set Status
-              </label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-2 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="assigned">Assigned</option>
-                <option value="unassigned">Unassigned</option>
-              </select>
+              {/* Selected Locations Display */}
+              {selectedLocations.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
+                  {selectedLocations.map((location) => (
+                    <span
+                      key={location.id}
+                      className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium"
+                    >
+                      <span className="truncate max-w-[150px]">{location.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleLocationSelect(location)}
+                        className="hover:text-indigo-900 flex-shrink-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 border-t border-slate-200">
+            <div className="pt-4 sm:pt-6 border-t border-slate-200">
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full px-4 py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                disabled={isLoading || isValidating}
+                className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  assignmentMode === "multi"
+                    ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+                    : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                }`}
               >
-                {isLoading
-                  ? "Processing..."
-                  : `Create ${selectedLocations.length} Assignments`}
+                {isValidating ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span>Validating...</span>
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span>Creating Assignments...</span>
+                  </>
+                ) : assignmentMode === "multi" ? (
+                  `Create ${
+                    selectedUsers.length * selectedLocations.length
+                  } Assignment${
+                    selectedUsers.length * selectedLocations.length !== 1
+                      ? "s"
+                      : ""
+                  }`
+                ) : (
+                  `Assign ${selectedLocations.length} Location${
+                    selectedLocations.length !== 1 ? "s" : ""
+                  }`
+                )}
               </button>
             </div>
           </form>
@@ -313,480 +884,3 @@ const AddAssignmentPage = () => {
 };
 
 export default AddAssignmentPage;
-
-
-
-// "use client";
-
-// import { useState, useEffect, useRef } from "react";
-// import { useSelector } from "react-redux";
-// import toast, { Toaster } from "react-hot-toast";
-// import { UsersApi } from "@/lib/api/usersApi";
-// import LocationsApi from "@/lib/api/LocationApi";
-// import { AssignmentsApi } from "@/lib/api/assignmentsApi";
-// import { useCompanyId } from "@/lib/providers/CompanyProvider";
-// import Loader from '@/components/ui/Loader'; // ✅ Import Loader
-// import {
-//   ClipboardPlus,
-//   User,
-//   MapPin,
-//   Search,
-//   ChevronDown,
-//   X,
-//   UserCheck,
-// } from "lucide-react";
-
-// const AddAssignmentPage = () => {
-//   // --- STATE MANAGEMENT ---
-//   const [cleanerUserId, setCleanerUserId] = useState("");
-//   const [selectedLocations, setSelectedLocations] = useState([]);
-//   const [status, setStatus] = useState("assigned");
-
-//   const [allUsers, setAllUsers] = useState([]);
-//   const [allLocations, setAllLocations] = useState([]);
-
-//   const [userSearchTerm, setUserSearchTerm] = useState("");
-//   const [locationSearchTerm, setLocationSearchTerm] = useState("");
-
-//   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-//   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-//   const [isLoading, setIsLoading] = useState(true); // ✅ Start with true
-//   const [hasInitialized, setHasInitialized] = useState(false);
-
-//   const { user: loggedInUser } = useSelector((state) => state.auth);
-//   const { companyId } = useCompanyId();
-
-//   const userDropdownRef = useRef(null);
-//   const locationDropdownRef = useRef(null);
-
-//   // --- DATA FETCHING WITH CLEANER RESTRICTION ---
-//   useEffect(() => {
-//     console.log("Fetching data for company:", companyId);
-    
-//     // ✅ Guard clause for companyId
-//     if (!companyId || companyId === 'null') {
-//       console.log('Skipping data fetch - companyId not ready');
-//       setIsLoading(false);
-//       setHasInitialized(true);
-//       return;
-//     }
-
-//     const fetchData = async () => {
-//       try {
-//         console.log("Fetching cleaners and locations for company:", companyId);
-        
-//         // ✅ RESTRICTION: Only fetch users with role_id = 5 (cleaners)
-//         const [userRes, locationRes] = await Promise.all([
-//           UsersApi.getAllUsers(companyId, 5), // ✅ roleId = 5 for cleaners only
-//           LocationsApi.getAllLocations(companyId)
-//         ]);
-
-//         console.log("✅ Cleaners response:", userRes);
-//         console.log("✅ Locations response:", locationRes);
-
-//         if (userRes.success) {
-//           // ✅ Double-check filter on frontend as backup
-//           const cleanersOnly = (userRes.data || []).filter(user => {
-//             const userRoleId = parseInt(user.role_id || user.role?.id || 0);
-//             return userRoleId === 5; // Only cleaners
-//           });
-          
-//           console.log(`Found ${cleanersOnly.length} cleaners out of ${userRes.data?.length || 0} users`);
-//           setAllUsers(cleanersOnly);
-//         } else {
-//           console.error('Failed to fetch cleaners:', userRes.error);
-//           toast.error(userRes.error || "Failed to fetch cleaners");
-//           setAllUsers([]);
-//         }
-
-//         if (locationRes.success) {
-//           setAllLocations(locationRes.data || []);
-//         } else {
-//           console.error('Failed to fetch locations:', locationRes.error);
-//           toast.error(locationRes.error || "Failed to fetch locations");
-//           setAllLocations([]);
-//         }
-
-//       } catch (err) {
-//         console.error("❌ Error while fetching:", err);
-//         toast.error("Failed to load data");
-//         setAllUsers([]);
-//         setAllLocations([]);
-//       } finally {
-//         setIsLoading(false);
-//         setHasInitialized(true);
-//       }
-//     };
-
-//     fetchData();
-//   }, [companyId]);
-
-//   // --- EVENT HANDLERS for closing dropdowns on outside click ---
-//   useEffect(() => {
-//     const handleClickOutside = (event) => {
-//       if (
-//         userDropdownRef.current &&
-//         !userDropdownRef.current.contains(event.target)
-//       ) {
-//         setIsUserDropdownOpen(false);
-//       }
-//       if (
-//         locationDropdownRef.current &&
-//         !locationDropdownRef.current.contains(event.target)
-//       ) {
-//         setIsLocationDropdownOpen(false);
-//       }
-//     };
-//     document.addEventListener("mousedown", handleClickOutside);
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
-//   }, []);
-
-//   const handleLocationSelect = (location) => {
-//     setSelectedLocations((prev) =>
-//       prev.some((loc) => loc.id === location.id)
-//         ? prev.filter((loc) => loc.id !== location.id)
-//         : [...prev, location]
-//     );
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-    
-//     if (!cleanerUserId || selectedLocations.length === 0) {
-//       return toast.error("Please select a cleaner and at least one location.");
-//     }
-
-//     setIsLoading(true);
-
-//     const assignmentData = {
-//       cleaner_user_id: cleanerUserId,
-//       location_ids: selectedLocations.map((loc) => loc.id),
-//       status: status,
-//       company_id: companyId,
-//     };
-
-//     try {
-//       const response = await AssignmentsApi.createAssignment(assignmentData);
-
-//       if (response.success) {
-//         toast.success(
-//           response.data?.message || "Mapping created successfully!"
-//         );
-        
-//         // Reset form
-//         setCleanerUserId("");
-//         setSelectedLocations([]);
-//         setUserSearchTerm("");
-//         setLocationSearchTerm("");
-        
-//         setTimeout(() => {
-//            window.location.href = `/cleaner-assignments?companyId=${companyId}`;
-//         }, 800);
-//       } else {
-//         toast.error(response.error || "Failed to create assignments.");
-//       }
-//     } catch (error) {
-//       console.error('Mapping creation error:', error);
-//       toast.error("Failed to create mapping.");
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   // --- FILTERING LOGIC ---
-//   const filteredUsers = allUsers.filter((user) =>
-//     user.name?.toLowerCase().includes(userSearchTerm.toLowerCase())
-//   );
-  
-//   const filteredLocations = allLocations.filter((loc) =>
-//     loc.name?.toLowerCase().includes(locationSearchTerm.toLowerCase())
-//   );
-
-//   const selectedUser = allUsers.find((u) => u.id === cleanerUserId);
-//   const selectedUserName = selectedUser?.name || "Select a cleaner...";
-
-//   // ✅ Loading state with Loader component
-//   if (isLoading || !hasInitialized) {
-//     return (
-//       <>
-//         <Toaster position="top-center" />
-//         <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
-//           <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-200/60">
-//             <div className="flex items-center gap-4 mb-8">
-//               <ClipboardPlus className="w-8 h-8 text-indigo-600" />
-//               <h1 className="text-3xl font-bold text-slate-800">
-//                 Map Locations
-//               </h1>
-//             </div>
-//             <div className="flex justify-center items-center h-64">
-//               <Loader 
-//                 size="large" 
-//                 color="#6366f1" 
-//                 message="Loading cleaners and locations..." 
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </>
-//     );
-//   }
-
-//   // ✅ No company ID state
-//   if (!companyId) {
-//     return (
-//       <>
-//         <Toaster position="top-center" />
-//         <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
-//           <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-200/60">
-//             <div className="text-center py-12">
-//               <ClipboardPlus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-//               <h2 className="text-xl font-semibold text-gray-800 mb-2">No Company Selected</h2>
-//               <p className="text-gray-600">Please select a company to create assignments.</p>
-//             </div>
-//           </div>
-//         </div>
-//       </>
-//     );
-//   }
-
-//   // --- RENDER ---
-//   return (
-//     <>
-//       <Toaster position="top-center" />
-//       <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
-//         <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-slate-200/60">
-//           <div className="flex items-center gap-4 mb-8">
-//             <ClipboardPlus className="w-8 h-8 text-indigo-600" />
-//             <div>
-//               <h1 className="text-3xl font-bold text-slate-800">
-//                 Map Locations to Cleaners
-//               </h1>
-//               <p className="text-sm text-slate-600 mt-2">
-//                 Select a cleaner and locations to create Mappings
-//               </p>
-//             </div>
-//           </div>
-
-//           {/* ✅ Info Card showing available cleaners */}
-//           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-//             <div className="flex items-center gap-2 text-sm text-blue-700">
-//               <UserCheck className="w-4 h-4" />
-//               <span>
-//                 <strong>{allUsers.length} cleaners available</strong> for mappings
-//                 {allLocations.length > 0 && ` across ${allLocations.length} locations`}
-//               </span>
-//             </div>
-//           </div>
-
-//           <form onSubmit={handleSubmit} className="space-y-8">
-//             {/* 1. Select Cleaner with Search */}
-//             <div ref={userDropdownRef}>
-//               <label className="block text-sm font-semibold text-slate-700 mb-2">
-//                 Select Cleaner
-//               </label>
-//               <div className="relative">
-//                 <button
-//                   type="button"
-//                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-//                   className="w-full flex justify-between items-center text-left px-4 py-3 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
-//                 >
-//                   <span className="truncate flex items-center gap-2">
-//                     <User className="w-4 h-4 text-slate-400" />
-//                     {selectedUserName}
-//                   </span>
-//                   <ChevronDown
-//                     className={`w-5 h-5 text-slate-400 transition-transform ${
-//                       isUserDropdownOpen ? "rotate-180" : ""
-//                     }`}
-//                   />
-//                 </button>
-//                 {isUserDropdownOpen && (
-//                   <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 flex flex-col">
-//                     <div className="p-3 border-b">
-//                       <div className="relative">
-//                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-//                         <input
-//                           type="text"
-//                           placeholder="Search for a cleaner..."
-//                           value={userSearchTerm}
-//                           onChange={(e) => setUserSearchTerm(e.target.value)}
-//                           className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-//                         />
-//                       </div>
-//                     </div>
-//                     <div className="overflow-y-auto p-2">
-//                       {filteredUsers.length === 0 ? (
-//                         <div className="p-4 text-center text-slate-500">
-//                           <UserCheck className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-//                           <p className="font-medium">No cleaners found</p>
-//                           <p className="text-xs">
-//                             {userSearchTerm ? 'Try a different search term' : 'No cleaners available'}
-//                           </p>
-//                         </div>
-//                       ) : (
-//                         filteredUsers.map((user) => (
-//                           <div
-//                             key={user.id}
-//                             onClick={() => {
-//                               setCleanerUserId(user.id);
-//                               setUserSearchTerm(user.name);
-//                               setIsUserDropdownOpen(false);
-//                             }}
-//                             className="p-3 rounded-md hover:bg-slate-100 cursor-pointer text-sm text-slate-700 flex items-center gap-2"
-//                           >
-//                             <User className="w-4 h-4 text-slate-400" />
-//                             <div>
-//                               <div className="font-medium">{user.name}</div>
-//                               {/* {user.email && (
-//                                 <div className="text-xs text-slate-500">{user.email}</div>
-//                               )} */}
-//                             </div>
-//                           </div>
-//                         ))
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-
-//             {/* 2. Select Locations (Multi-select with Search) */}
-//             <div ref={locationDropdownRef}>
-//               <label className="block text-sm font-semibold text-slate-700 mb-2">
-//                 Select Locations ({selectedLocations.length} selected)
-//               </label>
-//               <div className="relative">
-//                 <button
-//                   type="button"
-//                   onClick={() =>
-//                     setIsLocationDropdownOpen(!isLocationDropdownOpen)
-//                   }
-//                   className="w-full flex justify-between items-center text-left px-4 py-3 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
-//                 >
-//                   <span className="flex items-center gap-2">
-//                     <MapPin className="w-4 h-4 text-slate-400" />
-//                     {selectedLocations.length > 0
-//                       ? `${selectedLocations.length} locations selected`
-//                       : "Click to select locations..."}
-//                   </span>
-//                   <ChevronDown
-//                     className={`w-5 h-5 text-slate-400 transition-transform ${
-//                       isLocationDropdownOpen ? "rotate-180" : ""
-//                     }`}
-//                   />
-//                 </button>
-//                 {isLocationDropdownOpen && (
-//                   <div className="absolute z-10 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 flex flex-col">
-//                     <div className="p-3 border-b">
-//                       <div className="relative">
-//                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-//                         <input
-//                           type="text"
-//                           placeholder="Search locations..."
-//                           value={locationSearchTerm}
-//                           onChange={(e) =>
-//                             setLocationSearchTerm(e.target.value)
-//                           }
-//                           className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-//                         />
-//                       </div>
-//                     </div>
-//                     <div className="overflow-y-auto p-2">
-//                       {filteredLocations.length === 0 ? (
-//                         <div className="p-4 text-center text-slate-500">
-//                           <MapPin className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-//                           <p className="font-medium">No locations found</p>
-//                           <p className="text-xs">
-//                             {locationSearchTerm ? 'Try a different search term' : 'No locations available'}
-//                           </p>
-//                         </div>
-//                       ) : (
-//                         filteredLocations.map((location) => (
-//                           <label
-//                             key={location.id}
-//                             className="flex items-center p-3 rounded-md hover:bg-slate-100 cursor-pointer"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={selectedLocations.some(
-//                                 (loc) => loc.id === location.id
-//                               )}
-//                               onChange={() => handleLocationSelect(location)}
-//                               className="h-4 w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
-//                             />
-//                             <span className="ml-3 text-sm text-slate-700 flex items-center gap-2">
-//                               <MapPin className="w-4 h-4 text-slate-400" />
-//                               {location.name}
-//                             </span>
-//                           </label>
-//                         ))
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-
-//             {/* ✅ Selected Locations Preview */}
-//             {selectedLocations.length > 0 && (
-//               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-//                 <h4 className="font-medium text-green-800 mb-2">Selected Locations:</h4>
-//                 <div className="flex flex-wrap gap-2">
-//                   {selectedLocations.map((location) => (
-//                     <span
-//                       key={location.id}
-//                       className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
-//                     >
-//                       {location.name}
-//                       <button
-//                         type="button"
-//                         onClick={() => handleLocationSelect(location)}
-//                         className="hover:text-green-900"
-//                       >
-//                         <X className="w-3 h-3" />
-//                       </button>
-//                     </span>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-
-//             {/* 3. Select Status */}
-//             <div>
-//               <label
-//                 htmlFor="status"
-//                 className="block text-sm font-semibold text-slate-700 mb-2"
-//               >
-//                 Mappings Status
-//               </label>
-//               <select
-//                 id="status"
-//                 value={status}
-//                 onChange={(e) => setStatus(e.target.value)}
-//                 className="w-full px-4 py-3 text-slate-800 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-//               >
-//                 <option value="assigned">Assigned</option>
-//                 <option value="unassigned">Unassigned</option>
-//               </select>
-//             </div>
-
-//             {/* Submit Button */}
-//             <div className="pt-6 border-t border-slate-200">
-//               <button
-//                 type="submit"
-//                 disabled={isLoading || !cleanerUserId || selectedLocations.length === 0}
-//                 className="w-full px-4 py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 disabled:bg-indigo-400 disabled:cursor-not-allowed disabled:transform-none"
-//               >
-//                 {isLoading
-//                   ? "Creating Mappings..."
-//                   : `Create ${selectedLocations.length} Mapping${selectedLocations.length !== 1 ? 's' : ''}`}
-//               </button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
-//     </>
-//   );
-// };
-
-// export default AddAssignmentPage;

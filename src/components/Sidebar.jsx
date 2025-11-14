@@ -178,24 +178,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         // cleaner mapping
-        // {
-        //   icon: UserCog,
-        //   label: "Cleaner Mapping",
-        //   hasDropdown: true,
-        //   key: "cleaner-assignments",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Mapped List",
-        //       href: `/cleaner-assignments?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: PlusCircle,
-        //       label: "Add Mapping",
-        //       href: `/cleaner-assignments/add?companyId=${companyId}`,
-        //     },
-        //   ],
-        // },
+        {
+          icon: UserCog,
+          label: "Cleaner Mapping",
+          hasDropdown: true,
+          key: "cleaner-assignments",
+          children: [
+            {
+              icon: List,
+              label: "Mapped List",
+              href: `/cleaner-assignments?companyId=${companyId}`,
+            },
+            {
+              icon: PlusCircle,
+              label: "Add Mapping",
+              href: `/cleaner-assignments/add?companyId=${companyId}`,
+            },
+          ],
+        },
 
 
         // facility management 
@@ -332,24 +332,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           ],
         },
         // admin -cleaner mapping 
-        // {
-        //   icon: ClipboardList,
-        //   label: "Cleaner Mapping",
-        //   hasDropdown: true,
-        //   key: "cleaner-assignments",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Mapped List",
-        //       href: `/cleaner-assignments?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: UserCog,
-        //       label: "Add Mapping",
-        //       href: `/cleaner-assignments/add?companyId=${companyId}`,
-        //     },
-        //   ],
-        // },
+        {
+          icon: ClipboardList,
+          label: "Cleaner Mapping",
+          hasDropdown: true,
+          key: "cleaner-assignments",
+          children: [
+            {
+              icon: List,
+              label: "Mapped List",
+              href: `/cleaner-assignments?companyId=${companyId}`,
+            },
+            {
+              icon: UserCog,
+              label: "Add Mapping",
+              href: `/cleaner-assignments/add?companyId=${companyId}`,
+            },
+          ],
+        },
 
         // locate on map
         {
