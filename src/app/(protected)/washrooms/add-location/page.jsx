@@ -626,32 +626,6 @@ import toast from "react-hot-toast";
 import { Country, State, City } from 'country-state-city';
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi"
 
-// Indian States List
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
-  "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
-];
-
-const MAJOR_INDIAN_CITIES = [
-  "Mumbai", "Pune", "Nagpur", "Nashik", "Thane", "Aurangabad",
-  "New Delhi", "Delhi", "Bangalore", "Mysore", "Mangalore", "Hubli",
-  "Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem",
-  "Kolkata", "Howrah", "Durgapur", "Ahmedabad", "Surat", "Vadodara", "Rajkot",
-  "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Agra",
-  "Varanasi", "Allahabad", "Meerut", "Ghaziabad", "Noida", "Hyderabad",
-  "Warangal", "Visakhapatnam", "Vijayawada", "Guntur", "Thiruvananthapuram",
-  "Kochi", "Kozhikode", "Thrissur", "Bhopal", "Indore", "Jabalpur", "Gwalior",
-  "Chandigarh", "Ludhiana", "Amritsar", "Jalandhar", "Faridabad", "Gurgaon",
-  "Panipat", "Patna", "Gaya", "Bhagalpur", "Bhubaneswar", "Cuttack",
-  "Guwahati", "Silchar", "Ranchi", "Jamshedpur", "Dhanbad", "Raipur",
-  "Bhilai", "Dehradun", "Haridwar", "Panaji", "Margao"
-].sort();
 
 // Pincode validation for India
 const validatePincode = (pincode) => {
@@ -701,7 +675,19 @@ export default function AddLocationPage() {
     dist: "",
     status: true,
     options: {},
-    no_of_photos: null
+    no_of_photos: null,
+    usage_category: {
+      men: {
+        wc: 0,
+        indian: 0,
+        urinals: 0
+      },
+      women: {
+        wc: 0,
+        indian: 0,
+        urinals: 0
+      }
+    }
   });
 
   // ✅ Load Indian states on mount
@@ -1104,6 +1090,182 @@ export default function AddLocationPage() {
                 </div>
 
               </div>
+
+
+              <div className="col-span-2">
+                <h3 className="text-sm font-medium text-slate-700 mb-3">
+                  Usage Category
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Men Section */}
+                  <div className="p-3.5 border border-blue-200 rounded-lg bg-gradient-to-br from-blue-50 to-white">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <h4 className="text-sm font-medium text-blue-700">Men</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">WC</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.men.wc}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  wc: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">Indian</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.men.indian}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  indian: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">Urinals</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.men.urinals}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  urinals: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Women Section */}
+                  <div className="p-3.5 border border-pink-200 rounded-lg bg-gradient-to-br from-pink-50 to-white">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <h4 className="text-sm font-medium text-pink-700">Women</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">WC</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.women.wc}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  wc: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">Indian</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.women.indian}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  indian: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16">Urinals</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={form.usage_category.women.urinals}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setForm(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  urinals: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="flex-1 p-1.5 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
               {/* Address Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

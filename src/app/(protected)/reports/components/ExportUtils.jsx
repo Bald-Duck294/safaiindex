@@ -8,20 +8,20 @@ import * as XLSX from "xlsx";
  */
 const exportDailyTaskToPDF = (data, metadata) => {
   const doc = new jsPDF("l", "mm", "a4"); // Landscape A4
-  
+
   // ========== HEADER SECTION ==========
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 58, 138); // Dark blue
   doc.text("Daily Task Report", 14, 15);
-  
+
   // Add a horizontal line under the title
   doc.setDrawColor(30, 58, 138);
   doc.setLineWidth(0.5);
   doc.line(14, 18, 283, 18);
-  
+
   let currentY = 25;
-  
+
   // ========== METADATA TABLE (HORIZONTAL LAYOUT) ==========
   autoTable(doc, {
     head: [["Organization", "Report Type", "Date Range", "Generated On"]],
@@ -30,17 +30,17 @@ const exportDailyTaskToPDF = (data, metadata) => {
       metadata.report_type || "Daily Task Report",
       `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
       new Date(metadata.generated_on).toLocaleString('en-IN', {
-        day: '2-digit', 
-        month: '2-digit', 
+        day: '2-digit',
+        month: '2-digit',
         year: 'numeric',
-        hour: '2-digit', 
+        hour: '2-digit',
         minute: '2-digit',
         hour12: true
       })
     ]],
     startY: currentY,
     theme: "grid",
-    headStyles: { 
+    headStyles: {
       fillColor: [241, 245, 249], // Light gray header
       textColor: [51, 65, 85], // Dark gray text
       fontStyle: 'bold',
@@ -55,14 +55,14 @@ const exportDailyTaskToPDF = (data, metadata) => {
     },
     margin: { left: 14, right: 14 },
   });
-  
+
   currentY = doc.lastAutoTable.finalY + 3;
-  
+
   // ========== ANALYTICS/STATISTICS TABLE (HORIZONTAL LAYOUT with Green Header) ==========
-  const completionRate = metadata.total_tasks > 0 
-    ? ((metadata.completed_tasks / metadata.total_tasks) * 100).toFixed(1) 
+  const completionRate = metadata.total_tasks > 0
+    ? ((metadata.completed_tasks / metadata.total_tasks) * 100).toFixed(1)
     : 0;
-  
+
   autoTable(doc, {
     head: [["Total Tasks", "Completed Tasks", "Ongoing Tasks", "Completion Rate"]],
     body: [[
@@ -73,7 +73,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
     ]],
     startY: currentY,
     theme: "grid",
-    headStyles: { 
+    headStyles: {
       fillColor: [16, 185, 129], // Green header for analytics
       textColor: 255,
       fontStyle: 'bold',
@@ -90,29 +90,29 @@ const exportDailyTaskToPDF = (data, metadata) => {
     },
     margin: { left: 14, right: 14 },
   });
-  
+
   currentY = doc.lastAutoTable.finalY + 8;
-  
+
   // ========== TASK DETAILS TABLE (Main data) ==========
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(51, 65, 85);
   doc.text("Task Details", 14, currentY);
-  
+
   currentY += 3;
-  
+
   const formatDateTimeForPDF = (date) => {
     if (!date) return "Ongoing";
     return new Date(date).toLocaleString('en-IN', {
-      day: '2-digit', 
-      month: 'short', 
+      day: '2-digit',
+      month: 'short',
       year: 'numeric',
-      hour: '2-digit', 
+      hour: '2-digit',
       minute: '2-digit',
       hour12: true
     });
   };
-  
+
   const tableData = data.map((task, index) => [
     index + 1,
     task.cleaner_name,
@@ -124,7 +124,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
     task.final_rating.toFixed(1),
     task.status.toUpperCase(),
   ]);
-  
+
   autoTable(doc, {
     head: [
       [
@@ -142,32 +142,32 @@ const exportDailyTaskToPDF = (data, metadata) => {
     body: tableData,
     startY: currentY,
     theme: "grid",
-    headStyles: { 
+    headStyles: {
       fillColor: [37, 99, 235], // Blue header (original)
       textColor: 255,
       fontStyle: 'bold',
       fontSize: 8,
       halign: 'center'
     },
-    bodyStyles: { 
+    bodyStyles: {
       fontSize: 7,
       textColor: 50,
     },
-    alternateRowStyles: { 
-      fillColor: [248, 250, 252] 
+    alternateRowStyles: {
+      fillColor: [248, 250, 252]
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 8 },
       5: { halign: 'center' },
       6: { halign: 'center' },
       7: { halign: 'center' },
-      8: { 
+      8: {
         halign: 'center',
         fontStyle: 'bold'
       }
     },
     // Add conditional formatting for status column
-    didParseCell: function(data) {
+    didParseCell: function (data) {
       if (data.column.index === 8 && data.section === 'body') {
         if (data.cell.raw === 'COMPLETED') {
           data.cell.styles.textColor = [22, 163, 74]; // Green
@@ -178,7 +178,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
     },
     margin: { left: 14, right: 14 },
   });
-  
+
   // ========== FOOTER ==========
   const pageCount = doc.internal.getNumberOfPages();
   doc.setFontSize(8);
@@ -197,7 +197,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
       doc.internal.pageSize.height - 10
     );
   }
-  
+
   const fileName = `Daily_Task_Report_${new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(fileName);
 };

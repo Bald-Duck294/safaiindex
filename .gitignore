@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 src/app/(protected)/washrooms/commented.jsx
+oldPage.jsx
+src/app/(protected)/washrooms/item/[id]/edit/oldPage.jsx
+oldZoneWiseREport.jsx
+src/app/(protected)/reports/zone-wise/oldZoneWiseReport.jsx
+dummypage.jsx

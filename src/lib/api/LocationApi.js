@@ -212,14 +212,14 @@ export const LocationsApi = {
       const fieldsToSend = [
         'name', 'parent_id', 'type_id', 'latitude', 'longitude',
         'address', 'pincode', 'state', 'city', 'dist', 'status', 'options'
-        , 'facility_company_id' , 'no_of_photos'
+        , 'facility_company_id', 'no_of_photos', 'usage_category'
       ];
 
       fieldsToSend.forEach(key => {
         if (data[key] !== null && data[key] !== undefined && data[key] !== '') {
           let valueToAppend = data[key];
 
-          if (key === 'options') {
+          if (key === 'options' || key === 'usage_category') {
             valueToAppend = typeof data[key] === 'object'
               ? JSON.stringify(data[key])
               : data[key];
@@ -271,17 +271,16 @@ export const LocationsApi = {
     }
   },
 
-  // ✅ Also fix updateLocation
   updateLocation: async (id, data, companyId = null, images = [], replaceImages = false) => {
     try {
       const formData = new FormData();
 
-      // ✅ FIXED: Same logic as create
+
       Object.keys(data).forEach(key => {
         if (data[key] !== null && data[key] !== undefined) {
           let valueToAppend = data[key];
 
-          if (key === 'options') {
+          if (key === 'options' | key === 'usage_category') {
             console.log(`Processing options for update:`, data[key]);
 
             if (typeof data[key] === 'object' && data[key] !== null) {
@@ -320,7 +319,7 @@ export const LocationsApi = {
         params.append('companyId', companyId);
       }
 
-      // ✅ Debug FormData contents
+      //  Debug FormData contents
       console.log("Update FormData entries:");
       for (let pair of formData.entries()) {
         console.log(`${pair[0]}: ${pair[1]} (type: ${typeof pair[1]})`);

@@ -1117,6 +1117,7 @@ import {
   Trash2,
   Home,
   Building2,
+  Users,
   Camera
 } from 'lucide-react';
 
@@ -1182,7 +1183,20 @@ const EditLocationPage = () => {
     pincode: '',
     facility_companiesId: null,
     type_id: null,
-    options: {}
+    options: {},
+    usage_category: {
+      men: {
+        wc: 0,
+        indian: 0,
+        urinal: 0
+      },
+      women: {
+        wc: 0,
+        indian: 0,
+        urinal: 0
+      }
+
+    }
   });
 
   const params = useParams();
@@ -1224,8 +1238,25 @@ const EditLocationPage = () => {
             dist: locationResult.data.dist || '',
             pincode: locationResult.data.pincode || '',
             no_of_photos: locationResult.data.no_of_photos,
-            options: locationResult.data.options || {}
+            options: locationResult.data.options || {},
+
+
+            usage_category: locationResult.data.usage_category || {
+              men: {
+                wc: 0,
+                indian: 0,
+                urinals: 0
+              },
+              women: {
+                wc: 0,
+                indian: 0,
+                urinals: 0
+              }
+            }
+
           });
+
+
 
           setExistingImages(locationResult.data.images || []);
           setSelectedFacilityCompany(locationResult.data.facility_companiesId);
@@ -1491,7 +1522,9 @@ const EditLocationPage = () => {
         no_of_photos: formData.no_of_photos || null,
         facility_companiesId: formData.facility_companiesId || null,
         type_id: formData.type_id || null,
-        options: formData.options
+        options: formData.options,
+        usage_category: formData.usage_category
+
       };
 
       // console.log(updateData, "data to be updated")
@@ -2184,6 +2217,190 @@ const EditLocationPage = () => {
                   className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter number (1-20)"
                 />
+              </div>
+
+
+              {/* ✅ ADD THIS - Usage Category Section */}
+              <div className="col-span-2">
+                <h3 className="text-sm font-medium text-slate-700 mb-3">
+                  Usage Category
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Men Section */}
+                  <div className="p-4 border border-blue-300 rounded-lg bg-blue-50/50">
+                    <h4 className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-1.5">
+                      <Users className="w-4 h-4" />
+                      Men
+                    </h4>
+                    <div className="space-y-2.5">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          WC (Western)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.men.wc}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  wc: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Indian
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.men.indian}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  indian: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Urinals
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.men.urinals}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                men: {
+                                  ...prev.usage_category.men,
+                                  urinals: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Women Section */}
+                  <div className="p-4 border border-pink-300 rounded-lg bg-pink-50/50">
+                    <h4 className="text-sm font-medium text-pink-700 mb-3 flex items-center gap-1.5">
+                      <Users className="w-4 h-4" />
+                      Women
+                    </h4>
+                    <div className="space-y-2.5">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          WC (Western)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.women.wc}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  wc: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Indian
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.women.indian}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  indian: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Urinals
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.women.urinals}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              usage_category: {
+                                ...prev.usage_category,
+                                women: {
+                                  ...prev.usage_category.women,
+                                  urinals: value
+                                }
+                              }
+                            }));
+                          }}
+                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
 
