@@ -277,6 +277,97 @@ const SingleLocation = () => {
 
     return <div className="flex items-center gap-0.5">{stars}</div>;
   };
+
+
+
+  const renderUsageCategory = (usageCategory) => {
+    if (!usageCategory || Object.keys(usageCategory).length === 0) {
+      return null;
+    }
+
+    const genderData = [
+      {
+        key: 'men',
+        label: 'Men',
+        color: 'from-blue-500 to-blue-600',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
+        textColor: 'text-blue-700'
+      },
+      {
+        key: 'women',
+        label: 'Women',
+        color: 'from-pink-500 to-pink-600',
+        bgColor: 'bg-pink-50',
+        borderColor: 'border-pink-200',
+        textColor: 'text-pink-700'
+      }
+    ];
+
+    return (
+      <div className="bg-white rounded-lg shadow mb-8">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            Washroom Facilities
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {genderData.map(({ key, label, color, bgColor, borderColor, textColor }) => {
+              const data = usageCategory[key];
+              if (!data) return null;
+
+              const totalCount = (data.wc || 0) + (data.indian || 0) + (data.urinals || 0);
+
+              return (
+                <div key={key} className={`${bgColor} rounded-lg p-4 border ${borderColor}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={`w-8 h-8 bg-gradient-to-br ${color} rounded-full flex items-center justify-center flex-shrink-0`}>
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-semibold ${textColor}`}>{label}</h4>
+                      <p className="text-xs text-gray-500">Total: {totalCount} facilities</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {data.wc > 0 && (
+                      <div className="flex items-center justify-between bg-white rounded-md px-3 py-2 text-sm">
+                        <span className="font-medium text-gray-700">🚽 Western Toilet (WC)</span>
+                        <span className={`font-bold ${textColor}`}>{data.wc}</span>
+                      </div>
+                    )}
+
+                    {data.indian > 0 && (
+                      <div className="flex items-center justify-between bg-white rounded-md px-3 py-2 text-sm">
+                        <span className="font-medium text-gray-700">🚾 Indian Toilet</span>
+                        <span className={`font-bold ${textColor}`}>{data.indian}</span>
+                      </div>
+                    )}
+
+                    {data.urinals > 0 && (
+                      <div className="flex items-center justify-between bg-white rounded-md px-3 py-2 text-sm">
+                        <span className="font-medium text-gray-700">🧍 Urinals</span>
+                        <span className={`font-bold ${textColor}`}>{data.urinals}</span>
+                      </div>
+                    )}
+
+                    {totalCount === 0 && (
+                      <div className="text-center py-2 text-sm text-gray-500">
+                        No facilities available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -572,11 +663,13 @@ const SingleLocation = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Main Info Card - Two Column Layout */}
-        <div className="bg-white rounded-lg shadow mb-8">
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Main Info Card - Fully Responsive */}
+        <div className="bg-white rounded-lg shadow mb-6 sm:mb-8">
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Left Column - Image */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="aspect-video w-full bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={location.images?.[0] || "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"}
@@ -605,24 +698,24 @@ const SingleLocation = () => {
               </div>
 
               {/* Right Column - Details */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{location.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">{location.name}</h1>
 
                   {/* Address Section */}
-                  <div className="space-y-3 text-gray-600">
+                  <div className="space-y-2 sm:space-y-3 text-gray-600 text-sm sm:text-base">
                     {location.address && (
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 flex-shrink-0" />
                         <span>{location.address}</span>
                       </div>
                     )}
-                    {/* Location Type / Zone Hierarchy */}
+
                     {location.location_types && (
-                      <div className="flex items-center gap-3 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 px-4 py-3 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-sm">
                         <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <Layers className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </div>
                         </div>
                         <div className="flex flex-col">
@@ -636,8 +729,7 @@ const SingleLocation = () => {
                       </div>
                     )}
 
-
-                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                    <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm">
                       {location.city && (
                         <div className="flex items-center gap-1">
                           <span className="font-medium">City:</span> {location.city}
@@ -655,34 +747,34 @@ const SingleLocation = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span>Created on {formatDate(location.created_at)}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
+                {/* Action Buttons - Responsive */}
+                <div className="flex flex-col xs:flex-row flex-wrap gap-2 sm:gap-3">
                   <button
                     onClick={() => handleViewLocation(location.latitude, location.longitude)}
-                    className="flex items-center px-4 py-2.5 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                    className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
                   >
-                    <Navigation className="w-4 h-4 mr-2" />
+                    <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Locate on Map
                   </button>
                   <button
                     onClick={handleEdit}
-                    className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
+                    <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Edit
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="flex items-center px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Delete
                   </button>
                 </div>
@@ -690,25 +782,25 @@ const SingleLocation = () => {
             </div>
 
             {/* Amenities */}
-            <div className="mt-8">
+            <div className="mt-6 sm:mt-8">
               {renderLocationOptions(location.options)}
             </div>
 
             {/* Photo Upload Notice */}
             {location.no_of_photos && (
-              <div className="flex items-start gap-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
-                <Camera className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="mt-4 flex items-start gap-2 sm:gap-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-900">Photo Upload Limit</p>
+                  <p className="text-xs sm:text-sm font-semibold text-amber-900">Photo Upload Limit</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Minimum <span className="font-bold">{location.no_of_photos}</span> photos can be uploaded for this location
+                    Minimum <span className="font-bold">{location.no_of_photos}</span> photos can be uploaded
                   </p>
                 </div>
               </div>
             )}
-
           </div>
         </div>
+        {renderUsageCategory(location.usage_category)}
 
 
         {/* Assigned Cleaners */}
