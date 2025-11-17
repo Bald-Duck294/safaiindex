@@ -480,7 +480,7 @@ export default function ReviewContent({ companyId }) {
                                 'bg-red-500'
                             }`}></div>
                           <span className="text-xs text-slate-600">
-                           Curr Score: <span className="font-semibold text-slate-800">{review.score}/10</span>
+                           Current Score: <span className="font-semibold text-slate-800">{review.score}/10</span>
                           </span>
                         </div>
                       )}

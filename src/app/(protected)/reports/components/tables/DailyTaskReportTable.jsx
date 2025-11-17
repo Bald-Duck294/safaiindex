@@ -105,7 +105,7 @@ export default function DailyTaskReportTable({ data, metadata }) {
                             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Task End</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Duration (min)</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">AI Score</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Final Rating</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg. Score/Rating</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>

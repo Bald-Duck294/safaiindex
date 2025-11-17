@@ -135,7 +135,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
         "End Time",
         "Duration (min)",
         "AI Score (0-10)",
-        "Final Rating (0-10)",
+        "Avg. Score/Rating (0-10)",
         "Status",
       ],
     ],
