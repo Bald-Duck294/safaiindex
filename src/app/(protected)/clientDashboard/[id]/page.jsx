@@ -171,11 +171,82 @@ export default function ClientDashboard() {
     fetchDashboardData();
   }, [companyId]);
 
-  // NEW useEffect - Add this entire block
+  // useEffect(() => {
+  //   if (!companyId || companyId === 'null' || companyId === null || companyId === 'undefined') {
+  //     console.log('Skipping recent activities - invalid companyId:', companyId);
+  //     setIsActivitiesLoading(false); // Set loading to false so UI doesn't hang
+  //     return;
+  //   }
+
+  //   const fetchRecentActivities = async () => {
+  //     setIsActivitiesLoading(true);
+  //     try {
+  //       const { startOfDay } = getTodayDateRange();
+
+  //       let cleanerActivities = [];
+  //       let userActivities = [];
+
+  //       // Get cleaner reviews from Promise.all result stored in state
+  //       // We'll create a new state for this or fetch it separately
+
+  //       // console.log(companyId, "companyId before the call")
+  //       const cleanerReviewsRes = await CleanerReviewApi.getAllCleanerReviews({}, companyId);
+
+  //       // console.log(cleanerReviewsRes, "review res");
+  //       // Filter and format cleaner reviews for today
+  //       if (cleanerReviewsRes.success) {
+  //         cleanerActivities = cleanerReviewsRes.data
+  //           .filter(review => new Date(review.created_at) >= startOfDay)
+  //           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  //           .slice(0, 5)
+  //           .map(review => ({
+  //             type: 'cleaner',
+  //             id: review.id,
+  //             text: `${review.cleaner_user?.name || 'Cleaner'} ${review.status === 'completed' ? 'completed' : 'started'
+  //               } cleaning at ${review.location?.name || 'location'}`,
+  //             timestamp: review.created_at,
+  //             status: review.status,
+  //             score: review.score,
+  //             activityType: review.status === 'completed' ? 'success' : 'info',
+  //           }));
+  //       }
+
+  //       // Filter and format user reviews for today
+  //       if (userReviewsData?.data) {
+  //         userActivities = userReviewsData.data
+  //           .filter(review => new Date(review.created_at) >= startOfDay)
+  //           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  //           .slice(0, 2)
+  //           .map(review => ({
+  //             type: 'user',
+  //             id: review.id,
+  //             text: `${review.name} submitted feedback for ${review.location?.name || 'location'}`,
+  //             timestamp: review.created_at,
+  //             rating: review.rating,
+  //             activityType: review.rating >= 7 ? 'success' : review.rating >= 5 ? 'warning' : 'update',
+  //           }));
+  //       }
+
+  //       // Combine and sort by timestamp (oldest first for bottom-up display)
+  //       const combined = [...cleanerActivities, ...userActivities]
+  //         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+  //       setRecentActivities(combined);
+
+  //     } catch (error) {
+  //       console.error("Failed to fetch recent activities:", error);
+  //     } finally {
+  //       setIsActivitiesLoading(false);
+  //     }
+  //   };
+
+  //   fetchRecentActivities();
+  // }, [companyId, userReviewsData]);
+
   useEffect(() => {
     if (!companyId || companyId === 'null' || companyId === null || companyId === 'undefined') {
       console.log('Skipping recent activities - invalid companyId:', companyId);
-      setIsActivitiesLoading(false); // Set loading to false so UI doesn't hang
+      setIsActivitiesLoading(false);
       return;
     }
 
@@ -184,55 +255,70 @@ export default function ClientDashboard() {
       try {
         const { startOfDay } = getTodayDateRange();
 
-        let cleanerActivities = [];
-        let userActivities = [];
+        let allActivities = [];
 
-        // Get cleaner reviews from Promise.all result stored in state
-        // We'll create a new state for this or fetch it separately
-
-        // console.log(companyId, "companyId before the call")
+        // Fetch cleaner reviews
         const cleanerReviewsRes = await CleanerReviewApi.getAllCleanerReviews({}, companyId);
 
-        // console.log(cleanerReviewsRes, "review res");
-        // Filter and format cleaner reviews for today
+        // Process cleaner reviews - create TWO entries per review
         if (cleanerReviewsRes.success) {
-          cleanerActivities = cleanerReviewsRes.data
+          cleanerReviewsRes.data
             .filter(review => new Date(review.created_at) >= startOfDay)
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 5)
-            .map(review => ({
-              type: 'cleaner',
-              id: review.id,
-              text: `${review.cleaner_user?.name || 'Cleaner'} ${review.status === 'completed' ? 'completed' : 'started'
-                } cleaning at ${review.location?.name || 'location'}`,
-              timestamp: review.created_at,
-              status: review.status,
-              score: review.score,
-              activityType: review.status === 'completed' ? 'success' : 'info',
-            }));
+            .forEach(review => {
+              // dev - Task Started ( by ->  created_at)
+              allActivities.push({
+                type: 'cleaner',
+                id: `${review.id}-started`,
+                reviewId: review.id,
+                text: `${review.cleaner_user?.name || 'Cleaner'} started cleaning at ${review.location?.name || 'location'}`,
+                timestamp: review.created_at,
+                status: 'ongoing',
+                activityType: 'info',
+              });
+
+              // ✅ dev -  Task Completed (using updated_at, only if status is completed)
+              if (review.status === 'completed' && review.updated_at) {
+                const updatedDate = new Date(review.updated_at);
+                const createdDate = new Date(review.created_at);
+
+                if (updatedDate > createdDate && updatedDate >= startOfDay) {
+                  allActivities.push({
+                    type: 'cleaner',
+                    id: `${review.id}-completed`,
+                    reviewId: review.id,
+                    text: `${review.cleaner_user?.name || 'Cleaner'} completed cleaning at ${review.location?.name || 'location'}`,
+                    timestamp: review.updated_at,
+                    status: 'completed',
+                    score: review.score,
+                    activityType: 'success',
+                  });
+                }
+              }
+            });
         }
 
         // Filter and format user reviews for today
         if (userReviewsData?.data) {
-          userActivities = userReviewsData.data
+          const userActivities = userReviewsData.data
             .filter(review => new Date(review.created_at) >= startOfDay)
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 2)
             .map(review => ({
               type: 'user',
-              id: review.id,
+              id: `user-${review.id}`,
               text: `${review.name} submitted feedback for ${review.location?.name || 'location'}`,
               timestamp: review.created_at,
               rating: review.rating,
               activityType: review.rating >= 7 ? 'success' : review.rating >= 5 ? 'warning' : 'update',
             }));
+
+          allActivities.push(...userActivities);
         }
 
-        // Combine and sort by timestamp (oldest first for bottom-up display)
-        const combined = [...cleanerActivities, ...userActivities]
-          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // Sort by timestamp (oldest first for bottom-up display)
+        const sortedActivities = allActivities
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+          .slice(-10); // Limit to last 10 activities
 
-        setRecentActivities(combined);
+        setRecentActivities(sortedActivities);
 
       } catch (error) {
         console.error("Failed to fetch recent activities:", error);
@@ -243,6 +329,7 @@ export default function ClientDashboard() {
 
     fetchRecentActivities();
   }, [companyId, userReviewsData]);
+
 
 
   // --- DYNAMIC DATA MAPPING ---
@@ -410,7 +497,7 @@ export default function ClientDashboard() {
 
                       <div className="flex-1 min-w-0">
 
-                        <p className="cursor-pointer text-slate-700 hover:underline hover:text-blue-700  text-sm leading-relaxed" onClick={(e) => router.push(`/cleaner-review/${activity.id}?companyId=${companyId}`)}>
+                        <p className="cursor-pointer text-slate-700 hover:underline hover:text-blue-700  text-sm leading-relaxed" onClick={(e) => router.push(`/cleaner-review/${activity.reviewId || activity.id}?companyId=${companyId}`)}>
                           {activity.text}
                         </p>
 
