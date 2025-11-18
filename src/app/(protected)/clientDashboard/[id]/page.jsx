@@ -126,7 +126,7 @@ export default function ClientDashboard() {
           }));
 
           const sortedLocations = [...locationsRes.data]
-            .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+            .sort((a, b) => (b.currentScore || 0) - (a.currentScore || 0))
             .slice(0, 5);
           setTopLocations(sortedLocations);
         } else {
@@ -440,7 +440,7 @@ export default function ClientDashboard() {
           {/* Left: Top Rated Locations */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200/60">
             <h2 className="font-semibold text-lg text-slate-800 mb-4">
-              Top Rated Locations
+              Today's Top Rated Locations
             </h2>
             {topLocations.length === 0 ? (
               <div className="text-center py-8">
@@ -457,7 +457,7 @@ export default function ClientDashboard() {
                     <span className="flex-grow text-slate-700 truncate">
                       {loc.name}
                     </span>
-                    <Rating value={loc.averageRating || 0} />
+                    <Rating value={loc.currentScore || 0} />
                   </li>
                 ))}
               </ul>
