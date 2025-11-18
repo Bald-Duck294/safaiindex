@@ -40,14 +40,17 @@ export default function ViewFacilityCompanyPage() {
   }, [facilityCompanyId]);
 
 
+  // const handleViewLocations = () => {
+  //   sessionStorage.setItem('selectedFacilityCompanyId', facilityCompanyId);
+  //   sessionStorage.setItem('selectedFacilityCompanyName', facilityCompany?.name)
+  //   router.push(`/washrooms?companyId=${companyId}`);
+  // }
+
+
   const handleViewLocations = () => {
-    sessionStorage.setItem('selectedFacilityCompanyId', facilityCompanyId);
-    sessionStorage.setItem('selectedFacilityCompanyName', facilityCompany?.name)
-
-    router.push(`/washrooms?companyId=${companyId}`);
-
+    // ✅ Pass facilityCompanyId as URL parameter instead of sessionStorage
+    router.push(`/washrooms?companyId=${companyId}&facilityCompanyId=${facilityCompanyId}&facilityCompanyName=${encodeURIComponent(facilityCompany?.name || '')}`);
   }
-
 
   const fetchFacilityCompany = async () => {
     setIsLoading(true);
@@ -144,7 +147,7 @@ export default function ViewFacilityCompanyPage() {
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm"
                 >
                   <MapPin className="w-4 h-4" />
-                  View Assigned Locations
+                  View Assigned Washroom(s)
                 </button>
 
                 <button

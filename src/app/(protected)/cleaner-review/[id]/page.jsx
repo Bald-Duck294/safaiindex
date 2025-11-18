@@ -326,24 +326,90 @@ export default function ReviewDetails() {
                     Task Details
                   </h3>
                   <div className="space-y-2 text-sm text-slate-600">
-                    {/* <p><strong>Location ID:</strong> {review.location_id || 'N/A'}</p>
-                    {review.company_id && (
-                      <p><strong>Company ID:</strong> {review.company_id}</p>
-                    )} */}
-                    {review.tasks && Array.isArray(review.tasks) && review.tasks.length > 0 && (
-                      <div>
-                        <p className="font-semibold mb-2">Tasks Completed:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {review.tasks.map((task, index) => (
-                            <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                              Task {String(task)}
-                            </span>
-                          ))}
+                    {/* ✅ Conditional rendering based on status */}
+                    {review.status === 'ongoing' ? (
+                      // ✅ Work in Progress Container for ongoing tasks
+                      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <Clock size={20} className="text-amber-600 animate-pulse" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-amber-900 font-semibold mb-2 flex items-center gap-2">
+                              Work in Progress
+                            </h4>
+                            <p className="text-amber-800 text-sm mb-3">
+                              The cleaner is currently working on this location. Tasks are yet to be completed.
+                            </p>
+
+                            {/* Show tasks list for ongoing work */}
+                            {/* {review.tasks && Array.isArray(review.tasks) && review.tasks.length > 0 && (
+                              <div>
+                                <p className="font-semibold text-amber-900 mb-2 text-xs uppercase tracking-wide">
+                                  Tasks In Progress ({review.tasks.length}):
+                                </p>
+                                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                  {review.tasks.map((task, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-start gap-2 bg-white bg-opacity-60 px-3 py-2 rounded border border-amber-200"
+                                    >
+                                      <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center">
+                                          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
+                                        </div>
+                                      </div>
+                                      <span className="text-slate-700 text-sm leading-relaxed">
+                                        {String(task)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )} */}
+
+                            {/* Time elapsed indicator */}
+                            <div className="mt-3 pt-3 border-t border-amber-200">
+                              <p className="text-xs text-amber-700 flex items-center gap-2">
+                                <Clock size={14} />
+                                <span className="font-medium">Duration:</span>
+                                {getTimeElapsed(review.created_at)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ) : (
+                      // ✅ Completed Tasks Container
+                      review.tasks && Array.isArray(review.tasks) && review.tasks.length > 0 && (
+                        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              <CheckCircle size={20} className="text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-green-900 font-semibold mb-2">
+                                Tasks Completed ({review.tasks.length})
+                              </h4>
+                              <div className="flex flex-wrap gap-2">
+                                {review.tasks.map((task, index) => (
+                                  <span
+                                    key={index}
+                                    className="bg-green-100 text-green-800 px-3 py-1.5 rounded-md text-xs font-medium border border-green-200 flex items-center gap-1.5"
+                                  >
+                                    <CheckCircle size={12} className="text-green-600" />
+                                    {String(task)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
+
               </div>
 
               {/* Comments */}

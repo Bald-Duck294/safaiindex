@@ -439,9 +439,21 @@ export default function ClientDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Top Rated Locations */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200/60">
-            <h2 className="font-semibold text-lg text-slate-800 mb-4">
-              Today's Top Rated Locations
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-lg text-slate-800">
+                Today's Top Rated Locations
+              </h2>
+              <button
+                onClick={() => router.push(`/washrooms?companyId=${companyId}&sortBy=currentScore`)}
+                className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors flex items-center gap-1"
+              >
+                View All
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
             {topLocations.length === 0 ? (
               <div className="text-center py-8">
                 <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -463,6 +475,7 @@ export default function ClientDashboard() {
               </ul>
             )}
           </div>
+
           {/* Right: Recent Activities - REPLACE ENTIRE SECTION */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200/60">
             <h2 className="font-semibold text-lg text-slate-800 flex items-center gap-2 mb-4">

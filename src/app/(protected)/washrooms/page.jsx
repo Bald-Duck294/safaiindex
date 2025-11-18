@@ -18,7 +18,8 @@ function WashroomsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [minRating, setMinRating] = useState("");
-  const [sortOrder, setSortOrder] = useState("desc");
+  // const [sortOrder, setSortOrder] = useState("desc");
+  const [sortBy, setSortBy] = useState("newest");
   const [deleteModal, setDeleteModal] = useState({ open: false, location: null });
   const [actionsMenuOpen, setActionsMenuOpen] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -35,6 +36,7 @@ function WashroomsPage() {
   const [cleanerModal, setCleanerModal] = useState({ open: false, location: null });
 
   const router = useRouter();
+
 
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
@@ -56,7 +58,7 @@ function WashroomsPage() {
     }
 
     const { color, bg, label } = getRatingColor(rating);
-    
+
     return (
       <div className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 ${bg} rounded-lg`}>
         <div className="flex items-center gap-1.5">
@@ -73,6 +75,26 @@ function WashroomsPage() {
       </div>
     );
   };
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const sortByParam = searchParams.get('sortBy');
+    const facilityCompanyIdParam = searchParams.get('facilityCompanyId');
+    const facilityCompanyNameParam = searchParams.get('facilityCompanyName');
+
+
+    if (sortByParam === 'currentScore') {
+      setSortBy('currentScore');
+    }
+
+    if (facilityCompanyIdParam) {
+      setFacilityCompanyId(facilityCompanyIdParam);
+      if (facilityCompanyNameParam) {
+        setFacilityCompanyName(decodeURIComponent(facilityCompanyNameParam));
+      }
+    }
+
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -120,6 +142,8 @@ function WashroomsPage() {
     fetchList();
   }, [companyId]);
 
+
+
   useEffect(() => {
     let filtered = [...list];
 
@@ -145,15 +169,29 @@ function WashroomsPage() {
     if (minRating) {
       filtered = filtered.filter((item) => item.averageRating !== null && parseFloat(item.averageRating) >= parseFloat(minRating));
     }
-
+    //  sorting logic
+    // ✅ Updated sorting logic with name sorting
     filtered.sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      switch (sortBy) {
+        case 'currentScore':
+          return (b.currentScore || 0) - (a.currentScore || 0);
+        case 'averageScore':
+          return (b.averageRating || 0) - (a.averageRating || 0);
+        case 'nameAsc':
+          return a.name.localeCompare(b.name); // A to Z
+        case 'nameDesc':
+          return b.name.localeCompare(a.name); // Z to A
+        case 'asc':
+          return new Date(a.created_at) - new Date(b.created_at);
+        case 'desc':
+        default:
+          return new Date(b.created_at) - new Date(a.created_at);
+      }
     });
 
+
     setFilteredList(filtered);
-  }, [searchQuery, minRating, sortOrder, list, facilityCompanyId, selectedLocationTypeId, assignmentFilter]);
+  }, [searchQuery, minRating, sortBy, list, facilityCompanyId, selectedLocationTypeId, assignmentFilter]);
 
   useEffect(() => {
     const fetchFacilityCompanies = async () => {
@@ -250,11 +288,11 @@ function WashroomsPage() {
   const clearAllFilters = () => {
     setSearchQuery("");
     setMinRating("");
-    setSortOrder("desc");
     setFacilityCompanyId("");
     setFacilityCompanyName("");
     setSelectedLocationTypeId("");
     setAssignmentFilter("");
+    setSortBy("desc");
   };
 
   const renderCleanerBadge = (cleaners) => {
@@ -351,36 +389,61 @@ function WashroomsPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  
+
                   <div className="flex gap-1 bg-white border border-slate-300 rounded-lg p-1">
                     <button
                       onClick={() => setAssignmentFilter("")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${
-                        assignmentFilter === "" ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
-                      }`}
+                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "" ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setAssignmentFilter("assigned")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${
-                        assignmentFilter === "assigned" ? 'bg-emerald-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
-                      }`}
+                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "assigned" ? 'bg-emerald-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
                     >
                       Assigned
                     </button>
                     <button
                       onClick={() => setAssignmentFilter("unassigned")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${
-                        assignmentFilter === "unassigned" ? 'bg-orange-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
-                      }`}
+                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "unassigned" ? 'bg-orange-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
                     >
                       Unassigned
                     </button>
                   </div>
                 </div>
 
+                {/* ✅ NEW: Quick Sort by Name Buttons (visible on all screen sizes) */}
+                <div className="flex items-center gap-2 lg:hidden">
+                  <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Sort by Name:</span>
+                  <div className="flex gap-1 bg-white border border-slate-300 rounded-lg p-1">
+                    <button
+                      onClick={() => setSortBy('nameAsc')}
+                      className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-all ${sortBy === 'nameAsc' ? 'bg-blue-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                      </svg>
+                      A-Z
+                    </button>
+                    <button
+                      onClick={() => setSortBy('nameDesc')}
+                      className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-all ${sortBy === 'nameDesc' ? 'bg-blue-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                      </svg>
+                      Z-A
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap gap-2">
+                  {/* Existing dropdowns */}
                   <select
                     className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={selectedLocationTypeId}
@@ -426,11 +489,15 @@ function WashroomsPage() {
 
                   <select
                     className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
                   >
-                    <option value="desc">Newest</option>
-                    <option value="asc">Oldest</option>
+                    <option value="desc">Newest First</option>
+                    <option value="asc">Oldest First</option>
+                    <option value="currentScore">Current Score (High to Low)</option>
+                    <option value="averageScore">Average Score (High to Low)</option>
+                    <option value="nameAsc">Name (A to Z)</option>
+                    <option value="nameDesc">Name (Z to A)</option>
                   </select>
 
                   <button
@@ -443,6 +510,7 @@ function WashroomsPage() {
                 </div>
               </div>
             </div>
+
           </div>
 
           {/* Desktop Table View (hidden on mobile) */}
@@ -450,7 +518,33 @@ function WashroomsPage() {
             {/* Table Header */}
             <div className="grid grid-cols-[60px_2fr_1.3fr_1.2fr_1.2fr_1.3fr_1.2fr_auto] gap-3 bg-slate-100 text-slate-700 px-4 py-3 text-sm font-semibold border-b border-slate-200">
               <div className="text-center">Sr No</div>
-              <div>Washroom Name</div>
+
+              <button
+                onClick={() => setSortBy(sortBy === 'nameAsc' ? 'nameDesc' : 'nameAsc')}
+                className="text-left hover:text-blue-600 transition-colors flex items-center gap-1.5 group"
+              >
+                <span>Washroom Name</span>
+
+                {/* ✅ Show appropriate icon based on current sort state */}
+                {sortBy === 'nameAsc' ? (
+                  // Up arrow when sorted A to Z
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                ) : sortBy === 'nameDesc' ? (
+                  // Down arrow when sorted Z to A
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                ) : (
+                  // Neutral sort icon when NOT sorted by name
+                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                )}
+              </button>
+
+
               <div>Zone Name</div>
               <div className="text-center">Current Score</div>
               <div className="text-center">Average Rating</div>
@@ -524,9 +618,8 @@ function WashroomsPage() {
                     <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setStatusModal({ open: true, location: item })}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-                          (item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${(item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                          }`}
                       >
                         {(item.status === true || item.status === null) ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
                         Active
@@ -593,9 +686,8 @@ function WashroomsPage() {
                       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setStatusModal({ open: true, location: item })}
-                          className={`p-1.5 rounded transition-all ${
-                            (item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                          }`}
+                          className={`p-1.5 rounded transition-all ${(item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                            }`}
                         >
                           {(item.status === true || item.status === null) ? <Power className="w-4 h-4" /> : <PowerOff className="w-4 h-4" />}
                         </button>
@@ -762,4 +854,3 @@ function WashroomsPage() {
 }
 
 export default WashroomsPage;
-  
