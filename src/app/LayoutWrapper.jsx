@@ -1,29 +1,33 @@
-// app/LayoutWrapper.jsx
 "use client";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "../components/Header";
 import dynamic from "next/dynamic";
+// import AuthChecker from "../components/AuthChecker"; // ✅ Import AuthChecker
+import AuthChecker from "./(protected)/components/AuthChecker";
 
 const Sidebar = dynamic(() => import("../components/Sidebar"), { ssr: false });
 
-import { Suspense } from "react";
 export default function LayoutWrapper({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
 
-  // Pages to exclude layout
-  const hideLayoutFor = ["/", "/login", "/register"]; // add more routes if needed
+  // Pages to exclude layout (public pages)
+  const hideLayoutFor = ["/", "/login", "/register"];
   const shouldHideLayout = hideLayoutFor.includes(pathname);
 
+  // ✅ Wrap everything with AuthChecker
   if (shouldHideLayout) {
-    return <>{children}</>; // Just render children (no header/sidebar/footer)
+    return (
+      <AuthChecker>
+        {children}
+      </AuthChecker>
+    );
   }
 
   return (
-    <>
-      {/* <div className="flex h-[90vh] min-h-screen max-w-[100rem] mx-auto overflow-hidden"> */}
+    <AuthChecker>
       <div className="flex h-screen min-h-screen w-full overflow-hidden">
         <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
@@ -33,7 +37,6 @@ export default function LayoutWrapper({ children }) {
           <div className="bg-gray-50 flex-grow overflow-y-auto">{children}</div>
         </div>
       </div>
-      {/* <Footer /> */}
-    </>
+    </AuthChecker>
   );
 }
