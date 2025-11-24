@@ -289,7 +289,7 @@ const Header = ({ pageTitle }) => {
   const userRole = getRoleText();
 
   // ✅ Smart truncation: Show first and last characters for very long names
-  const truncateCompanyName = (name, maxLength = 40) => {
+  const truncateCompanyName = (name, maxLength = 30) => {
     if (!name || name.length <= maxLength) return name;
 
     const firstPart = name.substring(0, Math.floor(maxLength / 2) - 2);
@@ -315,7 +315,7 @@ const Header = ({ pageTitle }) => {
           <>
             <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
             <span
-              className="truncate"
+              className="truncate mr-[1rem]"
               title={company.name}
             >
               {truncateCompanyName(company.name)}
@@ -348,7 +348,7 @@ const Header = ({ pageTitle }) => {
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0 absolute right-4 md:right-6 lg:right-8 md:relative md:right-0">
         {/* User Name and Role */}
         <div className="text-right hidden md:block">
-          <span className="font-semibold text-xs md:text-sm text-slate-700 block truncate max-w-[120px] lg:max-w-[180px]">
+          <span className="font-semibold text-xs md:text-sm text-slate-700 block  truncate max-w-[120px] lg:max-w-[180px]">
             {user?.name || "Guest"}
           </span>
           <span className="block text-[10px] md:text-xs text-red-600 font-bold uppercase tracking-wider">
@@ -357,7 +357,7 @@ const Header = ({ pageTitle }) => {
         </div>
 
         {/* ✅ Notification Bell - ADD THIS */}
-        <NotificationBell />
+        <NotificationBell className="ml-8" />
 
         {/* Logout Button */}
         <button
