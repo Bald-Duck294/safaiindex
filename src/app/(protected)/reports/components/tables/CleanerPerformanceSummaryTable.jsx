@@ -26,7 +26,7 @@ export default function CleanerPerformanceSummaryTable({ data, metadata }) {
                             <th className="p-3 text-left text-xs font-semibold uppercase">Cleaner</th>
                             <th className="p-3 text-left text-xs font-semibold uppercase">Total Tasks</th>
                             <th className="p-3 text-left text-xs font-semibold uppercase">Avg. AI Score</th>
-                            <th className="p-3 text-left text-xs font-semibold uppercase">Avg. Compliance (%)</th>
+                            <th className="p-3 text-left text-xs font-semibold uppercase">Avg. Compliance (100%)</th>
                             <th className="p-3 text-left text-xs font-semibold uppercase">Avg. Duration (min)</th>
                             <th className="p-3 text-left text-xs font-semibold uppercase">Last Task Date</th>
                         </tr>

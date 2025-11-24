@@ -58,6 +58,7 @@ const AddAssignmentPage = () => {
         const userRes = await UsersApi.getAllUsers(companyId);
         const locationRes = await LocationsApi.getAllLocations(companyId);
 
+        // console.log(userRes, "user response")
         if (userRes.success) setAllUsers(userRes.data || []);
         if (locationRes.success) setAllLocations(locationRes.data || []);
       } catch (err) {
@@ -112,8 +113,8 @@ const AddAssignmentPage = () => {
     const conflicts = [];
 
     try {
-      const usersToCheck = assignmentMode === "multi" 
-        ? selectedUsers 
+      const usersToCheck = assignmentMode === "multi"
+        ? selectedUsers
         : [allUsers.find(u => u.id === singleUser)];
 
       // Check each user's existing assignments
@@ -125,7 +126,7 @@ const AddAssignmentPage = () => {
 
         if (response.success) {
           const assignedLocationIds = response.data.map((a) => a.location_id);
-          
+
           // Find conflicts
           const userConflicts = selectedLocations.filter((loc) =>
             assignedLocationIds.includes(loc.id)
@@ -298,6 +299,7 @@ const AddAssignmentPage = () => {
               location_ids: selectedLocations.map((loc) => loc.id),
               status: "assigned",
               company_id: companyId,
+              role_id: user.role_id,
             });
 
             if (response.success) {
@@ -323,6 +325,7 @@ const AddAssignmentPage = () => {
           location_ids: selectedLocations.map((loc) => loc.id),
           status: "assigned",
           company_id: companyId,
+          role_id: singleUser.role_id
         });
 
         if (response.success) {
@@ -336,8 +339,7 @@ const AddAssignmentPage = () => {
       // Show results
       if (successCount > 0 && failureCount === 0) {
         toast.success(
-          `Successfully created ${successCount} assignment${
-            successCount !== 1 ? "s" : ""
+          `Successfully created ${successCount} assignment${successCount !== 1 ? "s" : ""
           }!`
         );
 
@@ -348,9 +350,9 @@ const AddAssignmentPage = () => {
         setUserSearchTerm("");
         setLocationSearchTerm("");
 
-        setTimeout(() => {
-          window.location.href = `/cleaner-assignments?companyId=${companyId}`;
-        }, 1000);
+        // setTimeout(() => {
+        //   window.location.href = `/cleaner-assignments?companyId=${companyId}`;
+        // }, 1000);
       } else if (successCount > 0 && failureCount > 0) {
         toast(
           (t) => (
@@ -500,16 +502,14 @@ const AddAssignmentPage = () => {
               <button
                 type="button"
                 onClick={handleModeToggle}
-                className={`relative inline-flex h-8 w-16 sm:h-9 sm:w-[4.5rem] items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
-                  assignmentMode === "multi" ? "bg-indigo-600" : "bg-green-600"
-                }`}
+                className={`relative inline-flex h-8 w-16 sm:h-9 sm:w-[4.5rem] items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${assignmentMode === "multi" ? "bg-indigo-600" : "bg-green-600"
+                  }`}
               >
                 <span
-                  className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-transform shadow-sm ${
-                    assignmentMode === "multi"
-                      ? "translate-x-1"
-                      : "translate-x-8 sm:translate-x-9"
-                  }`}
+                  className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-transform shadow-sm ${assignmentMode === "multi"
+                    ? "translate-x-1"
+                    : "translate-x-8 sm:translate-x-9"
+                    }`}
                 >
                   {assignmentMode === "multi" ? (
                     <Users className="w-4 h-4 sm:w-5 sm:h-5 m-1 text-indigo-600" />
@@ -537,15 +537,13 @@ const AddAssignmentPage = () => {
                   >
                     <span className="truncate">
                       {selectedUsers.length > 0
-                        ? `${selectedUsers.length} user${
-                            selectedUsers.length !== 1 ? "s" : ""
-                          } selected`
+                        ? `${selectedUsers.length} user${selectedUsers.length !== 1 ? "s" : ""
+                        } selected`
                         : "Click to select users..."}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
-                        isUserDropdownOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isUserDropdownOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -653,13 +651,12 @@ const AddAssignmentPage = () => {
                     <span className="truncate">
                       {singleUser
                         ? allUsers.find((u) => u.id === singleUser)?.name ||
-                          "Select a user..."
+                        "Select a user..."
                         : "Select a user..."}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
-                        isUserDropdownOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isUserDropdownOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -683,11 +680,10 @@ const AddAssignmentPage = () => {
                           <div
                             key={user.id}
                             onClick={() => handleUserSelect(user)}
-                            className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer text-xs sm:text-sm transition-colors ${
-                              singleUser === user.id
-                                ? "bg-green-50 text-green-700 font-medium"
-                                : "text-slate-700"
-                            }`}
+                            className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer text-xs sm:text-sm transition-colors ${singleUser === user.id
+                              ? "bg-green-50 text-green-700 font-medium"
+                              : "text-slate-700"
+                              }`}
                           >
                             {user.name}
                           </div>
@@ -734,15 +730,13 @@ const AddAssignmentPage = () => {
                 >
                   <span className="truncate">
                     {selectedLocations.length > 0
-                      ? `${selectedLocations.length} location${
-                          selectedLocations.length !== 1 ? "s" : ""
-                        } selected`
+                      ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? "s" : ""
+                      } selected`
                       : "Click to select locations..."}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
-                      isLocationDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isLocationDropdownOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 
@@ -845,11 +839,10 @@ const AddAssignmentPage = () => {
               <button
                 type="submit"
                 disabled={isLoading || isValidating}
-                className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${
-                  assignmentMode === "multi"
-                    ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
-                    : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                }`}
+                className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${assignmentMode === "multi"
+                  ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+                  : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                  }`}
               >
                 {isValidating ? (
                   <>
@@ -862,16 +855,13 @@ const AddAssignmentPage = () => {
                     <span>Creating Assignments...</span>
                   </>
                 ) : assignmentMode === "multi" ? (
-                  `Create ${
-                    selectedUsers.length * selectedLocations.length
-                  } Assignment${
-                    selectedUsers.length * selectedLocations.length !== 1
-                      ? "s"
-                      : ""
+                  `Create ${selectedUsers.length * selectedLocations.length
+                  } Assignment${selectedUsers.length * selectedLocations.length !== 1
+                    ? "s"
+                    : ""
                   }`
                 ) : (
-                  `Assign ${selectedLocations.length} Location${
-                    selectedLocations.length !== 1 ? "s" : ""
+                  `Assign ${selectedLocations.length} Location${selectedLocations.length !== 1 ? "s" : ""
                   }`
                 )}
               </button>

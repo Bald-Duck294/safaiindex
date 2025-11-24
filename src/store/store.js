@@ -35,7 +35,8 @@ import authReducer from './slices/authSlice';
 import { configurationApi } from './slices/configurationApi';
 import { reviewApi } from './slices/reviewSlice';
 import { shiftApi } from "./slices/shiftApi.js";
-
+import { notificationApi } from './slices/notificationApi';
+import notificationReducer from './slices/notificationSlice';
 // ✅ Persist config for auth only
 const persistConfig = {
   key: 'auth',
@@ -48,10 +49,12 @@ const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
 export const store = configureStore({
   reducer: {
-    auth: persistedAuthReducer, // ✅ Use persisted reducer
+    auth: persistedAuthReducer,
+    notifications: notificationReducer,
     [configurationApi.reducerPath]: configurationApi.reducer,
     [reviewApi.reducerPath]: reviewApi.reducer,
-    [shiftApi.reducerPath]: shiftApi.reducer
+    [shiftApi.reducerPath]: shiftApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
   },
 
   middleware: (getDefaultMiddleware) =>
@@ -63,7 +66,8 @@ export const store = configureStore({
     }).concat(
       configurationApi.middleware,
       reviewApi.middleware,
-      shiftApi.middleware
+      shiftApi.middleware,
+      notificationApi.middleware
     ),
 });
 

@@ -11,7 +11,7 @@ import { parseParameter } from "next/dist/shared/lib/router/utils/route-regex";
 export const LocationsApi = {
   // Get all locations
   getAllLocations: async (company_id, includeUnavailable = false, facilityCompanyId = null) => {
-    console.log("in get all locations", company_id);
+    // console.log("in get all locations", company_id);
     // options = {} add this in the parametere if the options becomes more 
     // const { includeUnavailable = false, type_id = null } = options; this is how to acesses it 
 
@@ -28,7 +28,7 @@ export const LocationsApi = {
     //   params.type_id = type_id;
     // }
 
-    console.log(params, "from get all locs");
+    // console.log(params, "from get all locs");
     try {
       const response = await axiosInstance.get(`/locations`, { params });
       // console.log(response.data, "data22");
@@ -58,7 +58,7 @@ export const LocationsApi = {
         `/zones?${params.toString()}`
       );
 
-      console.log(response.data, "zones data");
+      // console.log(response.data, "zones data");
       return response.data;
     } catch (error) {
       console.error("Error fetching zones with toilets:", error);
@@ -281,12 +281,12 @@ export const LocationsApi = {
           let valueToAppend = data[key];
 
           if (key === 'options' | key === 'usage_category') {
-            console.log(`Processing options for update:`, data[key]);
+            // console.log(`Processing options for update:`, data[key]);
 
             if (typeof data[key] === 'object' && data[key] !== null) {
               // ✅ CRITICAL FIX: Always stringify objects
               valueToAppend = JSON.stringify(data[key]);
-              console.log(`Stringified options for update:`, valueToAppend);
+              // console.log(`Stringified options for update:`, valueToAppend);
             } else if (typeof data[key] === 'string') {
               valueToAppend = data[key];
             } else {
@@ -320,7 +320,7 @@ export const LocationsApi = {
       }
 
       //  Debug FormData contents
-      console.log("Update FormData entries:");
+      // console.log("Update FormData entries:");
       for (let pair of formData.entries()) {
         console.log(`${pair[0]}: ${pair[1]} (type: ${typeof pair[1]})`);
       }
@@ -522,11 +522,11 @@ export const LocationsApi = {
   // In LocationsApi.js
   toggleStautsLocations: async (id) => {
     try {
-      console.log('Calling toggle status API for ID:', id);
+      // console.log('Calling toggle status API for ID:', id);
       const response = await axiosInstance.post(`/locations/status/${id}`);
 
-      console.log('Raw API response:', response);
-      console.log('Response data:', response.data);
+      // console.log('Raw API response:', response);
+      // console.log('Response data:', response.data);
 
       return {
         success: true,

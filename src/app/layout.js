@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import LayoutWrapper from "./LayoutWrapper";
 import { CompanyProvider } from "@/lib/providers/CompanyProvider";
 // import StoreProvider from "@/store/StoreProvider";
+import NotificationProvider from "./(protected)/components/providers";
 import StoreProvider from '../store/StoreProvider.js'
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,7 +23,9 @@ export default function RootLayout({ children }) {
           <CompanyProvider>
             {/* LayoutWrapper will handle the sidebar state and pass it down */}
             <LayoutWrapper>
-              {children} {/* This is where your page content will be rendered */}
+              {/* <NotificationProvider> */}
+                {children} {/* This is where your page content will be rendered */}
+              {/* </NotificationProvider> */}
             </LayoutWrapper>
           </CompanyProvider>
         </StoreProvider>

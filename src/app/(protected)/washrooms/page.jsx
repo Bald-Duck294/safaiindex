@@ -57,13 +57,20 @@ function WashroomsPage() {
       return <span className="text-sm text-slate-400">—</span>;
     }
 
+    const smartRound = (rating) => {
+      const rounded = Math.round(rating * 10) / 10;
+      return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    };
+
     const { color, bg, label } = getRatingColor(rating);
 
     return (
       <div className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 ${bg} rounded-lg`}>
         <div className="flex items-center gap-1.5">
           <span className={`font-bold text-base ${color}`}>
-            {rating.toFixed(1)}
+            {/* {rating.toFixed(1)} */}
+            {/* {parseFloat(rating).toFixed(2)} */}
+            {smartRound(rating)}
           </span>
           <span className={`text-xs font-medium ${color}`}>{label}</span>
         </div>

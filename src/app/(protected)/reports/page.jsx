@@ -18,7 +18,7 @@ import ReportModal from "./components/ReportModal";
 import Loader from "@/components/ui/Loader";
 import { useSelector } from "react-redux";
 
-// ✅ Report type configurations
+
 const REPORT_TYPES = [
   {
     value: "daily_task",
@@ -43,6 +43,12 @@ const REPORT_TYPES = [
     label: "Cleaner Performance Summary",
     description: "Aggregate performance metrics for cleaners.",
     endpoint: "cleaner-performance-summary",
+  },
+  {
+    value: "detailed_cleaning",
+    label: "Detailed Cleaning Report",
+    description: "Aggregate performance metrics for cleaners.",
+    endpoint: "daily-task",
   }
 ];
 

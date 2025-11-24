@@ -5,7 +5,7 @@ import API_BASE_URL from "../utils/Constant";
 export const UsersApi = {
   // Get all users with optional filters
   getAllUsers: async (companyId = null, roleId = null) => {
-    console.log("in get all user", companyId);
+    // console.log("in get all user", companyId);
     try {
       const params = new URLSearchParams();
       if (companyId) {
@@ -16,7 +16,7 @@ export const UsersApi = {
       }
 
       const response = await axiosInstance.get(`/users?${params.toString()}`);
-      console.log(response, "response users");
+      // console.log(response, "response users");
 
       return {
         success: true,
@@ -42,7 +42,7 @@ export const UsersApi = {
         // Filter by role_id client-side
         const filteredUsers = allUsers.filter(user => user.role_id === roleId);
 
-        console.log(filteredUsers, "filter users");
+        // console.log(filteredUsers, "filter users");
         return {
           success: true,
           data: filteredUsers,
@@ -109,7 +109,7 @@ export const UsersApi = {
 
       // Remove companyId from query params, send everything in body
       const response = await axiosInstance.post(`/users`, requestData);
-      console.log(response, "create user response");
+      // console.log(response, "create user response");
 
       return {
         success: true,

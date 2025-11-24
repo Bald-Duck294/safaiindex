@@ -33,7 +33,7 @@ function CompanyProviderImpl({ children }) {
         };
 
         const newCompanyId = getCompanyId();
-        console.log("company_id from context", newCompanyId);
+        // console.log("company_id from context", newCompanyId);
         setCompanyId(newCompanyId);
     }, [pathname, searchParams]);
 

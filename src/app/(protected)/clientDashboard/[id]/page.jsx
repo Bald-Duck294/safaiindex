@@ -17,7 +17,7 @@ import {
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/ui/Loader";
-
+import useNotifications from "@/lib/hooks/useNotifications";
 // Import your API utilities
 import LocationsApi from "@/lib/api/LocationApi";
 import { CleanerReviewApi } from "@/lib/api/cleanerReviewApi";
@@ -47,6 +47,8 @@ const getTodayDate = () => {
 
 
 export default function ClientDashboard() {
+
+  useNotifications();
   // State to hold all the dynamic dashboard data
   const [statsData, setStatsData] = useState({
     totalLocations: 0,
@@ -60,6 +62,7 @@ export default function ClientDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState([]);
   const [isActivitiesLoading, setIsActivitiesLoading] = useState(true);
+
 
   const router = useRouter();
 
@@ -100,6 +103,24 @@ export default function ClientDashboard() {
     { limit: 50 }, // Fetch more to filter by date
     { skip: !companyId || companyId === 'null' || companyId === null }
   );
+
+
+  // Add this to your ClientDashboard component for testing
+useEffect(() => {
+  // Test if messaging is initialized
+  console.log("🧪 Testing FCM setup...");
+  
+  // Check if service worker is active
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      console.log("📋 Active service workers:", registrations.length);
+      registrations.forEach(reg => {
+        console.log("  - Scope:", reg.scope);
+        console.log("  - State:", reg.active?.state);
+      });
+    });
+  }
+}, []);
 
   // Fetch all data when the component mounts
   useEffect(() => {

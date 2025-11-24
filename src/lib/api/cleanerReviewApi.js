@@ -118,11 +118,11 @@ export const CleanerReviewApi = {
   getAllCleanerReviews: async (params = {}, company_id) => {
 
 
-    console.log('in get all cleaner review ', company_id)
+    // console.log('in get all cleaner review ', company_id)
     try {
       const queryParams = new URLSearchParams();
 
-      console.log(queryParams, "query params ")
+      // console.log(queryParams, "query params ")
       if (params.status) {
         queryParams.append("status", params.status);
       }
@@ -136,7 +136,7 @@ export const CleanerReviewApi = {
       if (company_id) {
         queryParams.append("company_id", company_id);
       }
-      console.log(queryParams, "query params after response")
+      // console.log(queryParams, "query params after response")
 
       const response = await axiosInstance.get(`/cleaner-reviews?${queryParams.toString()}`);
 
@@ -154,7 +154,7 @@ export const CleanerReviewApi = {
   },
 
   getReviewsByStatus: async (status, companyId, date = null) => {
-    console.log('get review by status', status, companyId, date);
+    // console.log('get review by status', status, companyId, date);
 
     try {
       let url = `/cleaner-reviews?status=${status}&company_id=${companyId}`;
@@ -194,7 +194,7 @@ export const CleanerReviewApi = {
     }
   },
   async getCleanerReviewById(reviewId) {
-    console.log(reviewId, "id")
+    // console.log(reviewId, "id")
     try {
       const response = await axiosInstance(`/cleaner-reviews/task/${reviewId}`, {
         method: 'GET',
@@ -203,7 +203,7 @@ export const CleanerReviewApi = {
         },
       });
 
-      console.log(response, "response")
+      // console.log(response, "response")
 
       if (response) {
         return {
@@ -237,7 +237,7 @@ export const CleanerReviewApi = {
         `/cleaner-reviews/location/${locationId}?${queryParams.toString()}`
       );
 
-      console.log('✅ Cleaner reviews response:', response);
+      // console.log('✅ Cleaner reviews response:', response);
 
       if (response.data) {
         return {

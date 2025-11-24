@@ -859,7 +859,7 @@ const SingleLocation = () => {
                         {renderStars(parseFloat(cleanerReviewStats.average_score))}
                       </div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {cleanerReviewStats.average_score}/10
+                        {parseFloat(cleanerReviewStats.average_score).toFixed(1)}/10
                       </div>
                       <p className="text-xs text-gray-600">
                         Cleaner {cleanerReviewCount === 1 ? 'Review' : 'Reviews'}

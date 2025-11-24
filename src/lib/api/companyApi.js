@@ -26,7 +26,7 @@ export const CompanyApi = {
   },
 
   getAllCompanies: async () => {
-    console.log("in get all companies");
+    // console.log("in get all companies");
     try {
       const response = await axiosInstance.get("/companies");
       return { success: true, data: response.data };
@@ -39,10 +39,10 @@ export const CompanyApi = {
   },
 
   getCompanyById: async (id) => {
-    console.log('get by id company ')
+    // console.log('get by id company ')
     try {
       const response = await axiosInstance.get(`/companies/${id}`);
-      console.log(response?.data , "data")
+      // console.log(response?.data, "data")
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -53,7 +53,7 @@ export const CompanyApi = {
   },
 
   updateCompany: async (id, companyData) => {
-    console.log('update')
+    // console.log('update')
     try {
       const response = await axiosInstance.post(`/companies/${id}`, companyData);
       return { success: true, data: response.data };

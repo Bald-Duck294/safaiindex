@@ -7,6 +7,7 @@ import ZoneWiseReportTable from "./tables/ZoneWiseReportTable";
 
 import AiScoringReportTable from "./tables/AiScoringReportTable";
 import CleanerPerformanceSummaryTable from "./tables/CleanerPerformanceSummaryTable";
+import DetailedCleaningReportTable from "./tables/DetailedCleaningReportTable";
 import { exportToPDF, exportToExcel } from "./ExportUtils";
 
 export default function ReportModal({ reportType, data, metadata, onClose }) {
@@ -33,6 +34,8 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
         return <AiScoringReportTable data={data} metadata={metadata} />;
       case "cleaner_performance_summary":
         return <CleanerPerformanceSummaryTable data={data} metadata={metadata} />;
+      case "detailed_cleaning":
+        return <DetailedCleaningReportTable data={data} metadata={metadata} />;
       default:
         return <div>Unknown report type</div>;
     }

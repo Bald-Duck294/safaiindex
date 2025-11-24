@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Users, Mail, Phone, Calendar, MapPin, Eye, Edit, Trash2, AlertTriangle, ArrowLeft, UserCheck, UserPlus, Search, Filter, ToggleLeft, ToggleRight } from "lucide-react";
+import { Users, Mail, Phone, Calendar, MapPin, Eye, Edit, Trash2, AlertTriangle, ArrowLeft, UserCheck, UserPlus, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import Loader from "@/components/ui/Loader";
@@ -15,10 +15,8 @@ export default function CleanersPage() {
     const [loading, setLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState({ open: false, assignment: null });
     const [deleting, setDeleting] = useState(false);
-    const [togglingStatus, setTogglingStatus] = useState(null); // ✅ Track which assignment is being toggled
+    const [togglingStatus, setTogglingStatus] = useState(null);
     const [statusModal, setStatusModal] = useState({ open: false, assignment: null });
-
-    // Filter states
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
 
@@ -29,47 +27,37 @@ export default function CleanersPage() {
     const locationId = searchParams.get('locationId');
     const locationName = searchParams.get('locationName');
 
-
     const user = useSelector((state) => state.auth.user);
     const userRoleId = user?.role_id;
     const isPermitted = userRoleId === 1 || userRoleId === 2;
 
-
     useEffect(() => {
         if (!locationId || !companyId) {
-            console.log('Missing locationId or companyId');
             setLoading(false);
             return;
         }
-
         fetchAssignments();
+        // eslint-disable-next-line
     }, [locationId, companyId]);
 
-    // Apply filters
     useEffect(() => {
         let filtered = [...assignments];
-
-        // Search filter
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(assignment => {
                 const cleanerName = assignment.cleaner_user?.name?.toLowerCase() || '';
                 const cleanerEmail = assignment.cleaner_user?.email?.toLowerCase() || '';
                 const cleanerPhone = assignment.cleaner_user?.phone?.toLowerCase() || '';
-
                 return cleanerName.includes(query) ||
                     cleanerEmail.includes(query) ||
                     cleanerPhone.includes(query);
             });
         }
-
-        // Status filter
         if (statusFilter !== "all") {
             filtered = filtered.filter(assignment =>
                 assignment.status?.toLowerCase() === statusFilter.toLowerCase()
             );
         }
-
         setFilteredAssignments(filtered);
     }, [searchQuery, statusFilter, assignments]);
 
@@ -77,17 +65,14 @@ export default function CleanersPage() {
         setLoading(true);
         try {
             const response = await AssignmentsApi.getAssignmentsByLocation(locationId, companyId);
-
             if (response.success) {
-
-                const filteredCleaners = response.data.filter((item) => item.role_id === 5)
+                const filteredCleaners = response.data.filter((item) => item.role_id === 5);
                 setAssignments(filteredCleaners);
-                setFilteredAssignments(response.data);
+                setFilteredAssignments(filteredCleaners);
             } else {
                 toast.error(response.error || "Failed to fetch assignments");
             }
         } catch (error) {
-            console.error("Error fetching assignments:", error);
             toast.error("Failed to fetch assignments");
         } finally {
             setLoading(false);
@@ -106,27 +91,15 @@ export default function CleanersPage() {
         router.push(`/assignments/cleaner/add?companyId=${companyId}&locationId=${locationId}&locationName=${encodeURIComponent(locationName)}`);
     };
 
-    // ✅ Toggle Status Handler
     const handleToggleStatus = async (assignment) => {
         setTogglingStatus(assignment.id);
-
         try {
             const currentStatus = assignment.status?.toLowerCase() || 'unassigned';
             const newStatus = currentStatus === 'assigned' ? 'unassigned' : 'assigned';
-
-            console.log(`Toggling status from ${currentStatus} to ${newStatus}`);
-
-            const updateData = {
-                status: newStatus,
-            };
-
-
+            const updateData = { status: newStatus };
             const response = await AssignmentsApi.updateAssignment(assignment.id, updateData);
-
             if (response.success) {
                 toast.success(`Status changed to ${newStatus}`);
-
-                // Update the assignment in the list
                 setAssignments(prevAssignments =>
                     prevAssignments.map(a =>
                         a.id === assignment.id ? { ...a, status: newStatus } : a
@@ -136,48 +109,33 @@ export default function CleanersPage() {
                 toast.error(response.error || "Failed to update status");
             }
         } catch (error) {
-            console.error('Toggle status error:', error);
             toast.error("Failed to update status");
         } finally {
             setTogglingStatus(null);
         }
     };
 
-
     const confirmStatusToggle = async () => {
         if (!statusModal.assignment) return;
-
         const assignment = statusModal.assignment;
         setTogglingStatus(assignment.id);
-
         try {
             const currentStatus = assignment.status?.toLowerCase() || 'unassigned';
             const newStatus = currentStatus === 'assigned' ? 'unassigned' : 'assigned';
-
-            console.log(`Toggling status from ${currentStatus} to ${newStatus}`);
-
-            const updateData = {
-                status: newStatus,
-            };
-
+            const updateData = { status: newStatus };
             const response = await AssignmentsApi.updateAssignment(assignment.id, updateData);
-
             if (response.success) {
                 toast.success(`Status changed to ${newStatus}`);
-
                 setAssignments(prevAssignments =>
                     prevAssignments.map(a =>
                         a.id === assignment.id ? { ...a, status: newStatus } : a
                     )
                 );
-
-                // Close modal
                 setStatusModal({ open: false, assignment: null });
             } else {
                 toast.error(response.error || "Failed to update status");
             }
         } catch (error) {
-            console.error('Toggle status error:', error);
             toast.error("Failed to update status");
         } finally {
             setTogglingStatus(null);
@@ -190,15 +148,11 @@ export default function CleanersPage() {
 
     const confirmDelete = async () => {
         if (!deleteModal.assignment) return;
-
         const assignmentId = deleteModal.assignment.id;
         const cleanerName = deleteModal.assignment.cleaner_user?.name || 'Cleaner';
-
         setDeleting(true);
-
         try {
             const response = await AssignmentsApi.deleteAssignment(assignmentId);
-
             if (response.success) {
                 toast.success(`${cleanerName} removed successfully`);
                 setAssignments(prev => prev.filter(a => a.id !== assignmentId));
@@ -207,7 +161,6 @@ export default function CleanersPage() {
                 toast.error(response.error || "Failed to remove assignment");
             }
         } catch (error) {
-            console.error("Delete error:", error);
             toast.error("Failed to remove assignment");
         } finally {
             setDeleting(false);
@@ -245,7 +198,6 @@ export default function CleanersPage() {
     return (
         <>
             <Toaster position="top-right" />
-
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-3 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
@@ -276,7 +228,6 @@ export default function CleanersPage() {
                                             <span className="ml-1">of {assignments.length}</span>
                                         </div>
                                     </div>
-
                                     {isPermitted &&
                                         <button
                                             onClick={handleAddCleaner}
@@ -289,7 +240,6 @@ export default function CleanersPage() {
                                 </div>
                             </div>
                         </div>
-
                         {/* Filters Section */}
                         <div className="p-4 bg-slate-50 border-b border-slate-200">
                             <div className="flex flex-col sm:flex-row gap-3">
@@ -304,7 +254,6 @@ export default function CleanersPage() {
                                         className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                     />
                                 </div>
-
                                 {/* Status Filter */}
                                 <select
                                     value={statusFilter}
@@ -315,7 +264,6 @@ export default function CleanersPage() {
                                     <option value="assigned">Assigned</option>
                                     <option value="unassigned">Unassigned</option>
                                 </select>
-
                                 {/* Clear Filters */}
                                 {(searchQuery || statusFilter !== "all") && (
                                     <button
@@ -328,9 +276,9 @@ export default function CleanersPage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Table View */}
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+                    {/* --- Responsive Listing Section --- */}
+                    {/* Table View: Desktop/Tablet */}
+                    <div className="hidden sm:block bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
                         {filteredAssignments.length === 0 ? (
                             <div className="p-12 text-center">
                                 <UserCheck className="h-16 w-16 text-slate-300 mx-auto mb-4" />
@@ -359,7 +307,6 @@ export default function CleanersPage() {
                                         <tr className="bg-slate-50 border-b border-slate-200">
                                             <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Sr. No.</th>
                                             <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Cleaner Name</th>
-                                            {/* <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Email</th> */}
                                             <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Phone</th>
                                             <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Status</th>
                                             <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Assigned On</th>
@@ -385,16 +332,6 @@ export default function CleanersPage() {
                                                         </span>
                                                     </div>
                                                 </td>
-                                                {/* <td className="py-4 px-6">
-                                                    {assignment.cleaner_user?.email ? (
-                                                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                                                            <Mail className="h-3 w-3 text-slate-400" />
-                                                            <span className="truncate max-w-xs">{assignment.cleaner_user.email}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-sm text-slate-400">N/A</span>
-                                                    )}
-                                                </td> */}
                                                 <td className="py-4 px-6">
                                                     {assignment.cleaner_user?.phone ? (
                                                         <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -406,9 +343,7 @@ export default function CleanersPage() {
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    {/* ✅ Status Toggle Button */}
                                                     <button
-                                                        // onClick={() => handleToggleStatus(assignment)}
                                                         onClick={() => setStatusModal({ open: true, assignment: assignment })}
                                                         disabled={togglingStatus === assignment.id}
                                                         className={`inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${assignment.status?.toLowerCase() === 'assigned'
@@ -418,7 +353,7 @@ export default function CleanersPage() {
                                                         title="Click to toggle status"
                                                     >
                                                         {togglingStatus === assignment.id ? (
-                                                            <div className="  w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                                         ) : assignment.status?.toLowerCase() === 'assigned' ? (
                                                             <ToggleRight className="w-3 h-3 cursor-pointer" />
                                                         ) : (
@@ -443,8 +378,6 @@ export default function CleanersPage() {
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                         </button>
-                                                        {/* Removed Edit button since we're toggling status directly */}
-
                                                         {isPermitted && (
                                                             <button
                                                                 onClick={() => handleDelete(assignment)}
@@ -462,8 +395,6 @@ export default function CleanersPage() {
                                 </table>
                             </div>
                         )}
-
-                        {/* Footer */}
                         {filteredAssignments.length > 0 && (
                             <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
                                 <div className="flex justify-between items-center text-sm text-slate-600">
@@ -477,126 +408,223 @@ export default function CleanersPage() {
                             </div>
                         )}
                     </div>
-
-                    {/* Status Confirmation Modal */}
-                    {statusModal.open && (
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className={`p-3 rounded-full ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                        ? 'bg-gray-100'
-                                        : 'bg-green-100'
-                                        }`}>
-                                        {statusModal.assignment?.status?.toLowerCase() === 'assigned' ? (
-                                            <ToggleLeft className="h-6 w-6 text-gray-600" />
-                                        ) : (
-                                            <ToggleRight className="h-6 w-6 text-green-600" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                                            Change Assignment Status
-                                        </h3>
-                                        <p className="text-slate-600 text-sm">
-                                            Confirm status change for this cleaner
-                                        </p>
-                                    </div>
+                    {/* Card View: Mobile */}
+                    <div className="block sm:hidden">
+                        {filteredAssignments.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <UserCheck className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                                <div className="font-medium text-slate-600">
+                                    {assignments.length === 0 ? 'No Cleaners Assigned' : 'No Results Found'}
                                 </div>
-
-                                <div className="mb-6">
-                                    <p className="text-slate-700">
-                                        Are you sure you want to change{" "}
-                                        <strong>{statusModal.assignment?.cleaner_user?.name}</strong>'s status to{" "}
-                                        <strong className={
-                                            statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                                ? 'text-gray-700'
-                                                : 'text-green-700'
-                                        }>
-                                            {statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                                ? 'Unassigned'
-                                                : 'Assigned'}
-                                        </strong>?
-                                    </p>
+                                <div className="text-slate-400 mb-4">
+                                    {assignments.length === 0
+                                        ? 'No cleaners are currently assigned to this washroom.'
+                                        : 'Try adjusting your search or filters.'}
                                 </div>
-
-                                <div className="flex gap-3 justify-end">
+                                {assignments.length === 0 && (
                                     <button
-                                        onClick={() => setStatusModal({ open: false, assignment: null })}
-                                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
-                                        disabled={togglingStatus === statusModal.assignment?.id}
+                                        onClick={handleAddCleaner}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                                     >
-                                        Cancel
+                                        <UserPlus className="h-4 w-4" />
+                                        Add First Cleaner
                                     </button>
-                                    <button
-                                        onClick={confirmStatusToggle}
-                                        disabled={togglingStatus === statusModal.assignment?.id}
-                                        className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
-                                            ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
-                                            : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-                                            }`}
-                                    >
-                                        {togglingStatus === statusModal.assignment?.id && (
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        )}
-                                        {togglingStatus === statusModal.assignment?.id
-                                            ? 'Processing...'
-                                            : 'Confirm Change'}
-                                    </button>
-                                </div>
+                                )}
                             </div>
-                        </div>
-                    )}
-
-                    {/* Delete Modal */}
-                    {deleteModal.open && (
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className="p-3 bg-red-100 rounded-full">
-                                        <AlertTriangle className="h-6 w-6 text-red-600" />
+                        ) : (
+                            filteredAssignments.map((assignment, idx) => (
+                                <div key={assignment.id} className="mb-4 p-4 rounded-xl bg-white border border-slate-200 shadow">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <Users className="h-4 w-4 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-slate-800">
+                                                {assignment.cleaner_user?.name || 'Unknown'}
+                                            </div>
+                                            {assignment.cleaner_user?.phone && (
+                                                <div className="text-xs text-slate-500">{assignment.cleaner_user.phone}</div>
+                                            )}
+                                        </div>
+                                        <span className={`ml-auto inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(assignment.status)}`}>
+                                            {assignment.status || 'N/A'}
+                                        </span>
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                                            Remove Assignment
-                                        </h3>
-                                        <p className="text-slate-600 text-sm">
-                                            This action cannot be undone
-                                        </p>
+                                    <div className="mb-2 text-sm text-slate-600">
+                                        Assigned on: {new Date(assignment.assigned_on).toLocaleDateString('en-US', {
+                                            year: 'numeric', month: 'short', day: 'numeric'
+                                        })}
                                     </div>
-                                </div>
-
-                                <div className="mb-6">
-                                    <p className="text-slate-700">
-                                        Are you sure you want to remove{" "}
-                                        <strong>{deleteModal.assignment?.cleaner_user?.name}</strong>{" "}
-                                        from this washroom?
-                                    </p>
-                                </div>
-
-                                <div className="flex gap-3 justify-end">
-                                    <button
-                                        onClick={() => setDeleteModal({ open: false, assignment: null })}
-                                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                        disabled={deleting}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={confirmDelete}
-                                        disabled={deleting}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:bg-red-400"
-                                    >
-                                        {deleting && (
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleView(assignment.id)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                            title="View Details"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setStatusModal({ open: true, assignment })}
+                                            disabled={togglingStatus === assignment.id}
+                                            className={`p-2 rounded-lg transition-colors ${assignment.status?.toLowerCase() === 'assigned'
+                                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                            title="Toggle Status"
+                                        >
+                                            {togglingStatus === assignment.id
+                                                ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                : assignment.status?.toLowerCase() === 'assigned'
+                                                    ? <ToggleRight className="w-4 h-4" />
+                                                    : <ToggleLeft className="w-4 h-4" />}
+                                        </button>
+                                        {isPermitted && (
+                                            <button
+                                                onClick={() => handleDelete(assignment)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                title="Remove Assignment"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         )}
-                                        {deleting ? 'Removing...' : 'Remove'}
-                                    </button>
+                                    </div>
                                 </div>
+                            ))
+                        )}
+                        {filteredAssignments.length > 0 && (
+                            <div className="text-center py-4 text-slate-600 text-sm">
+                                Showing {filteredAssignments.length} of {assignments.length} cleaner{assignments.length !== 1 ? 's' : ''}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    {/* --- Modals (unchanged logic) --- */}
+                    {/* ...Status and Delete modal code remains unchanged... */}
                 </div>
             </div>
+            {/* Status Confirmation Modal */}
+            {
+                statusModal.open && (
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className={`p-3 rounded-full ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                    ? 'bg-gray-100'
+                                    : 'bg-green-100'
+                                    }`}>
+                                    {statusModal.assignment?.status?.toLowerCase() === 'assigned' ? (
+                                        <ToggleLeft className="h-6 w-6 text-gray-600" />
+                                    ) : (
+                                        <ToggleRight className="h-6 w-6 text-green-600" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                                        Change Assignment Status
+                                    </h3>
+                                    <p className="text-slate-600 text-sm">
+                                        Confirm status change for this cleaner
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <p className="text-slate-700">
+                                    Are you sure you want to change{" "}
+                                    <strong>{statusModal.assignment?.cleaner_user?.name}</strong>'s status to{" "}
+                                    <strong className={
+                                        statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                            ? 'text-gray-700'
+                                            : 'text-green-700'
+                                    }>
+                                        {statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                            ? 'Unassigned'
+                                            : 'Assigned'}
+                                    </strong>?
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setStatusModal({ open: false, assignment: null })}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                                    disabled={togglingStatus === statusModal.assignment?.id}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmStatusToggle}
+                                    disabled={togglingStatus === statusModal.assignment?.id}
+                                    className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                        ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
+                                        : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                                        }`}
+                                >
+                                    {togglingStatus === statusModal.assignment?.id && (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    {togglingStatus === statusModal.assignment?.id
+                                        ? 'Processing...'
+                                        : 'Confirm Change'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Delete Modal */}
+            {
+                deleteModal.open && (
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="p-3 bg-red-100 rounded-full">
+                                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                                        Remove Assignment
+                                    </h3>
+                                    <p className="text-slate-600 text-sm">
+                                        This action cannot be undone
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <p className="text-slate-700">
+                                    Are you sure you want to remove{" "}
+                                    <strong>{deleteModal.assignment?.cleaner_user?.name}</strong>{" "}
+                                    from this washroom?
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setDeleteModal({ open: false, assignment: null })}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                    disabled={deleting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    disabled={deleting}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:bg-red-400"
+                                >
+                                    {deleting && (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    {deleting ? 'Removing...' : 'Remove'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </>
     );
 }
+
+
+

@@ -78,7 +78,7 @@ export default function AiScoringReportTable({ data, metadata }) {
                                     <td className="px-4 py-3 text-slate-700">{row.total_inspections}</td>
                                     <td className="px-4 py-3">
                                         <span className={`font-bold text-lg ${getScoreColor(row.average_score)}`}>
-                                            {row.average_score.toFixed(2)}
+                                            {row.average_score.toFixed(1)}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
