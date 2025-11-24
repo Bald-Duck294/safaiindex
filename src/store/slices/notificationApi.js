@@ -1,7 +1,8 @@
 // src/store/slices/notificationApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+// 'http://localhost:8000/api'
+const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
 
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
