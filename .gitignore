@@ -45,3 +45,5 @@ src/app/(protected)/washrooms/item/[id]/edit/oldPage.jsx
 oldZoneWiseREport.jsx
 src/app/(protected)/reports/zone-wise/oldZoneWiseReport.jsx
 dummypage.jsx
+prePage3.jsx
+storage.js
