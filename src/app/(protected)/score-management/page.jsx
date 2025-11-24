@@ -308,10 +308,10 @@ const PhotoModal = ({ photos, onClose }) => {
                             resetZoom();
                         }}
                         className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
-                                ? photo.color === 'blue'
-                                    ? 'border-blue-500 ring-2 ring-blue-400'
-                                    : 'border-green-500 ring-2 ring-green-400'
-                                : 'border-gray-600 hover:border-gray-400'
+                            ? photo.color === 'blue'
+                                ? 'border-blue-500 ring-2 ring-blue-400'
+                                : 'border-green-500 ring-2 ring-green-400'
+                            : 'border-gray-600 hover:border-gray-400'
                             }`}
                     >
                         <img
@@ -450,7 +450,7 @@ export default function ScoreManagement() {
         const response = await CleanerReviewApi.getAllCleanerReviews(params, companyFilter);
 
         if (response.success) {
-            setReviews(response.data);
+            setReviews(response.data.filter((r) => r.status === "completed"));
         } else {
             toast.error("Failed to load reviews");
         }
@@ -752,7 +752,17 @@ export default function ScoreManagement() {
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="text-xs text-slate-600">
-                                                        {new Date(review.updated_at).toLocaleDateString()}
+                                                        {/* {new Date(review.updated_at).toLocaleDateString()} */}
+                                                        <span className="text-xs text-slate-800"> {new Date(review.updated_at).toLocaleString('en-IN', {
+                                                            year: 'numeric',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            // second: '2-digit',
+                                                            hour12: true
+                                                        })}
+                                                        </span>
                                                     </div>
                                                 </td>
                                             </tr>
