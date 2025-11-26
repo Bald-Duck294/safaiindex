@@ -208,7 +208,7 @@ const Header = ({ pageTitle }) => {
   const { user } = useSelector((state) => state.auth);
 
   // ✅ Initialize notifications (FCM listener)
-  useNotifications(); // ← ADD THIS
+  useNotifications();
 
   const [company, setCompany] = useState(null);
   const [loadingCompany, setLoadingCompany] = useState(false);
