@@ -48,7 +48,7 @@ const getTodayDate = () => {
 
 export default function ClientDashboard() {
 
-  useNotifications();
+  // useNotifications();
   // State to hold all the dynamic dashboard data
   const [statsData, setStatsData] = useState({
     totalLocations: 0,
