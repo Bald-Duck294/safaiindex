@@ -6,10 +6,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { requestFCMToken, listenToFCMMessages } from "@/lib/firebase/fcm"
 import { addNotification, setFCMToken } from "@/store/slices/notificationSlice";
 import { useSaveFCMTokenMutation } from "@/store/slices/notificationApi";
+import { store } from "@/store/store";
+
 
 export default function useNotifications() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { notifications, unreadCount, fcmToken } = useSelector(
     (state) => state.notifications
   );
@@ -19,6 +21,12 @@ export default function useNotifications() {
   const [saveFCMToken] = useSaveFCMTokenMutation();
 
   useEffect(() => {
+
+    if (!isAuthenticated || !user || !user.id) {
+      console.log("⚠️ User not authenticated, skipping FCM initialization");
+      isInitialized.current = false;
+      return;
+    }
     if (isInitialized.current) {
       console.log("⏭️ FCM already initialized, skipping...");
       return;
@@ -87,6 +95,13 @@ export default function useNotifications() {
       // ✅ 1. Listen for FOREGROUND messages via onMessage
       console.log("👂 Setting up onMessage listener (foreground only)...");
       unsubscribeFCM = listenToFCMMessages((payload) => {
+
+        const currentAuth = store.getState?.()?.auth?.isAuthenticated;
+        if (!currentAuth) {
+          console.log("⚠️ User logged out, ignoring notification");
+          return;
+        }
+
         console.log("🎉 onMessage FIRED - Tab is ACTIVE (foreground)");
         console.log("📦 Payload:", JSON.stringify(payload, null, 2));
 
@@ -121,6 +136,12 @@ export default function useNotifications() {
           console.log("🖱️ Notification clicked!");
           // Handle navigation if needed
           // e.g., router.push(event.data.data.screen);
+
+          const { data } = event.data;
+          if (data) {
+            console.log("📍 Notification data:", data);
+            // Optional: You can dispatch actions or show toast notifications here
+          }
         }
       };
 
@@ -146,7 +167,7 @@ export default function useNotifications() {
       isInitialized.current = false;
       processedMessageIds.current.clear();
     };
-  }, [user?.id, dispatch, saveFCMToken]);
+  }, [user?.id, isAuthenticated, dispatch, saveFCMToken]);
 
   return {
     notifications,
@@ -154,4 +175,3 @@ export default function useNotifications() {
     fcmToken,
   };
 }
-  

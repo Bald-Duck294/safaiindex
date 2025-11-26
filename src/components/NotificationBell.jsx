@@ -3,7 +3,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import toast from 'react-hot-toast'
+import { useRouter } from "next/navigation";
 import { Bell, X, Check } from "lucide-react";
+import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import {
     markAsRead,
     markAllAsRead,
@@ -16,6 +19,9 @@ import {
 
 const NotificationBell = () => {
     const dispatch = useDispatch();
+    const router = useRouter();
+    const { companyId } = useCompanyId();
+
     const { notifications, unreadCount } = useSelector(
         (state) => state.notifications
     );
@@ -52,9 +58,45 @@ const NotificationBell = () => {
         };
     }, [isOpen]);
 
-    const handleNotificationClick = async (id) => {
-        dispatch(markAsRead(id));
+    const handleNotificationClick = async (notification) => {  // ✅ Receive full notification object
+
+        console.log("data ", notification);
+        dispatch(markAsRead(notification.id));
+
+
+
+        setIsOpen(false)
+
+        if (notification.data) {  // ✅ CORRECT - Access the clicked notification's data
+            const { type, reviewId } = notification.data
+            console.log("notification 💡💡💡", type, " reviewId", reviewId);
+
+            switch (type) {
+                case "review":
+                    if (reviewId && companyId) {
+                        router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`)
+                    }
+                    else {
+                        console.log('company_id', companyId);
+                        console.log('review_id', reviewId);
+                        toast.error('Either reviewId or company id not provided')
+                    }
+                    break;
+
+                // Add other cases as needed
+                case "task":
+                    if (notification.data.taskId && companyId) {
+                        router.push(`/tasks/${notification.data.taskId}?companyId=${companyId}`)
+                    }
+                    break;
+
+                default:
+                    console.log("ℹ️ No navigation defined for type:", type);
+                    break;
+            }
+        }
     };
+
 
     const handleMarkAllAsRead = () => {
         dispatch(markAllAsRead());
@@ -183,7 +225,7 @@ const NotificationBell = () => {
                                     {notifications.map((notification) => (
                                         <div
                                             key={notification.id}
-                                            onClick={() => handleNotificationClick(notification.id)}
+                                            onClick={() => handleNotificationClick(notification)}
                                             className={`
                                                 px-4 sm:px-5 py-3 sm:py-4 
                                                 hover:bg-slate-50 active:bg-slate-100

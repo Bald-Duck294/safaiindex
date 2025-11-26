@@ -1,8 +1,8 @@
 // src/store/slices/notificationApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
+import API_BASE_URL from '@/lib/utils/Constant';
 // 'http://localhost:8000/api'
-const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
+// const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
 
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
@@ -29,7 +29,18 @@ export const notificationApi = createApi({
       }),
       invalidatesTags: ['FCMToken'],
     }),
+    deleteFCMToken: builder.mutation({
 
+      query: ({ userId }) => {
+        console.log(userId, "userId");
+        return {
+          url: '/delete-fcm-token',
+          method: 'DELETE',
+          body: { user_id: userId }
+        };
+      },
+      invalidatesTags: ['FCMToken']
+    }),
     // Get user's FCM token from backend
     getFCMToken: builder.query({
       query: (userId) => `/fcm-token/${userId}`,
@@ -65,6 +76,7 @@ export const notificationApi = createApi({
 export const {
   useSaveFCMTokenMutation,
   useGetFCMTokenQuery,
+  useDeleteFCMTokenMutation,
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useDeleteNotificationMutation,

@@ -48,6 +48,7 @@ export default function CleanersPage() {
                 const cleanerName = assignment.cleaner_user?.name?.toLowerCase() || '';
                 const cleanerEmail = assignment.cleaner_user?.email?.toLowerCase() || '';
                 const cleanerPhone = assignment.cleaner_user?.phone?.toLowerCase() || '';
+
                 return cleanerName.includes(query) ||
                     cleanerEmail.includes(query) ||
                     cleanerPhone.includes(query);

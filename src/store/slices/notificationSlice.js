@@ -18,12 +18,12 @@ const notificationSlice = createSlice({
         read: false,
         data: action.payload.data || {},
       };
-      
+
       // Add to beginning of array (newest first)
       state.notifications.unshift(newNotification);
       state.unreadCount += 1;
     },
-    
+
     markAsRead: (state, action) => {
       const notification = state.notifications.find(n => n.id === action.payload);
       if (notification && !notification.read) {
@@ -31,12 +31,12 @@ const notificationSlice = createSlice({
         state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
     },
-    
+
     markAllAsRead: (state) => {
       state.notifications.forEach(n => n.read = true);
       state.unreadCount = 0;
     },
-    
+
     clearNotification: (state, action) => {
       const notification = state.notifications.find(n => n.id === action.payload);
       if (notification && !notification.read) {
@@ -44,15 +44,22 @@ const notificationSlice = createSlice({
       }
       state.notifications = state.notifications.filter(n => n.id !== action.payload);
     },
-    
+
     clearAllNotifications: (state) => {
       state.notifications = [];
       state.unreadCount = 0;
     },
-    
+
     setFCMToken: (state, action) => {
       state.fcmToken = action.payload;
     },
+
+    resetNotifications: (state, action) => {
+      state.notifications = [];
+      state.unreadCount = 0;
+      state.fcmToken = null;
+
+    }
   },
 });
 
@@ -63,6 +70,7 @@ export const {
   clearNotification,
   clearAllNotifications,
   setFCMToken,
+  resetNotifications
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;

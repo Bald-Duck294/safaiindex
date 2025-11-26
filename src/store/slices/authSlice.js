@@ -2,7 +2,7 @@
 "use client";
 
 import { createSlice } from "@reduxjs/toolkit";
-
+import { resetNotifications } from "./notificationSlice";
 // Function to safely get the initial state from localStorage
 const getInitialState = () => {
   if (typeof window === 'undefined') {
@@ -12,11 +12,11 @@ const getInitialState = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      return { 
-        user, 
+      return {
+        user,
         isAuthenticated: true, // ✅ Set to true if user exists
-        isFetching: false, 
-        error: false 
+        isFetching: false,
+        error: false
       };
     }
   } catch (error) {

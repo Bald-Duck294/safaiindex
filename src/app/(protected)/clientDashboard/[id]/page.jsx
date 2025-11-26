@@ -106,21 +106,21 @@ export default function ClientDashboard() {
 
 
   // Add this to your ClientDashboard component for testing
-useEffect(() => {
-  // Test if messaging is initialized
-  console.log("🧪 Testing FCM setup...");
-  
-  // Check if service worker is active
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      console.log("📋 Active service workers:", registrations.length);
-      registrations.forEach(reg => {
-        console.log("  - Scope:", reg.scope);
-        console.log("  - State:", reg.active?.state);
+  useEffect(() => {
+    // Test if messaging is initialized
+    console.log("🧪 Testing FCM setup...");
+
+    // Check if service worker is active
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log("📋 Active service workers:", registrations.length);
+        registrations.forEach(reg => {
+          console.log("  - Scope:", reg.scope);
+          console.log("  - State:", reg.active?.state);
+        });
       });
-    });
-  }
-}, []);
+    }
+  }, []);
 
   // Fetch all data when the component mounts
   useEffect(() => {

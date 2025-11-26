@@ -218,7 +218,7 @@
 
 
 // src/lib/firebase/fcm.js
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, deleteToken } from "firebase/messaging";
 import app from "./firebase";
 
 let messaging = null;
@@ -228,6 +228,40 @@ if (typeof window !== "undefined") {
 }
 
 const VAPID_KEY = "BOXjoc6B-HK4cy2cYKu8IR8ZeOkLmPPkC7wtj1jIt9hSJcKvK53wTNvV2ddlLe4Jf_jJMVr6lxYxEuDCN9pErko";
+
+
+
+const ensureServiceWorkerReady = async () => {
+    if (!('serviceWorker' in navigator)) {
+        console.log("⚠️ Service Worker not supported");
+        return null;
+    }
+
+    try {
+        // Check if service worker is already registered
+        let registration = await navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope');
+
+        if (!registration) {
+            console.log("📝 No Firebase SW found, registering...");
+            registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                scope: '/firebase-cloud-messaging-push-scope'
+            });
+            console.log("✅ Service worker registered");
+        } else {
+            console.log("✅ Service worker already registered");
+        }
+
+        // ✅ IMPORTANT: Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+        console.log("✅ Service worker is ready");
+
+        return registration;
+    } catch (error) {
+        console.error("❌ Service worker registration failed:", error);
+        return null;
+    }
+};
+
 
 /**
  * Request FCM token
@@ -258,8 +292,20 @@ export const requestFCMToken = async () => {
         }
 
         if (permission === "granted") {
+            // ✅ CRITICAL FIX: Ensure service worker is ready BEFORE getting token
+            console.log("⏳ Ensuring service worker is ready...");
+            const registration = await ensureServiceWorkerReady();
+
+            if (!registration) {
+                console.error("❌ Service worker not available");
+                return null;
+            }
+
+            // ✅ Get token with the ready service worker registration
+            console.log("🔑 Requesting FCM token...");
             const token = await getToken(messaging, {
                 vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration, // ✅ Pass the registration
             });
 
             console.log("✅ FCM Token received");
@@ -270,9 +316,42 @@ export const requestFCMToken = async () => {
         }
     } catch (error) {
         console.error("❌ Error getting FCM token:", error);
+
+        // ✅ Better error messages
+        if (error.name === 'AbortError') {
+            console.error("💡 Hint: Service worker might not be active yet. Try refreshing the page.");
+        }
+
         return null;
     }
 };
+
+
+export const deleteFCMToken = async () => {
+    if (!messaging) {
+        console.warn("FCM messaging not available");
+        return false;
+    }
+
+    try {
+        const deleted = await deleteToken(messaging);
+
+        if (deleted) {
+            console.log("✅ FCM token deleted successfully");
+
+            // Clear notification permission (optional - resets permission state)
+            // Note: This doesn't actually revoke browser permission, just clears the token
+            return true;
+        } else {
+            console.log("ℹ️ No FCM token to delete");
+            return false;
+        }
+    } catch (error) {
+        console.error("❌ Error deleting FCM token:", error);
+        return false;
+    }
+};
+
 
 /**
  * ✅ Listen for BOTH foreground messages AND service worker messages

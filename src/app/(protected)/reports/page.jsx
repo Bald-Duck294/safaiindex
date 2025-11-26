@@ -52,12 +52,23 @@ const REPORT_TYPES = [
   }
 ];
 
+
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
   const isPermitted = userRoleId === 1 || userRoleId === 2;
 
+  const todayDate = getTodayDate();
   // ✅ Report type selection
   const [selectedReportType, setSelectedReportType] = useState("daily_task");
 
@@ -69,8 +80,8 @@ export default function ReportsPage() {
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedCleaner, setSelectedCleaner] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(todayDate);
+  const [endDate, setEndDate] = useState(todayDate);
   const [statusFilter, setStatusFilter] = useState("all");
 
   // ✅ Data states
@@ -113,6 +124,9 @@ export default function ReportsPage() {
   const fetchCleaners = async () => {
     try {
       const response = await ReportsApi.getCleanersForReport(companyId);
+      console.log(
+        response, "response"
+      )
       if (response.success) {
         setCleaners(response.data);
       }
@@ -326,7 +340,9 @@ export default function ReportsPage() {
                     <option value="">All Cleaners</option>
                     {cleaners.map((cleaner) => (
                       <option key={cleaner.id} value={cleaner.id}>
-                        {cleaner.name} {cleaner.phone && `(${cleaner.phone})`}
+                        {cleaner.name}
+                        {/* {cleaner.phone && `(${cleaner.phone})`} */}
+
                       </option>
                     ))}
                   </select>

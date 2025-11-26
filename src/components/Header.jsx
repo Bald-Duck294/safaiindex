@@ -195,12 +195,15 @@ import { CompanyApi } from "../lib/api/companyApi";
 import NotificationBell from "./NotificationBell";
 // import useNotifications from "../hooks/useNotifications"
 import useNotifications from "@/lib/hooks/useNotifications.js";
-
+import { useDeleteFCMTokenMutation, useSaveFCMTokenMutation } from "@/store/slices/notificationApi.js";
+import { deleteFCMToken } from "@/lib/firebase/fcm.js";
+import { resetNotifications } from "@/store/slices/notificationSlice.js";
 const Header = ({ pageTitle }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const [deleteFcmTokenFromBackend] = useDeleteFCMTokenMutation();
 
   const { user } = useSelector((state) => state.auth);
 
@@ -260,9 +263,43 @@ const Header = ({ pageTitle }) => {
     fetchCompany();
   }, [companyId]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/login");
+  const handleLogout = async () => {
+
+    try {
+      await deleteFCMToken();
+
+      if (user?.id) {
+
+        try {
+          await deleteFcmTokenFromBackend({ userId: user?.id }).unwrap();
+          console.log('deleted token form backend')
+        } catch (error) {
+          console.log(error, "error")
+        }
+
+        dispatch(resetNotifications());
+        dispatch(logout());
+
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            if (registration.scope.includes('firebase-cloud-messaging')) {
+              await registration.unregister();
+              console.log("✅ Service worker unregistered");
+            }
+          }
+        }
+      }
+
+      router.push("/login");
+    } catch (error) {
+      console.error("❌ Error during logout:", error);
+      toast.error("Error logging out. Please try again.");
+    }
   };
 
   // Determine the role text based on user's role_id
@@ -356,9 +393,10 @@ const Header = ({ pageTitle }) => {
           </span>
         </div>
 
-        {/* ✅ Notification Bell - ADD THIS */}
-        <NotificationBell className="ml-8" />
-
+        {
+          (user?.role_id === 1) ?
+            <NotificationBell className="ml-8" /> : ''
+        }
         {/* Logout Button */}
         <button
           onClick={handleLogout}

@@ -350,9 +350,9 @@ const AddAssignmentPage = () => {
         setUserSearchTerm("");
         setLocationSearchTerm("");
 
-        // setTimeout(() => {
-        //   window.location.href = `/cleaner-assignments?companyId=${companyId}`;
-        // }, 1000);
+        setTimeout(() => {
+          window.location.href = `/cleaner-assignments?companyId=${companyId}`;
+        }, 1000);
       } else if (successCount > 0 && failureCount > 0) {
         toast(
           (t) => (
