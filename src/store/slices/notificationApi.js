@@ -23,7 +23,7 @@ export const notificationApi = createApi({
     // Save FCM token to backend
     saveFCMToken: builder.mutation({
       query: ({ fcmToken, userId }) => ({
-        url: '/save-fcm-token',
+        url: '/fcm/save-fcm-token',
         method: 'POST',
         body: { fcm_token: fcmToken, user_id: userId },
       }),
@@ -34,9 +34,9 @@ export const notificationApi = createApi({
       query: ({ userId }) => {
         console.log(userId, "userId");
         return {
-          url: '/delete-fcm-token',
+          url: '/fcm/delete-fcm-token',
           method: 'DELETE',
-          body: { user_id: userId }
+          body: { userId }
         };
       },
       invalidatesTags: ['FCMToken']
