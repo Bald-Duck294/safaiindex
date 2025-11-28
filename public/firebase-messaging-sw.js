@@ -99,6 +99,7 @@
 // });
 // public/firebase-messaging-sw.js
 
+// public/firebase-messaging-sw.js
 
 
 // public/firebase-messaging-sw.js
@@ -118,60 +119,69 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ✅ Handle background messages with custom notification
+// ✅ Intercept push messages BEFORE Firebase processes them
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push event received');
+
+  if (!event.data) {
+    console.log('[SW] No data in push event');
+    return;
+  }
+
+  try {
+    const payload = event.data.json();
+    console.log('[SW] Push payload:', payload);
+
+    const title = payload.notification?.title || payload.data?.title || 'New Notification';
+    const body = payload.notification?.body || payload.data?.body || '';
+
+    const notificationOptions = {
+      body: body,
+      icon: 'https://safaiindex.vercel.app/safa_logo.jpeg',
+      badge: 'https://safaiindex.vercel.app/safa_logo.jpeg',
+      data: payload.data || {},
+      vibrate: [200, 100, 200],
+      tag: payload.data?.reviewId || payload.data?.taskId || Date.now().toString(),
+      requireInteraction: false,
+    };
+
+    // ✅ Prevent Firebase from showing notification by handling it ourselves
+    event.waitUntil(
+      Promise.all([
+        // Send to Redux
+        self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+          .then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'FCM_NOTIFICATION_BACKGROUND',
+                payload: {
+                  title: title,
+                  body: body,
+                  data: payload.data || {},
+                  messageId: payload.messageId,
+                  timestamp: new Date().toISOString()
+                }
+              });
+            });
+          }),
+        // Show custom notification
+        self.registration.showNotification(title, notificationOptions)
+      ])
+    );
+  } catch (error) {
+    console.error('[SW] Error processing push:', error);
+  }
+});
+
+// ✅ Keep onBackgroundMessage empty (prevents Firebase from showing notification)
 messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] Background message received:', payload);
-  console.log('[SW] Payload:', JSON.stringify(payload, null, 2));
-
-  const title = payload.notification?.title || payload.data?.title || 'New Notification';
-  const body = payload.notification?.body || payload.data?.body || '';
-
-  console.log('[SW] Title:', title);
-  console.log('[SW] Body:', body);
-
-  // ✅ Use full URL to your logo (deployed version)
-  const notificationOptions = {
-    body: body,
-    icon: 'https://safaiindex.vercel.app/safa_logo.jpeg', // ✅ Use your actual deployed logo
-    badge: '', // ✅ Same logo for badge
-    data: payload.data || {},
-    vibrate: [200, 100, 200],
-    tag: payload.data?.reviewId || payload.data?.taskId || 'notification',
-    requireInteraction: false,
-  };
-
-  console.log('[SW] Showing notification with options:', notificationOptions);
-
-  // ✅ Send to Redux FIRST
-  self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
-    .then(clients => {
-      console.log('[SW] Found', clients.length, 'clients');
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'FCM_NOTIFICATION_BACKGROUND',
-          payload: {
-            title: title,
-            body: body,
-            data: payload.data || {},
-            messageId: payload.messageId,
-            timestamp: new Date().toISOString()
-          }
-        });
-      });
-    });
-
-  // ✅ THEN show notification
-  // return self.registration.showNotification(title, notificationOptions);
-  self.registration.showNotification(title, notificationOptions);
-
-  // ✅ Return nothing or return an empty resolved promise
-  return Promise.resolve();
+  console.log('[SW] onBackgroundMessage - doing nothing to prevent duplicate');
+  // Don't show notification here - already handled in 'push' event
 });
 
 // ✅ Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Notification clicked');
-  console.log('[SW] Data:', event.notification.data);
 
   event.notification.close();
 
@@ -189,7 +199,6 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Try to focus existing window
         for (const client of clientList) {
           if (client.url.includes(self.location.origin)) {
             client.postMessage({
@@ -200,7 +209,6 @@ self.addEventListener('notificationclick', (event) => {
             return client.focus().then(() => client.navigate(targetUrl));
           }
         }
-        // Open new window
         if (clients.openWindow) {
           return clients.openWindow(targetUrl);
         }
