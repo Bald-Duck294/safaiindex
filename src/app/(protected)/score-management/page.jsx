@@ -522,8 +522,8 @@ export default function ScoreManagement() {
                 setCompanies(response.data);
 
                 // ✅ Set default company (ID 24 if exists, otherwise first company)
-                const defaultCompany = response.data.find(c => c.id === 24) || response.data[0];
-                setCompanyFilter(defaultCompany.id.toString());
+                // const defaultCompany = response.data.find(c => c.id === 24) || response.data[0];
+                // setCompanyFilter(defaultCompany.id.toString());
 
                 console.log("✅ Companies loaded:", response.data.length);
                 // console.log("✅ Default company set:", defaultCompany.name);
@@ -618,13 +618,13 @@ export default function ScoreManagement() {
             console.log("📦 Full API response:", response);
 
             // ✅ FIXED: Check the correct nested path
-            if (!response.success || !response.data?.data?.reviews?.[0]) {
-                toast.error('Review not found');
-                console.error("❌ Review not found:", reviewId);
-                console.error("❌ Response:", response);
-                setIsLoadingFromNotification(false);
-                return;
-            }
+            // if (!response.success || !response.data?.data?.reviews?.[0]) {
+            //     toast.error('Review not found');
+            //     console.error("❌ Review not found:", reviewId);
+            //     console.error("❌ Response:", response);
+            //     setIsLoadingFromNotification(false);
+            //     return;
+            // }
 
             // ✅ Extract review from nested structure
             const review = response.data.data.reviews[0];
@@ -730,7 +730,7 @@ export default function ScoreManagement() {
                         duration: 4000,
                     });
                 } else if (review.status === 'ongoing') {
-                    toast('⏳ This review is in progress.', {
+                    toast('This review is in progress.', {
                         id: 'loading-review',
                         icon: '⏳',
                         duration: 4000,

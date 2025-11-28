@@ -97,8 +97,6 @@
 //       })
 //   );
 // });
-
-
 // public/firebase-messaging-sw.js
 
 importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
@@ -116,6 +114,34 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+
+
+// public/firebase-messaging-sw.js
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[SW] Background message received:', payload);
+
+  const title = payload.notification?.title || payload.data?.title || 'New Notification';
+  const body = payload.notification?.body || payload.data?.body || '';
+
+  const notificationOptions = {
+    body: body,
+    icon: '/safai_logo.jpeg',        // ✅ Your company logo (192x192)
+    badge: '/safai_logo.jpeg',          // ✅ Small badge logo (72x72)
+    image: payload.notification?.image, // Optional: larger image if provided
+    data: payload.data || {},
+    vibrate: [200, 100, 200],
+    tag: payload.data?.reviewId || 'notification',
+    requireInteraction: false,
+    actions: [], // Optional: add action buttons
+  };
+
+  console.log('[SW] Showing custom notification with logo');
+
+  // ✅ Show notification with custom options
+  return self.registration.showNotification(title, notificationOptions);
+});
+
 // ✅ Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] Background message received:', payload);
@@ -130,12 +156,9 @@ messaging.onBackgroundMessage((payload) => {
     '';
 
   console.log('[SW] Extracted - Title:', title, 'Body:', body);
-
-  // ✅ DON'T show notification here - Firebase already shows it automatically
-  // This prevents duplicate notifications
   console.log('[SW] Skipping manual notification (Firebase handles it automatically)');
 
-  // ✅ Just send message to React app to update Redux
+  // ✅ Send message to React app to update Redux
   console.log('[SW] Notifying app to update Redux...');
   self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
     .then(clients => {
@@ -154,116 +177,77 @@ messaging.onBackgroundMessage((payload) => {
         });
       });
     });
-
-  // ✅ IMPORTANT: Don't return anything or call showNotification()
-  // Firebase SDK will automatically show the notification
 });
 
-// ✅ Handle notification clicks
-// self.addEventListener('notificationclick', (event) => {
-//   console.log('[SW] Notification clicked:', event);
-//   event.notification.close();
-
-//   const data = event.notification.data;
-//   const targetUrl = data?.screen ? `/?screen=${data.screen}` : '/';
-
-//   event.waitUntil(
-//     clients.matchAll({ type: 'window', includeUncontrolled: true })
-//       .then((clientList) => {
-//         for (const client of clientList) {
-//           client.postMessage({
-//             type: 'NOTIFICATION_CLICKED',
-//             data: data
-//           });
-
-//           if ('focus' in client) {
-//             return client.focus();
-//           }
-//         }
-
-//         if (clients.openWindow) {
-//           return clients.openWindow(targetUrl);
-//         }
-//       })
-//   );
-// });
-
-
-// ✅ Enhanced notification click handler with navigation
+// ✅ FIXED: Handle notification clicks with correct navigation
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Notification clicked:', event);
   console.log('[SW] Notification data:', event.notification.data);
 
   event.notification.close();
 
-  const data = event.notification.data;
+  const data = event.notification.data || {};
 
   // ✅ Build target URL based on notification type
-  let targetUrl = '/'; // Default fallback
+  let targetUrl = '/dashboard'; // Default fallback
 
-  if (data) {
-    const { type, reviewId, taskId, shiftId } = data;
+  console.log('[SW] Notification type:', data.type);
+  console.log('[SW] Review ID:', data.reviewId);
+  console.log('[SW] Task ID:', data.taskId);
 
-    // Get companyId from data or use a default
-    // Note: You might need to pass companyId in notification data from backend
-    const companyId = data.companyId || '24'; // ⚠️ Consider passing this from backend
-
-    console.log('[SW] Notification type:', type);
-    console.log('[SW] Review ID:', reviewId);
-    console.log('[SW] Company ID:', companyId);
-
-    switch (type) {
-      case 'review':
-        if (reviewId) {
-          targetUrl = `/cleaner-review/${reviewId}?companyId=${companyId}`;
-        }
-        break;
-
-      case 'task':
-        if (taskId) {
-          targetUrl = `/tasks/${taskId}?companyId=${companyId}`;
-        }
-        break;
-
-      case 'shift':
-        if (shiftId) {
-          targetUrl = `/shifts/${shiftId}?companyId=${companyId}`;
-        }
-        break;
-
-      default:
-        targetUrl = '/dashboard';
-        break;
-    }
+  // ✅ FIXED: Navigate to score-management instead of cleaner-review
+  if (data.type === 'review' && data.reviewId) {
+    targetUrl = `/score-management?reviewId=${data.reviewId}&autoOpen=true`;
+    console.log('[SW] 🎯 Navigating to score management');
+  }
+  else if (data.type === 'task' && data.taskId) {
+    const companyId = data.companyId || '24';
+    targetUrl = `/tasks/${data.taskId}?companyId=${companyId}`;
+    console.log('[SW] 🎯 Navigating to task');
+  }
+  else if (data.type === 'shift' && data.shiftId) {
+    const companyId = data.companyId || '24';
+    targetUrl = `/shifts/${data.shiftId}?companyId=${companyId}`;
+    console.log('[SW] 🎯 Navigating to shift');
   }
 
-  console.log('[SW] Target URL:', targetUrl);
+  console.log('[SW] Final target URL:', targetUrl);
 
   // ✅ Open or focus window with target URL
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Try to find an existing window and focus it
+        console.log('[SW] Found windows:', clientList.length);
+
+        // Try to find an existing window
         for (const client of clientList) {
-          if ('focus' in client) {
+          // Check if it's your app's domain
+          if (client.url.includes(self.location.origin)) {
+            console.log('[SW] ✅ Found existing window, focusing and navigating');
+
+            // Post message to the app
             client.postMessage({
               type: 'NOTIFICATION_CLICKED',
               data: data,
               targetUrl: targetUrl
             });
-            return client.focus().then(() => {
-              // Navigate to target URL
-              return client.navigate(targetUrl);
+
+            // Focus and navigate
+            return client.focus().then((focusedClient) => {
+              console.log('[SW] ✅ Window focused, now navigating to:', targetUrl);
+              return focusedClient.navigate(targetUrl);
             });
           }
         }
 
         // If no window is open, open a new one
+        console.log('[SW] ❌ No existing window found, opening new one');
         if (clients.openWindow) {
           return clients.openWindow(targetUrl);
         }
       })
+      .catch((error) => {
+        console.error('[SW] ❌ Error handling notification click:', error);
+      })
   );
 });
-
-

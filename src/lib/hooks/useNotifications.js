@@ -7,11 +7,13 @@ import { requestFCMToken, listenToFCMMessages } from "@/lib/firebase/fcm"
 import { addNotification, setFCMToken } from "@/store/slices/notificationSlice";
 import { useSaveFCMTokenMutation } from "@/store/slices/notificationApi";
 import { store } from "@/store/store";
+import { useRouter } from "next/navigation";
 
 
 export default function useNotifications() {
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const router = useRouter();
   const { notifications, unreadCount, fcmToken } = useSelector(
     (state) => state.notifications
   );
@@ -137,11 +139,17 @@ export default function useNotifications() {
           // Handle navigation if needed
           // e.g., router.push(event.data.data.screen);
 
-          const { data } = event.data;
-          if (data) {
-            console.log("📍 Notification data:", data);
-            // Optional: You can dispatch actions or show toast notifications here
+          const { data, targetUrl } = event.data;
+          console.log("🚀 Navigating to:", targetUrl);
+
+
+          if (targetUrl) {
+            router.push(targetUrl);
           }
+          // if (data) {
+          //   console.log("📍 Notification data:", data);
+          //   // Optional: You can dispatch actions or show toast notifications here
+          // }
         }
       };
 
@@ -167,7 +175,7 @@ export default function useNotifications() {
       isInitialized.current = false;
       processedMessageIds.current.clear();
     };
-  }, [user?.id, isAuthenticated, dispatch, saveFCMToken]);
+  }, [user?.id, isAuthenticated, dispatch, saveFCMToken, router]);
 
   return {
     notifications,
