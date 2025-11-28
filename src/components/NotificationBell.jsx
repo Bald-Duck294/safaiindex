@@ -20,11 +20,15 @@ import {
 const NotificationBell = () => {
     const dispatch = useDispatch();
     const router = useRouter();
-    const { companyId } = useCompanyId();
+    // const { companyId } = useCompanyId();
 
     const { notifications, unreadCount } = useSelector(
         (state) => state.notifications
     );
+
+    // const { companyId } = useSelector(state => state?.auth.user?.company_id);
+    const companyId = useSelector(state => state?.auth?.user?.company_id);
+
 
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -74,7 +78,11 @@ const NotificationBell = () => {
             switch (type) {
                 case "review":
                     if (reviewId && companyId) {
-                        router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`)
+
+                        const url = `/score-management?reviewId=${reviewId}&autoOpen=true`;
+                        console.log("🚀 Navigating to:", url);
+                        router.push(url);
+                        // router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`)
                     }
                     else {
                         console.log('company_id', companyId);
