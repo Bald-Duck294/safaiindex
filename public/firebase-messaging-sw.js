@@ -161,7 +161,11 @@ messaging.onBackgroundMessage((payload) => {
     });
 
   // ✅ THEN show notification
-  return self.registration.showNotification(title, notificationOptions);
+  // return self.registration.showNotification(title, notificationOptions);
+  self.registration.showNotification(title, notificationOptions);
+
+  // ✅ Return nothing or return an empty resolved promise
+  return Promise.resolve();
 });
 
 // ✅ Handle notification clicks
