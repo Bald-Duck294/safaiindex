@@ -99,6 +99,8 @@
 // });
 // public/firebase-messaging-sw.js
 // public/firebase-messaging-sw.js
+// public/firebase-messaging-sw.js
+// public/firebase-messaging-sw.js
 
 importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
@@ -115,11 +117,22 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ✅ Update Redux when notification arrives
+// ✅ Store globally
+let globalNotificationData = {};
+
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] Notification received:', payload);
 
-  // Send to Redux for notification bell
+  // ✅ Store data globally
+  globalNotificationData = {
+    type: payload.data?.type,
+    reviewId: payload.data?.reviewId,
+    taskId: payload.data?.taskId,
+  };
+
+  console.log('[SW] Stored notification data:', globalNotificationData);
+
+  // Send to Redux
   self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
     .then(clients => {
       clients.forEach(client => {
@@ -137,37 +150,62 @@ messaging.onBackgroundMessage((payload) => {
     });
 });
 
-// ✅ Handle notification clicks
+// ✅ Handle notification clicks - USE GLOBAL DATA
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
+  console.log('[SW] ========== NOTIFICATION CLICKED ==========');
+  console.log('[SW] Event:', event);
+  console.log('[SW] Event notification:', event.notification);
+  console.log('[SW] Event notification data:', event.notification.data);
+  console.log('[SW] Global notification data:', globalNotificationData);
 
   event.notification.close();
 
-  const data = event.notification.data || {};
+  // ✅ Try multiple data sources
+  const data = event.notification.data || globalNotificationData || {};
+
+  console.log('[SW] Final data:', data);
+  console.log('[SW] Data type:', data.type);
+  console.log('[SW] Data reviewId:', data.reviewId);
+
   let targetUrl = '/dashboard';
 
-  // Build target URL based on notification type
   if (data.type === 'review' && data.reviewId) {
     targetUrl = `/score-management?reviewId=${data.reviewId}&autoOpen=true`;
+    console.log('[SW] ✅ Built review URL:', targetUrl);
   } else if (data.type === 'task' && data.taskId) {
     targetUrl = `/tasks/${data.taskId}`;
+    console.log('[SW] ✅ Built task URL:', targetUrl);
+  } else {
+    console.log('[SW] ⚠️ NO DATA FOUND - using default');
   }
 
-  console.log('[SW] Opening:', targetUrl);
+  console.log('[SW] Final target URL:', targetUrl);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Try to focus existing window
+        console.log('[SW] Found', clientList.length, 'windows');
+
         for (const client of clientList) {
           if (client.url.includes(self.location.origin)) {
-            return client.focus().then(() => client.navigate(targetUrl));
+            console.log('[SW] ✅ Focusing existing window');
+            return client.focus().then(() => {
+              console.log('[SW] ✅ Navigating to:', targetUrl);
+              return client.navigate(targetUrl);
+            });
           }
         }
-        // Open new window if none exists
+
+        console.log('[SW] ❌ No existing window, opening new one');
         if (clients.openWindow) {
           return clients.openWindow(targetUrl);
         }
+      })
+      .then(() => {
+        console.log('[SW] ========== NAVIGATION COMPLETE ==========');
+      })
+      .catch((error) => {
+        console.error('[SW] ❌ ERROR:', error);
       })
   );
 });
