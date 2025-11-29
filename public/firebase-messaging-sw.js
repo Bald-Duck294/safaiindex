@@ -120,92 +120,139 @@ const messaging = firebase.messaging();
 // ✅ Store globally
 let globalNotificationData = {};
 
-messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] Notification received:', payload);
+// messaging.onBackgroundMessage((payload) => {
+//   console.log('[SW] Notification received:', payload);
 
-  // ✅ Store data globally
-  globalNotificationData = {
-    type: payload.data?.type,
-    reviewId: payload.data?.reviewId,
-    taskId: payload.data?.taskId,
-  };
+//   // ✅ Store data globally
+//   globalNotificationData = {
+//     type: payload.data?.type,
+//     reviewId: payload.data?.reviewId,
+//     taskId: payload.data?.taskId,
+//   };
 
-  console.log('[SW] Stored notification data:', globalNotificationData);
+//   console.log('[SW] Stored notification data:', globalNotificationData);
 
-  // Send to Redux
-  self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
-    .then(clients => {
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'FCM_NOTIFICATION_BACKGROUND',
-          payload: {
-            title: payload.notification?.title || payload.data?.title,
-            body: payload.notification?.body || payload.data?.body,
-            data: payload.data || {},
-            messageId: payload.messageId,
-            timestamp: new Date().toISOString()
-          }
-        });
-      });
-    });
-});
+//   // Send to Redux
+//   self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+//     .then(clients => {
+//       clients.forEach(client => {
+//         client.postMessage({
+//           type: 'FCM_NOTIFICATION_BACKGROUND',
+//           payload: {
+//             title: payload.notification?.title || payload.data?.title,
+//             body: payload.notification?.body || payload.data?.body,
+//             data: payload.data || {},
+//             messageId: payload.messageId,
+//             timestamp: new Date().toISOString()
+//           }
+//         });
+//       });
+//     });
+// });
 
 // ✅ Handle notification clicks - USE GLOBAL DATA
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] ========== NOTIFICATION CLICKED ==========');
-  console.log('[SW] Event:', event);
-  console.log('[SW] Event notification:', event.notification);
-  console.log('[SW] Event notification data:', event.notification.data);
-  console.log('[SW] Global notification data:', globalNotificationData);
 
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[SW] Background message:', payload);
+
+  const { title, body } = payload.notification || {};
+  const data = payload.data || {};
+
+  const notificationOptions = {
+    body: body,
+    data: { ...data }, // << IMPORTANT
+    icon: "https://safaiindex.vercel.app/safai_logo.jpeg",
+    badge: "https://safaiindex.vercel.app/safai_logo.jpeg"
+  };
+
+  self.registration.showNotification(title, notificationOptions);
+});
+
+
+// self.addEventListener('notificationclick', (event) => {
+//   console.log('[SW] ========== NOTIFICATION CLICKED ==========');
+//   console.log('[SW] Event:', event);
+//   console.log('[SW] Event notification:', event.notification);
+//   console.log('[SW] Event notification data:', event.notification.data);
+//   console.log('[SW] Global notification data:', globalNotificationData);
+
+//   event.notification.close();
+
+//   // ✅ Try multiple data sources
+//   const data = event.notification.data || {};
+
+//   console.log('[SW] Final data:', data);
+//   console.log('[SW] Data type:', data.type);
+//   console.log('[SW] Data reviewId:', data.reviewId);
+
+//   let targetUrl = '/dashboard';
+
+//   if (data.type === 'review' && data.reviewId) {
+//     targetUrl = `/score-management?reviewId=${data.reviewId}&autoOpen=true`;
+//     console.log('[SW] ✅ Built review URL:', targetUrl);
+//   } else if (data.type === 'task' && data.taskId) {
+//     targetUrl = `/tasks/${data.taskId}`;
+//     console.log('[SW] ✅ Built task URL:', targetUrl);
+//   } else {
+//     console.log('[SW] ⚠️ NO DATA FOUND - using default');
+//   }
+
+//   console.log('[SW] Final target URL:', targetUrl);
+
+//   event.waitUntil(
+//     clients.matchAll({ type: 'window', includeUncontrolled: true })
+//       .then((clientList) => {
+//         console.log('[SW] Found', clientList.length, 'windows');
+
+//         for (const client of clientList) {
+//           if (client.url.startsWith(self.origin)) {
+//             console.log('[SW] ✅ Focusing existing window');
+//             return client.focus().then(() => {
+//               console.log('[SW] ✅ Navigating to:', targetUrl);
+//               return client.navigate(targetUrl);
+//             });
+//           }
+//         }
+
+//         console.log('[SW] ❌ No existing window, opening new one');
+//         if (clients.openWindow) {
+//           return clients.openWindow(targetUrl);
+//         }
+//       })
+//       .then(() => {
+//         console.log('[SW] ========== NAVIGATION COMPLETE ==========');
+//       })
+//       .catch((error) => {
+//         console.error('[SW] ❌ ERROR:', error);
+//       })
+//   );
+// });
+
+
+self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  // ✅ Try multiple data sources
-  const data = event.notification.data || globalNotificationData || {};
-
-  console.log('[SW] Final data:', data);
-  console.log('[SW] Data type:', data.type);
-  console.log('[SW] Data reviewId:', data.reviewId);
+  const data = event.notification.data || {};
 
   let targetUrl = '/dashboard';
 
   if (data.type === 'review' && data.reviewId) {
     targetUrl = `/score-management?reviewId=${data.reviewId}&autoOpen=true`;
-    console.log('[SW] ✅ Built review URL:', targetUrl);
   } else if (data.type === 'task' && data.taskId) {
     targetUrl = `/tasks/${data.taskId}`;
-    console.log('[SW] ✅ Built task URL:', targetUrl);
-  } else {
-    console.log('[SW] ⚠️ NO DATA FOUND - using default');
   }
-
-  console.log('[SW] Final target URL:', targetUrl);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        console.log('[SW] Found', clientList.length, 'windows');
-
+      .then(clientList => {
         for (const client of clientList) {
-          if (client.url.includes(self.location.origin)) {
-            console.log('[SW] ✅ Focusing existing window');
-            return client.focus().then(() => {
-              console.log('[SW] ✅ Navigating to:', targetUrl);
-              return client.navigate(targetUrl);
-            });
+          if (client.url.startsWith(self.location.origin)) {
+            client.focus();
+            return client.navigate(targetUrl);
           }
         }
-
-        console.log('[SW] ❌ No existing window, opening new one');
-        if (clients.openWindow) {
-          return clients.openWindow(targetUrl);
-        }
-      })
-      .then(() => {
-        console.log('[SW] ========== NAVIGATION COMPLETE ==========');
-      })
-      .catch((error) => {
-        console.error('[SW] ❌ ERROR:', error);
+        return clients.openWindow(targetUrl);
       })
   );
 });
