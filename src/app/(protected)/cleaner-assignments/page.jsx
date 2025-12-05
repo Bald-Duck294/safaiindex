@@ -14,10 +14,15 @@ export default function AssignmentListPage() {
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
   const { companyId, hasCompanyContext } = useCompanyId();
@@ -51,6 +56,24 @@ export default function AssignmentListPage() {
     }
   };
 
+  // Helper function to get role colors
+  const getRoleColor = (roleName) => {
+    if (!roleName) return "bg-gray-100 text-gray-800";
+
+    const role = roleName.toLowerCase();
+    switch (role) {
+      case 'supervisor':
+        return "bg-blue-100 text-blue-800";
+      case 'cleaner':
+        return "bg-purple-100 text-purple-800";
+      case 'zonal admin':
+      case 'zonaladmin':
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
 
@@ -71,6 +94,35 @@ export default function AssignmentListPage() {
     }
   };
 
+  // ✅ NEW: Handle status toggle
+  const handleStatusToggle = async (assignment) => {
+    const newStatus = assignment.status === "assigned" ? "unassigned" : "assigned";
+
+    if (!confirm(`Change status from "${assignment.status}" to "${newStatus}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await AssignmentsApi.updateAssignment(assignment.id, {
+        status: newStatus,
+        cleaner_user_id: assignment.cleaner_user_id,
+        company_id: assignment.company_id || companyId,
+        location_id: assignment.location_id,
+        role_id: assignment.role_id,
+      });
+
+      if (res.success) {
+        toast.success(`Status changed to ${newStatus}!`);
+        fetchAssignments(); // Refresh the list
+      } else {
+        toast.error(res.error || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Status update error:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
   // Filter and search logic
   const filteredAssignments = useMemo(() => {
     let filtered = [...assignments];
@@ -85,19 +137,41 @@ export default function AssignmentListPage() {
       });
     }
 
+
     // Apply status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter((assignment) => assignment.status === statusFilter);
     }
 
+    if (roleFilter !== "all") {
+      filtered = filtered.filter((assignment) => {
+        let roleName = assignment.role?.name?.toLowerCase()
+        return roleName === roleFilter.toLocaleLowerCase()
+      })
+    }
+
     return filtered;
-  }, [assignments, searchQuery, statusFilter]);
+  }, [assignments, searchQuery, statusFilter, roleFilter]);
 
   // Get unique statuses for filter dropdown
   const uniqueStatuses = useMemo(() => {
     const statuses = [...new Set(assignments.map(a => a.status))];
     return statuses;
   }, [assignments]);
+
+  const uniqueRoles = useMemo(() => {
+    const roles = [...new Set(assignments.map(a => a.role?.name).filter(Boolean))];
+    return roles;
+  }, [assignments]);
+
+  const roleCounts = useMemo(() => {
+    const counts = { all: uniqueRoles.length };
+    uniqueRoles.forEach((role) => {
+      counts[role.toLocaleLowerCase()] = assignments.filter((item) => role.toLocaleLowerCase() === item?.role?.name?.toLocaleLowerCase()).length
+    })
+
+    return counts
+  }, [assignments, uniqueRoles])
 
   // Count assignments by status
   const statusCounts = useMemo(() => {
@@ -111,6 +185,19 @@ export default function AssignmentListPage() {
   useEffect(() => {
     fetchAssignments();
   }, [companyId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowStatusDropdown(false);
+        setShowRoleDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   if (loading || !hasInitialized) {
     return (
@@ -190,6 +277,7 @@ export default function AssignmentListPage() {
         </div>
 
         {/* Search and Filter Section */}
+        {/* Search and Filter Section */}
         <div className="bg-white rounded-xl p-4 mb-6 border border-slate-200 shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
@@ -212,65 +300,222 @@ export default function AssignmentListPage() {
               )}
             </div>
 
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <Filter className="w-4 h-4" />
-                <span className="text-sm font-medium">Filters</span>
-              </button>
+            {/* Filters Container */}
+            <div className="flex gap-3 flex-wrap">
+              {/* Status Filter Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => {
+                    setShowStatusDropdown(!showStatusDropdown);
+                    setShowRoleDropdown(false);
+                  }}
+                  className={`px-4 py-2.5 border rounded-lg text-sm font-medium transition-all flex items-center gap-2 min-w-[160px] justify-between ${statusFilter !== 'all'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-400'
+                    }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Status: {statusFilter === 'all' ? 'All' : statusFilter}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-              <div className={`${showFilters ? 'flex' : 'hidden'} lg:flex flex-wrap gap-2`}>
-                <button
-                  onClick={() => setStatusFilter("all")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === "all"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                >
-                  All ({statusCounts.all})
-                </button>
-                <button
-                  onClick={() => setStatusFilter("assigned")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === "assigned"
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                >
-                  Assigned ({statusCounts.assigned})
-                </button>
-                <button
-                  onClick={() => setStatusFilter("unassigned")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === "unassigned"
-                      ? "bg-yellow-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                >
-                  Unassigned ({statusCounts.unassigned})
-                </button>
+                {/* Status Dropdown Menu */}
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setStatusFilter('all');
+                          setShowStatusDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${statusFilter === 'all'
+                          ? 'bg-indigo-100 text-indigo-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>All Status</span>
+                          <span className="text-xs bg-slate-200 px-2 py-0.5 rounded">{statusCounts.all}</span>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setStatusFilter('assigned');
+                          setShowStatusDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${statusFilter === 'assigned'
+                          ? 'bg-green-100 text-green-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            Assigned
+                          </span>
+                          <span className="text-xs bg-green-200 px-2 py-0.5 rounded">{statusCounts.assigned}</span>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setStatusFilter('unassigned');
+                          setShowStatusDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${statusFilter === 'unassigned'
+                          ? 'bg-yellow-100 text-yellow-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            Unassigned
+                          </span>
+                          <span className="text-xs bg-yellow-200 px-2 py-0.5 rounded">{statusCounts.unassigned}</span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Role Filter Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => {
+                    setShowRoleDropdown(!showRoleDropdown);
+                    setShowStatusDropdown(false);
+                  }}
+                  className={`px-4 py-2.5 border rounded-lg text-sm font-medium transition-all flex items-center gap-2 min-w-[160px] justify-between ${roleFilter !== 'all'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-400'
+                    }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Role: {roleFilter === 'all' ? 'All' : roleFilter}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showRoleDropdown ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Role Dropdown Menu */}
+                {showRoleDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setRoleFilter('all');
+                          setShowRoleDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${roleFilter === 'all'
+                          ? 'bg-indigo-100 text-indigo-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>All Roles</span>
+                          <span className="text-xs bg-slate-200 px-2 py-0.5 rounded">{roleCounts.all}</span>
+                        </div>
+                      </button>
+
+                      {uniqueRoles.map((role) => (
+                        <button
+                          key={role}
+                          onClick={() => {
+                            setRoleFilter(role);
+                            setShowRoleDropdown(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${roleFilter === role
+                            ? `${getRoleColor(role)} font-medium`
+                            : 'text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${role.toLowerCase() === 'supervisor' ? 'bg-blue-500' :
+                                role.toLowerCase() === 'cleaner' ? 'bg-purple-500' :
+                                  'bg-orange-500'
+                                }`}></span>
+                              {role}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded ${role.toLowerCase() === 'supervisor' ? 'bg-blue-200' :
+                              role.toLowerCase() === 'cleaner' ? 'bg-purple-200' :
+                                'bg-orange-200'
+                              }`}>
+                              {roleCounts[role.toLowerCase()] || 0}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Clear All Filters */}
+              {(statusFilter !== "all" || roleFilter !== "all" || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setRoleFilter("all");
+                    setSearchQuery("");
+                    setShowStatusDropdown(false);
+                    setShowRoleDropdown(false);
+                  }}
+                  className="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium flex items-center gap-2 border border-red-200"
+                >
+                  <X className="w-4 h-4" />
+                  Clear All
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Active filters display */}
-          {(searchQuery || statusFilter !== "all") && (
+          {/* Active filters chips */}
+          {(searchQuery || statusFilter !== "all" || roleFilter !== "all") && (
             <div className="mt-3 pt-3 border-t border-slate-200">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-slate-600">Active filters:</span>
+                <span className="text-sm text-slate-600 font-medium">Active:</span>
                 {searchQuery && (
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium flex items-center gap-1">
-                    Search: "{searchQuery}"
+                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium flex items-center gap-1.5">
+                    🔍 "{searchQuery}"
                     <button onClick={() => setSearchQuery("")} className="hover:text-indigo-900">
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {statusFilter !== "all" && (
-                  <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium flex items-center gap-1">
-                    Status: {statusFilter}
-                    <button onClick={() => setStatusFilter("all")} className="hover:text-indigo-900">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${statusFilter === 'assigned' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                    {statusFilter}
+                    <button onClick={() => setStatusFilter("all")} className="hover:opacity-70">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                {roleFilter !== "all" && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${getRoleColor(roleFilter)
+                    }`}>
+                    {roleFilter}
+                    <button onClick={() => setRoleFilter("all")} className="hover:opacity-70">
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -279,6 +524,7 @@ export default function AssignmentListPage() {
             </div>
           )}
         </div>
+
 
         {/* Assignments List */}
         {filteredAssignments.length === 0 ? (
@@ -314,10 +560,13 @@ export default function AssignmentListPage() {
                         #
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Cleaner
+                        Name
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Location
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Role
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Status
@@ -359,16 +608,41 @@ export default function AssignmentListPage() {
                         </td>
                         <td className="px-4 py-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${assignment.status === "assigned"
-                                ? "bg-green-100 text-green-800"
-                                : assignment.status === "unassigned"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-gray-100 text-gray-800"
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getRoleColor(assignment.role?.name)
                               }`}
                           >
-                            {assignment.status}
+                            {assignment?.role?.name || "N/A"}
                           </span>
                         </td>
+
+                        <td className="px-4 py-4">
+                          <button
+                            onClick={() => handleStatusToggle(assignment)}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer ${assignment.status === "assigned"
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : assignment.status === "unassigned"
+                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                              }`}
+                            title="Click to toggle status"
+                          >
+                            {assignment.status}
+                            <svg
+                              className="w-3 h-3 ml-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                              />
+                            </svg>
+                          </button>
+                        </td>
+
                         <td className="px-4 py-4 text-sm text-slate-600">
                           {assignment.assigned_on
                             ? new Date(assignment.assigned_on).toLocaleDateString()
@@ -376,13 +650,13 @@ export default function AssignmentListPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <Link
+                            {/* <Link
                               href={`/cleaner-assignments/${assignment.id}?companyId=${companyId}`}
                               className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
-                            </Link>
+                            </Link> */}
                             <button
                               onClick={() => handleDelete(assignment.id)}
                               disabled={deleting === assignment.id}
@@ -425,16 +699,32 @@ export default function AssignmentListPage() {
                         </p>
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${assignment.status === "assigned"
-                          ? "bg-green-100 text-green-800"
-                          : assignment.status === "unassigned"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                    <button
+                      onClick={() => handleStatusToggle(assignment)}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer ${assignment.status === "assigned"
+                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                        : assignment.status === "unassigned"
+                          ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                         }`}
+                      title="Click to toggle status"
                     >
                       {assignment.status}
-                    </span>
+                      <svg
+                        className="w-3 h-3 ml-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                        />
+                      </svg>
+                    </button>
+
                   </div>
 
                   <div className="space-y-2 mb-4">
@@ -442,6 +732,16 @@ export default function AssignmentListPage() {
                       <MapPin className="w-4 h-4 text-slate-400" />
                       <span>{assignment.locations?.name || `Location #${assignment.location_id}`}</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">Role:</span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getRoleColor(assignment.role?.name)
+                          }`}
+                      >
+                        {assignment?.role?.name || "N/A"}
+                      </span>
+                    </div>
+
                     <p className="text-xs text-slate-500">
                       Assigned: {assignment.assigned_on
                         ? new Date(assignment.assigned_on).toLocaleDateString()

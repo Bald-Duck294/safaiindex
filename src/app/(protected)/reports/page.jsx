@@ -10,6 +10,8 @@ import {
   RefreshCw,
   Loader2,
   ChevronDown,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
@@ -18,13 +20,24 @@ import ReportModal from "./components/ReportModal";
 import Loader from "@/components/ui/Loader";
 import { useSelector } from "react-redux";
 
-
 const REPORT_TYPES = [
   {
     value: "daily_task",
-    label: "Daily Task Report",
+    label: "Daily Cleaning Report",
     description: "View cleaner tasks with AI scores and compliance",
     endpoint: "daily-task",
+  },
+  {
+    value: 'washroom_report',
+    label: "Washroom Report",
+    description: "view single washroom report",
+    endpoint: "washroom-report"
+  },
+  {
+    value: "cleaner_report",
+    label: "Cleaner Report",
+    description: "View individual cleaner or all cleaners performance",
+    endpoint: "cleaner-report"
   },
   {
     value: "zone_wise",
@@ -48,10 +61,9 @@ const REPORT_TYPES = [
     value: "detailed_cleaning",
     label: "Detailed Cleaning Report",
     description: "Aggregate performance metrics for cleaners.",
-    endpoint: "daily-task",
+    endpoint: "detailed-cleaning",
   }
 ];
-
 
 const getTodayDate = () => {
   const today = new Date();
@@ -62,6 +74,75 @@ const getTodayDate = () => {
 };
 
 
+const NoDataModal = ({ isOpen, onClose, filters }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-fadeIn">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">No Data Found</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <p className="text-slate-600 mb-4">
+            No records found for the selected filters. Please try:
+          </p>
+          <ul className="space-y-2 mb-6">
+            <li className="flex items-start gap-2 text-sm text-slate-600">
+              <span className="text-blue-600 mt-0.5">•</span>
+              <span>Adjusting the date range</span>
+            </li>
+            <li className="flex items-start gap-2 text-sm text-slate-600">
+              <span className="text-blue-600 mt-0.5">•</span>
+              <span>Selecting different filters</span>
+            </li>
+            <li className="flex items-start gap-2 text-sm text-slate-600">
+              <span className="text-blue-600 mt-0.5">•</span>
+              <span>Removing some filter constraints</span>
+            </li>
+          </ul>
+
+          {/* ✅ Show current filters */}
+          <div className="bg-slate-50 rounded-lg p-4 mb-4">
+            <p className="text-xs font-semibold text-slate-500 mb-2">Current Filters:</p>
+            <div className="space-y-1 text-sm text-slate-700">
+              {filters.zone && <p>Zone: <span className="font-medium">{filters.zone}</span></p>}
+              {filters.location && <p>Location: <span className="font-medium">{filters.location}</span></p>}
+              {filters.cleaner && <p>Cleaner: <span className="font-medium">{filters.cleaner}</span></p>}
+              {filters.dateRange && <p>Date Range: <span className="font-medium">{filters.dateRange}</span></p>}
+              {filters.status && <p>Status: <span className="font-medium">{filters.status}</span></p>}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Adjust Filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
@@ -69,13 +150,18 @@ export default function ReportsPage() {
   const isPermitted = userRoleId === 1 || userRoleId === 2;
 
   const todayDate = getTodayDate();
-  // ✅ Report type selection
+
+  // Report type selection
   const [selectedReportType, setSelectedReportType] = useState("daily_task");
 
-  // ✅ Common filter states
+  // Common filter states
   const [zones, setZones] = useState([]);
   const [locations, setLocations] = useState([]);
   const [cleaners, setCleaners] = useState([]);
+
+  // ✅ Add loading states for each dropdown
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingCleaners, setLoadingCleaners] = useState(false);
 
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -84,21 +170,53 @@ export default function ReportsPage() {
   const [endDate, setEndDate] = useState(todayDate);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // ✅ Data states
+  // Data states
   const [reportData, setReportData] = useState([]);
   const [reportMetadata, setReportMetadata] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // ✅ Fetch dropdown data on mount
+  const [showNoDataModal, setShowNoDataModal] = useState(false);
+
+  const [flag, setFlag] = useState(true);
+
+  // ✅ Initial data fetch on mount
   useEffect(() => {
     if (companyId) {
       fetchZones();
-      fetchLocations();
-      fetchCleaners();
+      fetchLocations(); // Load all locations initially
+      fetchCleaners(); // Load all cleaners initially
     }
-  }, [companyId]);
+  }, [companyId, selectedReportType]);
 
+  // ✅ Cascade: When zone changes, reload locations
+  useEffect(() => {
+    if (companyId && selectedZone) {
+      fetchLocationsByZone(selectedZone);
+      setSelectedLocation(""); // Reset location
+      setSelectedCleaner(""); // Reset cleaner
+      setCleaners([]); // Clear cleaners
+    } else if (companyId && !selectedZone) {
+      // If zone is cleared, load all locations
+      fetchLocations();
+      setSelectedLocation("");
+      setSelectedCleaner("");
+    }
+  }, [selectedZone, companyId]);
+
+  // ✅ Cascade: When location changes, reload cleaners
+  useEffect(() => {
+    if (companyId && selectedLocation) {
+      fetchCleanersByLocation(selectedLocation);
+      setSelectedCleaner(""); // Reset cleaner
+    } else if (companyId && !selectedLocation && !selectedZone) {
+      // If location is cleared and no zone selected, load all cleaners
+      fetchCleaners();
+      setSelectedCleaner("");
+    }
+  }, [selectedLocation, companyId]);
+
+  // ✅ Fetch functions
   const fetchZones = async () => {
     try {
       const response = await ReportsApi.getAvailableZones(companyId);
@@ -107,10 +225,12 @@ export default function ReportsPage() {
       }
     } catch (error) {
       console.error("Error fetching zones:", error);
+      toast.error("Failed to load zones");
     }
   };
 
   const fetchLocations = async () => {
+    setLoadingLocations(true);
     try {
       const response = await ReportsApi.getLocationsForReport(companyId);
       if (response.success) {
@@ -118,24 +238,112 @@ export default function ReportsPage() {
       }
     } catch (error) {
       console.error("Error fetching locations:", error);
+      toast.error("Failed to load locations");
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  // ✅ Fetch locations filtered by zone
+  const fetchLocationsByZone = async (zoneId) => {
+    setLoadingLocations(true);
+    try {
+      const response = await ReportsApi.getLocationsForReport(companyId, zoneId);
+      if (response.success) {
+        setLocations(response.data);
+      } else {
+        setLocations([]);
+        toast.info("No locations found for selected zone");
+      }
+    } catch (error) {
+      console.error("Error fetching locations by zone:", error);
+      toast.error("Failed to load locations");
+      setLocations([]);
+    } finally {
+      setLoadingLocations(false);
     }
   };
 
   const fetchCleaners = async () => {
+    setLoadingCleaners(true);
     try {
       const response = await ReportsApi.getCleanersForReport(companyId);
-      console.log(
-        response, "response"
-      )
       if (response.success) {
         setCleaners(response.data);
       }
     } catch (error) {
       console.error("Error fetching cleaners:", error);
+      toast.error("Failed to load cleaners");
+    } finally {
+      setLoadingCleaners(false);
     }
   };
 
-  // ✅ Generate report based on selected type
+  // ✅ Fetch cleaners filtered by location
+  const fetchCleanersByLocation = async (locationId) => {
+    setLoadingCleaners(true);
+    try {
+      const response = await ReportsApi.getCleanersForReport(companyId, locationId);
+      if (response.success) {
+        setCleaners(response.data);
+        if (response.data.length === 0) {
+          toast.info("No cleaners assigned to this washroom");
+        }
+      } else {
+        setCleaners([]);
+      }
+    } catch (error) {
+      console.error("Error fetching cleaners by location:", error);
+      toast.error("Failed to load cleaners");
+      setCleaners([]);
+    } finally {
+      setLoadingCleaners(false);
+    }
+  };
+
+  // Generate dynamic report name
+  const generateReportName = (defaultReportType) => {
+    const isSingleDate = startDate === endDate;
+
+    if (selectedReportType === "washroom_report") {
+      if (selectedLocation) {
+        const locationName = locations.find(loc => loc.id === selectedLocation)?.name || "Washroom";
+        return isSingleDate
+          ? `${locationName.replace(/\s+/g, '_')}_Daily_Report`
+          : `${locationName.replace(/\s+/g, '_')}_Report`;
+      } else {
+        return "All_Washrooms_Report";
+      }
+    }
+
+    if (selectedReportType === "cleaner_report") {
+      if (selectedCleaner) {
+        const cleanerName = cleaners.find(c => c.id === selectedCleaner)?.name || "Cleaner";
+        return isSingleDate
+          ? `${cleanerName.replace(/\s+/g, '_')}_Daily_Report`
+          : `${cleanerName.replace(/\s+/g, '_')}_Report`;
+      } else {
+        return "All_Cleaners_Report";
+      }
+    }
+
+    if (selectedLocation && selectedReportType === "daily_task") {
+      const locationName = locations.find(loc => loc.id === parseInt(selectedLocation))?.name || "Washroom";
+      return isSingleDate
+        ? `${locationName.replace(/\s+/g, '_')}_Daily_Report`
+        : `${locationName.replace(/\s+/g, '_')}_Report`;
+    }
+
+    return defaultReportType || "Report";
+  };
+  const getCurrentFilters = () => ({
+    zone: selectedZone ? zones.find(z => z.id === selectedZone)?.name : null,
+    location: selectedLocation ? locations.find(l => l.id === selectedLocation)?.display_name : null,
+    cleaner: selectedCleaner ? cleaners.find(c => c.id === selectedCleaner)?.name : null,
+    dateRange: `${startDate || 'Beginning'} to ${endDate || 'Now'}`,
+    status: statusFilter !== 'all' ? statusFilter : null,
+  });
+
   const generateReport = async () => {
     if (!companyId) {
       toast.error("Company ID is required");
@@ -150,7 +358,7 @@ export default function ReportsPage() {
 
       let effectiveStartDate = startDate;
       let effectiveEndDate = endDate;
-      // Build params based on report type
+
       let params = {
         company_id: companyId,
         ...(startDate && { start_date: startDate }),
@@ -158,12 +366,11 @@ export default function ReportsPage() {
       };
 
       if (selectedReportType === "daily_task") {
-        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
         if (!effectiveStartDate) effectiveStartDate = today;
         if (!effectiveEndDate) effectiveEndDate = today;
       }
 
-      // Add report-specific filters
       if (selectedReportType === "daily_task") {
         params = {
           ...params,
@@ -177,20 +384,48 @@ export default function ReportsPage() {
         params = {
           ...params,
           ...(selectedZone && { type_id: selectedZone }),
-          // ...(reviewFilter !== "all" && { review_filter: reviewFilter }), // ✅ Commented out
+        };
+      } else if (selectedReportType === "washroom_report") {
+        params = {
+          ...params,
+          ...(selectedLocation && { location_id: selectedLocation }),
+          ...(statusFilter !== "all" && { status_filter: statusFilter }),
+        };
+      } else if (selectedReportType === "cleaner_report") {
+        params = {
+          ...params,
+          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+          ...(statusFilter !== "all" && { status_filter: statusFilter }),
         };
       }
-
-      console.log("Generating report with params:", params);
 
       const response = await ReportsApi.getReport(
         selectedReport.endpoint,
         params
       );
 
+      const hasData = response.data && response.data.length > 0;
+
       if (response.success || response.status === "success") {
+        if (!hasData) {
+          setShowNoDataModal(true);
+          toast.info("No records found for selected filters");
+          return;
+        }
+
+
+        // ✅ Only show Report Modal if data exists
+        const defaultReportType = response.metadata?.report_type || selectedReport.label;
+        const reportName = generateReportName(defaultReportType);
+
+        const enhancedMetadata = {
+          ...response.metadata,
+          report_type: reportName,
+          dynamic_report_name: reportName
+        };
+
         setReportData(response.data);
-        setReportMetadata(response.metadata);
+        setReportMetadata(enhancedMetadata);
         setShowModal(true);
         toast.success("Report generated successfully!");
       } else {
@@ -204,16 +439,24 @@ export default function ReportsPage() {
     }
   };
 
+
   const handleReset = () => {
     setSelectedZone("");
     setSelectedLocation("");
     setSelectedCleaner("");
-    setStartDate("");
-    setEndDate("");
+    setStartDate(todayDate);
+    setEndDate(todayDate);
     setStatusFilter("all");
     setReportData([]);
     setReportMetadata(null);
     setShowModal(false);
+    setShowNoDataModal(false);
+
+    // ✅ Reload all data to original state
+    if (companyId) {
+      fetchLocations();
+      fetchCleaners();
+    }
   };
 
   return (
@@ -253,7 +496,7 @@ export default function ReportsPage() {
                   value={selectedReportType}
                   onChange={(e) => {
                     setSelectedReportType(e.target.value);
-                    handleReset(); // Reset filters when changing report type
+                    handleReset();
                   }}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white pr-10"
                 >
@@ -282,72 +525,98 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Zone Filter - Only for Zone-wise report */}
-              {selectedReportType === "zone_wise" && isPermitted && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Zone / Location Type
-                  </label>
-                  <select
-                    value={selectedZone}
-                    onChange={(e) => setSelectedZone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="">All Zones</option>
-                    {zones.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* ✅ Zone Filter - With cascade effect */}
+              {flag && ((selectedReportType === "daily_task" ||
+                selectedReportType === "detailed_cleaning" ||
+                selectedReportType === "zone_wise") && isPermitted) && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <MapPin className="w-4 h-4 inline mr-1" />
+                      Zone / Location Type
+                    </label>
+                    <select
+                      value={selectedZone}
+                      onChange={(e) => setSelectedZone(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">All Zones</option>
+                      {zones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-              {/* ✅ Location Filter - For Daily Task Report */}
-              {selectedReportType === "daily_task" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Location / Washroom
-                  </label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="">All Locations</option>
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.display_name}
+              {/* ✅ Location Filter - Shows loading state and filtered results */}
+              {(selectedReportType === "daily_task" ||
+                selectedReportType === "detailed_cleaning" ||
+                selectedReportType === "washroom_report" ||
+                selectedReportType === "cleaner_report") && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <MapPin className="w-4 h-4 inline mr-1" />
+                      Location / Washroom
+                      {loadingLocations && (
+                        <Loader2 className="w-3 h-3 animate-spin inline ml-2" />
+                      )}
+                    </label>
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => setSelectedLocation(e.target.value)}
+                      disabled={loadingLocations}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">
+                        {loadingLocations ? "Loading..." : "All Locations"}
                       </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                      {locations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.display_name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedZone && locations.length === 0 && !loadingLocations && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        No locations found for selected zone
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              {/* ✅ Cleaner Filter - For Daily Task Report */}
-              {selectedReportType === "daily_task" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Cleaner
-                  </label>
-                  <select
-                    value={selectedCleaner}
-                    onChange={(e) => setSelectedCleaner(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="">All Cleaners</option>
-                    {cleaners.map((cleaner) => (
-                      <option key={cleaner.id} value={cleaner.id}>
-                        {cleaner.name}
-                        {/* {cleaner.phone && `(${cleaner.phone})`} */}
-
+              {/* ✅ Cleaner Filter - Shows loading state and filtered results */}
+              {(selectedReportType === "daily_task" ||
+                selectedReportType === "cleaner_report") && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Cleaner
+                      {loadingCleaners && (
+                        <Loader2 className="w-3 h-3 animate-spin inline ml-2" />
+                      )}
+                    </label>
+                    <select
+                      value={selectedCleaner}
+                      onChange={(e) => setSelectedCleaner(e.target.value)}
+                      disabled={loadingCleaners}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">
+                        {loadingCleaners ? "Loading..." : "All Cleaners"}
                       </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                      {cleaners.map((cleaner) => (
+                        <option key={cleaner.id} value={cleaner.id}>
+                          {cleaner.name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedLocation && cleaners.length === 0 && !loadingCleaners && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        No cleaners assigned to this washroom
+                      </p>
+                    )}
+                  </div>
+                )}
 
               {/* Start Date */}
               <div>
@@ -377,23 +646,25 @@ export default function ReportsPage() {
                 />
               </div>
 
-              {/* ✅ Status Filter - For Daily Task Report */}
-              {selectedReportType === "daily_task" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="completed">Completed</option>
-                    <option value="ongoing">Ongoing</option>
-                  </select>
-                </div>
-              )}
+              {/* Status Filter */}
+              {(selectedReportType === "daily_task" ||
+                selectedReportType === "washroom_report" ||
+                selectedReportType === "cleaner_report") && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="completed">Completed</option>
+                      <option value="ongoing">Ongoing</option>
+                    </select>
+                  </div>
+                )}
             </div>
 
             {/* Action Buttons */}
@@ -438,7 +709,7 @@ export default function ReportsPage() {
           )}
 
           {/* Empty State */}
-          {!isLoading && !showModal && (
+          {!isLoading && !showModal && !showNoDataModal && (
             <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
               <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-500 text-lg">No report generated yet</p>
@@ -449,8 +720,12 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
-
-      {/* ✅ Report Modal */}
+      <NoDataModal
+        isOpen={showNoDataModal}
+        onClose={() => setShowNoDataModal(false)}
+        filters={getCurrentFilters()}
+      />
+      {/* Report Modal */}
       {showModal && reportData && reportMetadata && (
         <ReportModal
           reportType={selectedReportType}

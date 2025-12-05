@@ -19,6 +19,7 @@ import {
   Users,
   AlertCircle,
   Loader,
+  Filter,
 } from "lucide-react";
 
 const AddAssignmentPage = () => {
@@ -35,6 +36,7 @@ const AddAssignmentPage = () => {
 
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [locationSearchTerm, setLocationSearchTerm] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState("all"); // ✅ Role filter state
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
@@ -48,6 +50,28 @@ const AddAssignmentPage = () => {
   const userDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
 
+  // ✅ UPDATED: Filter out role_id 1 and 2, then get unique roles
+  const assignableUsers = allUsers.filter(u => u.role_id !== 1 && u.role_id !== 2);
+  const uniqueRoles = [...new Set(assignableUsers.map(u => u.role?.name).filter(Boolean))];
+
+  // ✅ UPDATED: Remove emojis, only show background colors
+  const getRoleColor = (roleName) => {
+    if (!roleName) return "bg-gray-100 text-gray-700";
+
+    const role = roleName.toLowerCase();
+    switch (role) {
+      case 'supervisor':
+        return "bg-blue-100 text-blue-700";
+      case 'cleaner':
+        return "bg-purple-100 text-purple-700";
+      case 'zonal admin':
+      case 'zonaladmin':
+        return "bg-orange-100 text-orange-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   // --- DATA FETCHING ---
   useEffect(() => {
     if (!companyId) return;
@@ -58,7 +82,6 @@ const AddAssignmentPage = () => {
         const userRes = await UsersApi.getAllUsers(companyId);
         const locationRes = await LocationsApi.getAllLocations(companyId);
 
-        // console.log(userRes, "user response")
         if (userRes.success) setAllUsers(userRes.data || []);
         if (locationRes.success) setAllLocations(locationRes.data || []);
       } catch (err) {
@@ -115,9 +138,8 @@ const AddAssignmentPage = () => {
     try {
       const usersToCheck = assignmentMode === "multi"
         ? selectedUsers
-        : [allUsers.find(u => u.id === singleUser)];
+        : [assignableUsers.find(u => u.id === singleUser)];
 
-      // Check each user's existing assignments
       for (const user of usersToCheck) {
         const response = await AssignmentsApi.getAssignmentsByCleanerId(
           user.id,
@@ -126,8 +148,6 @@ const AddAssignmentPage = () => {
 
         if (response.success) {
           const assignedLocationIds = response.data.map((a) => a.location_id);
-
-          // Find conflicts
           const userConflicts = selectedLocations.filter((loc) =>
             assignedLocationIds.includes(loc.id)
           );
@@ -179,6 +199,7 @@ const AddAssignmentPage = () => {
     setSelectedLocations([]);
     setUserSearchTerm("");
     setLocationSearchTerm("");
+    setSelectedRoleFilter("all");
   };
 
   const handleUserSelect = (user) => {
@@ -216,10 +237,12 @@ const AddAssignmentPage = () => {
   };
 
   const handleSelectAllUsers = () => {
-    if (selectedUsers.length === allUsers.length) {
+    const usersToSelect = filteredUsers;
+
+    if (selectedUsers.length === usersToSelect.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(allUsers);
+      setSelectedUsers(usersToSelect);
     }
   };
 
@@ -241,13 +264,11 @@ const AddAssignmentPage = () => {
     const conflicts = await validateAssignments();
 
     if (conflicts.length > 0) {
-      // Create detailed error message
       const errorMessages = conflicts.map((conflict) => {
         const locationList = conflict.locations.join(", ");
         return `• ${conflict.userName} is already assigned to: ${locationList}`;
       });
 
-      // Show detailed error in a custom toast
       toast.error(
         (t) => (
           <div className="max-w-md">
@@ -272,15 +293,10 @@ const AddAssignmentPage = () => {
             </button>
           </div>
         ),
-        {
-          duration: Infinity, // Don't auto-dismiss
-          style: {
-            maxWidth: "500px",
-          },
-        }
+        { duration: Infinity, style: { maxWidth: "500px" } }
       );
 
-      return; // Don't proceed with submission
+      return;
     }
 
     setIsLoading(true);
@@ -291,7 +307,6 @@ const AddAssignmentPage = () => {
       const errors = [];
 
       if (assignmentMode === "multi") {
-        // Multi mode: Create assignments for multiple users and locations
         const promises = selectedUsers.map(async (user) => {
           try {
             const response = await AssignmentsApi.createAssignment({
@@ -319,13 +334,13 @@ const AddAssignmentPage = () => {
 
         await Promise.all(promises);
       } else {
-        // Single mode
+        const selectedUserData = assignableUsers.find(u => u.id === singleUser);
         const response = await AssignmentsApi.createAssignment({
           cleaner_user_id: singleUser,
           location_ids: selectedLocations.map((loc) => loc.id),
           status: "assigned",
           company_id: companyId,
-          role_id: singleUser.role_id
+          role_id: selectedUserData?.role_id
         });
 
         if (response.success) {
@@ -343,7 +358,6 @@ const AddAssignmentPage = () => {
           }!`
         );
 
-        // Reset form and redirect
         setSelectedUsers([]);
         setSingleUser("");
         setSelectedLocations([]);
@@ -384,13 +398,9 @@ const AddAssignmentPage = () => {
               </button>
             </div>
           ),
-          {
-            duration: Infinity,
-            style: { maxWidth: "500px" },
-          }
+          { duration: Infinity, style: { maxWidth: "500px" } }
         );
       } else {
-        // All failed
         toast.error(
           (t) => (
             <div className="max-w-md">
@@ -418,10 +428,7 @@ const AddAssignmentPage = () => {
               </button>
             </div>
           ),
-          {
-            duration: Infinity,
-            style: { maxWidth: "500px" },
-          }
+          { duration: Infinity, style: { maxWidth: "500px" } }
         );
       }
     } catch (error) {
@@ -446,10 +453,13 @@ const AddAssignmentPage = () => {
     }
   };
 
-  // --- FILTERING LOGIC ---
-  const filteredUsers = allUsers.filter((user) =>
-    user.name.toLowerCase().includes(userSearchTerm.toLowerCase())
-  );
+  // ✅ UPDATED: Filter logic - exclude role_id 1 & 2, then filter by search and role
+  const filteredUsers = assignableUsers.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(userSearchTerm.toLowerCase());
+    const matchesRole = selectedRoleFilter === "all" ||
+      user.role?.name?.toLowerCase() === selectedRoleFilter.toLowerCase();
+    return matchesSearch && matchesRole;
+  });
 
   const filteredLocations = (
     assignmentMode === "single" ? availableLocations : allLocations
@@ -463,7 +473,7 @@ const AddAssignmentPage = () => {
     selectedLocations.length === locationsToShow.length &&
     locationsToShow.length > 0;
   const allUsersSelected =
-    selectedUsers.length === allUsers.length && allUsers.length > 0;
+    selectedUsers.length === filteredUsers.length && filteredUsers.length > 0;
 
   // --- RENDER ---
   return (
@@ -480,41 +490,52 @@ const AddAssignmentPage = () => {
                   Create Assignments
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
-                  Assign locations to cleaners
+                  Assign locations to users
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Mode Toggle - SMALLER VERSION */}
-          <div className="mb-6 md:mb-8 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Mode Toggle */}
+          <div className="mb-6 md:mb-8 p-4 sm:p-5 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
-                <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                  Assignment Mode
-                </h3>
-                <p className="text-xs text-slate-500">
+                <div className="flex items-center gap-3 mb-2">
+                  {assignmentMode === "multi" ? (
+                    <Users className="w-5 h-5 text-indigo-600" />
+                  ) : (
+                    <User className="w-5 h-5 text-green-600" />
+                  )}
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800">
+                    {assignmentMode === "multi"
+                      ? "Multiple Assignment Mode"
+                      : "Single Assignment Mode"}
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 ml-8">
                   {assignmentMode === "multi"
-                    ? "Assign multiple users to multiple locations"
-                    : "Assign single user to unassigned locations only"}
+                    ? "Assign multiple users to multiple locations at once"
+                    : "Assign one user to only their unassigned locations"}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleModeToggle}
-                className={`relative inline-flex h-8 w-16 sm:h-9 sm:w-[4.5rem] items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${assignmentMode === "multi" ? "bg-indigo-600" : "bg-green-600"
+                className={`relative inline-flex h-10 w-20 sm:h-11 sm:w-24 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 flex-shrink-0 shadow-md ${assignmentMode === "multi"
+                  ? "bg-indigo-600 focus:ring-indigo-500"
+                  : "bg-green-600 focus:ring-green-500"
                   }`}
               >
                 <span
-                  className={`inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white transition-transform shadow-sm ${assignmentMode === "multi"
+                  className={`inline-block h-8 w-8 sm:h-9 sm:w-9 transform rounded-full bg-white transition-transform shadow-lg ${assignmentMode === "multi"
                     ? "translate-x-1"
-                    : "translate-x-8 sm:translate-x-9"
+                    : "translate-x-11 sm:translate-x-14"
                     }`}
                 >
                   {assignmentMode === "multi" ? (
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 m-1 text-indigo-600" />
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 m-1.5 text-indigo-600" />
                   ) : (
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 m-1 text-green-600" />
+                    <User className="w-5 h-5 sm:w-6 sm:h-6 m-1.5 text-green-600" />
                   )}
                 </span>
               </button>
@@ -522,6 +543,60 @@ const AddAssignmentPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {/* ✅ NEW: Role Filter at Top (Outside Dropdown) */}
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
+              <label className="block text-xs sm:text-sm font-semibold text-indigo-900 mb-2">
+                Filter by Role
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRoleFilter("all")}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${selectedRoleFilter === "all"
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
+                    }`}
+                >
+                  All Roles ({assignableUsers.length})
+                </button>
+                {uniqueRoles.map((role) => {
+                  const roleCount = assignableUsers.filter(
+                    u => u.role?.name === role
+                  ).length;
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRoleFilter(role)}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${selectedRoleFilter === role
+                        ? "bg-indigo-600 text-white shadow-md"
+                        : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
+                        }`}
+                    >
+                      <span className={`inline-block px-2 py-0.5 rounded-full mr-1.5 ${getRoleColor(role)}`}>
+                        {role}
+                      </span>
+                      ({roleCount})
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedRoleFilter !== "all" && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-indigo-700">
+                    Showing {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} with role: {selectedRoleFilter}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoleFilter("all")}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                  >
+                    Clear filter
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* User Selection - Multi or Single based on mode */}
             {assignmentMode === "multi" ? (
               // Multi-select Users
@@ -548,7 +623,7 @@ const AddAssignmentPage = () => {
                   </button>
 
                   {isUserDropdownOpen && (
-                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-64 sm:max-h-80 flex flex-col">
+                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-96 flex flex-col">
                       {/* Search */}
                       <div className="p-2 sm:p-3 border-b border-slate-200">
                         <div className="relative">
@@ -578,7 +653,7 @@ const AddAssignmentPage = () => {
                           ) : (
                             <>
                               <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                              <span>Select All ({allUsers.length})</span>
+                              <span>Select All ({filteredUsers.length})</span>
                             </>
                           )}
                         </button>
@@ -600,14 +675,23 @@ const AddAssignmentPage = () => {
                                 onChange={() => handleUserSelect(user)}
                                 className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
                               />
-                              <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">
-                                {user.name}
-                              </span>
+                              {/* ✅ UPDATED: Show user name with role badge (no emoji) */}
+                              <div className="ml-2 sm:ml-3 flex items-center gap-2 flex-1">
+                                <span className="text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">
+                                  {user.name}
+                                </span>
+                                <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium ${getRoleColor(user.role?.name)
+                                  }`}>
+                                  {user.role?.name || "No Role"}
+                                </span>
+                              </div>
                             </label>
                           ))
                         ) : (
                           <p className="text-xs sm:text-sm text-slate-500 text-center py-4">
-                            No users found
+                            {selectedRoleFilter !== "all"
+                              ? `No users found with role "${selectedRoleFilter}"`
+                              : "No users found"}
                           </p>
                         )}
                       </div>
@@ -624,6 +708,9 @@ const AddAssignmentPage = () => {
                         className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium"
                       >
                         <span className="truncate max-w-[150px]">{user.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}>
+                          {user.role?.name}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleUserSelect(user)}
@@ -650,8 +737,17 @@ const AddAssignmentPage = () => {
                   >
                     <span className="truncate">
                       {singleUser
-                        ? allUsers.find((u) => u.id === singleUser)?.name ||
-                        "Select a user..."
+                        ? (() => {
+                          const user = assignableUsers.find((u) => u.id === singleUser);
+                          return user ? (
+                            <span className="flex items-center gap-2">
+                              {user.name}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}>
+                                {user.role?.name}
+                              </span>
+                            </span>
+                          ) : "Select a user...";
+                        })()
                         : "Select a user..."}
                     </span>
                     <ChevronDown
@@ -661,7 +757,7 @@ const AddAssignmentPage = () => {
                   </button>
 
                   {isUserDropdownOpen && (
-                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-64 sm:max-h-80 flex flex-col">
+                    <div className="absolute z-20 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg max-h-96 flex flex-col">
                       <div className="p-2 sm:p-3 border-b border-slate-200">
                         <div className="relative">
                           <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
@@ -676,18 +772,33 @@ const AddAssignmentPage = () => {
                       </div>
 
                       <div className="overflow-y-auto p-2">
-                        {filteredUsers.map((user) => (
-                          <div
-                            key={user.id}
-                            onClick={() => handleUserSelect(user)}
-                            className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer text-xs sm:text-sm transition-colors ${singleUser === user.id
-                              ? "bg-green-50 text-green-700 font-medium"
-                              : "text-slate-700"
-                              }`}
-                          >
-                            {user.name}
-                          </div>
-                        ))}
+                        {filteredUsers.length > 0 ? (
+                          filteredUsers.map((user) => (
+                            <div
+                              key={user.id}
+                              onClick={() => handleUserSelect(user)}
+                              className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer transition-colors ${singleUser === user.id
+                                ? "bg-green-50 text-green-700 font-medium"
+                                : "text-slate-700"
+                                }`}
+                            >
+                              {/* ✅ UPDATED: Show user with role (no emoji) */}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs sm:text-sm">{user.name}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${getRoleColor(user.role?.name)
+                                  }`}>
+                                  {user.role?.name || "No Role"}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs sm:text-sm text-slate-500 text-center py-4">
+                            {selectedRoleFilter !== "all"
+                              ? `No users found with role "${selectedRoleFilter}"`
+                              : "No users found"}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -820,7 +931,9 @@ const AddAssignmentPage = () => {
                       key={location.id}
                       className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium"
                     >
-                      <span className="truncate max-w-[150px]">{location.name}</span>
+                      <span className="truncate max-w-[150px]">
+                        {location.name}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleLocationSelect(location)}

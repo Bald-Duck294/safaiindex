@@ -208,7 +208,7 @@ export default function CleanersPage() {
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => router.back()}
-                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                        className="cursor-pointer p-2 hover:bg-white/10 rounded-lg transition-colors"
                                     >
                                         <ArrowLeft className="h-5 w-5 text-white" />
                                     </button>
@@ -232,7 +232,7 @@ export default function CleanersPage() {
                                     {isPermitted &&
                                         <button
                                             onClick={handleAddCleaner}
-                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+                                            className=" cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg"
                                         >
                                             <UserPlus className="h-4 w-4" />
                                             <span>Add Cleaner</span>
@@ -269,7 +269,7 @@ export default function CleanersPage() {
                                 {(searchQuery || statusFilter !== "all") && (
                                     <button
                                         onClick={clearFilters}
-                                        className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                                        className=" cursor-pointer px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
                                     >
                                         Clear Filters
                                     </button>
@@ -294,7 +294,7 @@ export default function CleanersPage() {
                                 {assignments.length === 0 && (
                                     <button
                                         onClick={handleAddCleaner}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                                     >
                                         <UserPlus className="h-4 w-4" />
                                         Add First Cleaner
@@ -374,7 +374,7 @@ export default function CleanersPage() {
                                                     <div className="flex justify-center gap-2">
                                                         <button
                                                             onClick={() => handleView(assignment.id)}
-                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                                             title="View Details"
                                                         >
                                                             <Eye className="h-4 w-4" />
@@ -382,7 +382,7 @@ export default function CleanersPage() {
                                                         {isPermitted && (
                                                             <button
                                                                 onClick={() => handleDelete(assignment)}
-                                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                                 title="Remove Assignment"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
@@ -425,7 +425,7 @@ export default function CleanersPage() {
                                 {assignments.length === 0 && (
                                     <button
                                         onClick={handleAddCleaner}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                                        className=" cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                                     >
                                         <UserPlus className="h-4 w-4" />
                                         Add First Cleaner
@@ -459,7 +459,7 @@ export default function CleanersPage() {
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleView(assignment.id)}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                                             title="View Details"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -467,7 +467,7 @@ export default function CleanersPage() {
                                         <button
                                             onClick={() => setStatusModal({ open: true, assignment })}
                                             disabled={togglingStatus === assignment.id}
-                                            className={`p-2 rounded-lg transition-colors ${assignment.status?.toLowerCase() === 'assigned'
+                                            className={` cursor-pointer p-2 rounded-lg transition-colors ${assignment.status?.toLowerCase() === 'assigned'
                                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
@@ -482,7 +482,7 @@ export default function CleanersPage() {
                                         {isPermitted && (
                                             <button
                                                 onClick={() => handleDelete(assignment)}
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                                className=" cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg"
                                                 title="Remove Assignment"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -547,7 +547,7 @@ export default function CleanersPage() {
                             <div className="flex gap-3 justify-end">
                                 <button
                                     onClick={() => setStatusModal({ open: false, assignment: null })}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                                    className=" cursor-pointer px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
                                     disabled={togglingStatus === statusModal.assignment?.id}
                                 >
                                     Cancel
@@ -555,7 +555,7 @@ export default function CleanersPage() {
                                 <button
                                     onClick={confirmStatusToggle}
                                     disabled={togglingStatus === statusModal.assignment?.id}
-                                    className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
+                                    className={` cursor-pointer px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 font-medium ${statusModal.assignment?.status?.toLowerCase() === 'assigned'
                                         ? 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
                                         : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
                                         }`}
@@ -603,7 +603,7 @@ export default function CleanersPage() {
                             <div className="flex gap-3 justify-end">
                                 <button
                                     onClick={() => setDeleteModal({ open: false, assignment: null })}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                    className="cursor-pointer px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                                     disabled={deleting}
                                 >
                                     Cancel
@@ -611,7 +611,7 @@ export default function CleanersPage() {
                                 <button
                                     onClick={confirmDelete}
                                     disabled={deleting}
-                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:bg-red-400"
+                                    className=" cursor-pointer px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:bg-red-400"
                                 >
                                     {deleting && (
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

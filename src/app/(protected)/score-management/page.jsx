@@ -995,7 +995,7 @@ export default function ScoreManagement() {
                                     onChange={(e) => setScoreFilter(e.target.value)}
                                     className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                 >
-                                    <option value="all">All Scores</option>
+                                    <option value="all">Scores Range</option>
                                     <option value="high">High (8-10)</option>
                                     <option value="medium">Medium (5-7)</option>
                                     <option value="low">Low (0-4)</option>

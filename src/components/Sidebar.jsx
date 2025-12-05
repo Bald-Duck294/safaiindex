@@ -2,25 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter, usePathname, useSearchParams } from "next/navigation"; // ✅ Added useSearchParams
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { logout } from "../store/slices/authSlice.js";
 
 import {
-  LayoutDashboard,// Dashboard
-  Building2, // Client Dashboard
-  List,   //List views
-  FolderTree, // Location Types parent
+  LayoutDashboard,
+  Building2,
+  List,
+  FolderTree,
   FolderPlus,
-  UserPlus,      // Add User
-  Users,             // User Management
-  UserCog,           // Cleaner Mapping
-  PlusCircle,        // Add actions
+  UserPlus,
+  Users,
+  UserCog,
+  PlusCircle,
   Bath,
-  Toilet,            // Washrooms (better than Bath)
+  Toilet,
   ClipboardList,
   CheckCircle,
   ClipboardCheck,
-  UserCheck, // for registered user
+  UserCheck,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -28,7 +28,7 @@ import {
   LogOut,
   Menu,
   X,
-  MapPin, // Locations
+  MapPin,
   Building,
   MessageSquare,
   FileText,
@@ -38,7 +38,6 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
-
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobile, setIsMobile] = useState(false);
 
@@ -48,14 +47,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // console.log('Pathname:', pathname);
-  // console.log('SearchParams:', Object.fromEntries(searchParams.entries()));
-
-
-
   const getRoleText = () => {
     if (!user || !user.role_id) {
-      return "User"; // Default role if not specified
+      return "User";
     }
     switch (user.role_id) {
       case 1:
@@ -72,17 +66,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const userRole = getRoleText();
 
   const getCompanyContext = () => {
-    // Method 1: From clientDashboard route
     if (pathname.startsWith('/clientDashboard/')) {
       const segments = pathname.split('/');
-      // console.log('ClientDashboard segments:', segments);
-      return segments[2]; // Gets the ID from /clientDashboard/[id]
+      return segments[2];
     }
 
-    // Method 2: From search params (for other routes)
     const companyId = searchParams.get('companyId');
     if (companyId) {
-      // console.log('CompanyId from searchParams:', companyId);
       return companyId;
     }
 
@@ -94,33 +84,57 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const isOnMainDashboard = pathname === '/dashboard';
   const hasCompanyContext = !!companyId;
 
+  // ✅ NEW: Function to check if a route is active
+  const isRouteActive = (href) => {
+    if (!href) return false;
 
-  // console.log('CompanyId:', companyId);
-  // console.log('HasCompanyContext:', hasCompanyContext);
-  // console.log('IsOnMainDashboard:', isOnMainDashboard);
-  // console.log('IsSuperadmin:', isSuperadmin);
+    // Exact match for dashboard routes
+    if (href === '/dashboard' && pathname === '/dashboard') return true;
+    if (href.startsWith('/clientDashboard/') && pathname.startsWith('/clientDashboard/')) return true;
+
+    // For routes with query params, match the base path
+    const [basePath] = href.split('?');
+    return pathname.startsWith(basePath);
+  };
+
+  // ✅ NEW: Function to check if any child route is active
+  const isDropdownActive = (children) => {
+    if (!children) return false;
+    return children.some(child => isRouteActive(child.href));
+  };
+
+  // ✅ NEW: Auto-expand dropdown if child route is active
+  useEffect(() => {
+    const newOpenDropdowns = {};
+
+    menuItems.forEach(item => {
+      if (item.hasDropdown && item.children) {
+        const isActive = isDropdownActive(item.children);
+        if (isActive) {
+          newOpenDropdowns[item.key] = true;
+        }
+      }
+    });
+
+    setOpenDropdowns(prev => ({ ...prev, ...newOpenDropdowns }));
+  }, [pathname, searchParams]); // Re-run when route changes
 
   const getMenuItems = () => {
-    // Superadmin on main dashboard only
+    // ... your existing getMenuItems logic remains exactly the same ...
     if (isSuperadmin && isOnMainDashboard && !hasCompanyContext) {
       return [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }
       ];
     }
 
-    // Company context menu (show when companyId exists)
     if (hasCompanyContext && user?.role_id === 1) {
-      // SUPERADMIN VIEW - Full access including company management
       return [
-        // dashboard 
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-        // client dashboard
         {
           icon: Building2,
           label: "Client Dashboard",
           href: `/clientDashboard/${companyId}`
         },
-        // Location hierarchy
         {
           icon: FolderTree,
           label: "Location Hierarchy",
@@ -139,7 +153,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        //washrooms 
         {
           icon: Toilet,
           label: "Washrooms",
@@ -158,7 +171,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        //user management 
         {
           icon: Users,
           label: "User Management",
@@ -177,7 +189,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        // cleaner mapping
         {
           icon: UserCog,
           label: "Cleaner Mapping",
@@ -196,9 +207,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-
-
-        // facility management 
         {
           icon: Building2,
           label: "Facility Companies",
@@ -217,41 +225,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-
-
-        // shift management
-        // {
-        //   icon: CalendarClock,
-        //   label: "Shift Management",
-        //   hasDropdown: true,
-        //   key: "shift-management",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Shift List",
-        //       href: `/shifts?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: UserPlus,
-        //       label: "Add Shift",
-        //       href: `/shifts/add?companyId=${companyId}`,
-        //     },
-        //   ],
-        // },
-
-        // locate on map
         {
           icon: MapPin,
           label: "Locate On Map",
           href: `/locations?companyId=${companyId}`
         },
-        // cleaner-activity
         {
           icon: ClipboardList,
           label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
-        // user-review
         {
           icon: MessageSquare,
           label: "User Review",
@@ -265,15 +248,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       ];
     }
     else if (hasCompanyContext && user?.role_id === 2) {
-      // ADMIN VIEW - Company-specific access
       return [
-        // admin -dashboard
         {
           icon: Building,
           label: "Dashboard",
           href: `/clientDashboard/${companyId}`
         },
-        // admin -Locaton Hierarchy 
         {
           icon: FolderTree,
           label: "Location Hierarchy",
@@ -292,7 +272,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        // admin - washroom list
         {
           icon: Toilet,
           label: "Washrooms",
@@ -311,8 +290,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-
-        // admin - user mangament 
         {
           icon: Users,
           label: "User Management",
@@ -331,7 +308,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-        // admin -cleaner mapping 
         {
           icon: ClipboardList,
           label: "Cleaner Mapping",
@@ -350,90 +326,40 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             },
           ],
         },
-
-        // locate on map
         {
           icon: MapPin,
           label: "Locate On Map",
           href: `/locations?companyId=${companyId}`
         },
-        {
-          icon: List,
-          label: "shift",
-          href: `/shift?companyId=${companyId}`
-        },
-
-        // shift management
         // {
-        //   icon: CalendarClock,
-        //   label: "Shift Management",
-        //   hasDropdown: true,
-        //   key: "shift-management",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Shift List",
-        //       href: `/shift?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: UserPlus,
-        //       label: "Add Shift",
-        //       href: `/shift/add?companyId=${companyId}`,
-        //     },
-        //   ],
+        //   icon: List,
+        //   label: "shift",
+        //   href: `/shift?companyId=${companyId}`
         // },
-
-        // cleaner activity
         {
           icon: ClipboardList,
           label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
-        // admin - user -activity 
         {
           icon: Building,
           label: "User Review",
           href: `/user-activity?companyId=${companyId}`
         },
-
         {
           icon: FileText,
           label: "Reports",
           href: `/reports?companyId=${companyId}`,
         },
-        // ✅ ADD REGISTERED USERS FOR ADMIN (Company-specific)
-
-        // {
-        //   icon: ClipboardList,
-        //   label: "Registered Users",
-        //   hasDropdown: true,
-        //   key: "registered-users",
-        //   children: [
-        //     {
-        //       icon: List,
-        //       label: "Registered Users List",
-        //       href: `/registered-users?companyId=${companyId}`,
-        //     },
-        //     {
-        //       icon: PlusCircle,
-        //       label: "Add Registered User",
-        //       href: `/registered-users/add?companyId=${companyId}`,
-        //     },
-        //   ],
-        // },
-
       ];
     }
     else if (hasCompanyContext && user?.role_id === 3) {
       return [
-        // supervisor -dashboard
         {
           icon: Building,
           label: "Dashboard",
           href: `/clientDashboard/${companyId}`
         },
-
-        // supervisor - washroom list
         {
           icon: Toilet,
           label: "Washrooms",
@@ -445,38 +371,28 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               label: "Washrooms List",
               href: `/washrooms?companyId=${companyId}`
             },
-            // {
-            //   icon: PlusCircle,
-            //   label: "Add Washroom",
-            //   href: `/washrooms/add-location?companyId=${companyId}`
-            // },
           ],
         },
-
         {
           icon: UserCheck,
           label: "Cleaner List",
           href: `/users/cleaner?companyId=${companyId}`
         },
-        // locate on map
         {
           icon: MapPin,
           label: "Locate On Map",
           href: `/locations?companyId=${companyId}`
         },
-        // cleaner activity
         {
           icon: ClipboardList,
           label: "Cleaner Activity",
           href: `/cleaner-review?companyId=${companyId}`
         },
-        // admin - user -activity 
         {
           icon: Building,
           label: "User Review",
           href: `/user-activity?companyId=${companyId}`
         },
-
         {
           icon: FileText,
           label: "Reports",
@@ -503,28 +419,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       ];
     }
 
-    // Fallback
     return [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }
     ];
   };
 
-
-  // Filter menu items based on user permissions (future feature utility)
   const filterMenuByPermissions = (menuItems) => {
-    // console.log('In filter')
     if (!user?.features) return menuItems;
-    // console.log('in filter by permission ')
+
     try {
       const userFeatures = typeof user.features === 'string'
         ? JSON.parse(user.features)
         : user.features;
 
       return menuItems.filter(item => {
-        // If no feature restriction defined, show by default
         if (!item.requiredFeature) return true;
-
-        // Check if user has required feature
         return userFeatures.includes(item.requiredFeature);
       });
     } catch (error) {
@@ -534,9 +443,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const menuItems = filterMenuByPermissions(getMenuItems());
-
-  // ✅ Add debugging for final menu items
-  // console.log('Final menuItems:', menuItems);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -552,12 +458,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const toggleDropdown = (key) => {
-    // If the sidebar is closed, open it first, then open the dropdown
     if (!sidebarOpen) {
       setSidebarOpen(true);
       setTimeout(() => {
         setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
-      }, 150); // Small delay to allow sidebar to start expanding
+      }, 150);
     } else {
       setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
     }
@@ -577,8 +482,41 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       .toUpperCase();
   };
 
-  const commonLinkClasses =
-    "flex items-center px-3 py-3 rounded-md cursor-pointer relative overflow-hidden text-gray-300 hover:bg-indigo-600 hover:text-white transition-all duration-200";
+  // ✅ UPDATED: Base link classes
+  const commonLinkClasses = "flex items-center px-3 py-3 rounded-md cursor-pointer relative overflow-hidden transition-all duration-200";
+
+  // ✅ NEW: Function to get active link classes
+  const getActiveLinkClasses = (href, isChild = false) => {
+    const isActive = isRouteActive(href);
+
+    if (isActive) {
+      return `${commonLinkClasses} ${isChild
+          ? 'bg-slate-700 text-white border-l-2 border-indigo-500'
+          : 'bg-indigo-600 text-white shadow-lg'
+        }`;
+    }
+
+    return `${commonLinkClasses} ${isChild
+        ? 'text-gray-400 hover:bg-slate-700 hover:text-white'
+        : 'text-gray-300 hover:bg-indigo-600 hover:text-white'
+      }`;
+  };
+
+  // ✅ NEW: Function to get dropdown button classes
+  const getDropdownButtonClasses = (item) => {
+    const isActive = isDropdownActive(item.children);
+    const isOpen = openDropdowns[item.key];
+
+    if (isActive) {
+      return `${commonLinkClasses} bg-slate-800 text-white border-l-2 border-indigo-500`;
+    }
+
+    if (isOpen) {
+      return `${commonLinkClasses} bg-slate-800 text-white`;
+    }
+
+    return `${commonLinkClasses} text-gray-300 hover:bg-indigo-600 hover:text-white`;
+  };
 
   return (
     <>
@@ -632,13 +570,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               const isDropdownOpen = openDropdowns[item.key];
 
               if (item.hasDropdown) {
-                // RENDER A BUTTON FOR DROPDOWNS
                 return (
                   <li key={index} className="group">
                     <button
                       onClick={() => toggleDropdown(item.key)}
-                      className={`${commonLinkClasses} w-full ${isDropdownOpen ? "bg-slate-800 text-white" : ""
-                        } ${!sidebarOpen ? "justify-center" : ""}`}
+                      className={`${getDropdownButtonClasses(item)} w-full ${!sidebarOpen ? "justify-center" : ""
+                        }`}
                     >
                       <IconComponent size={20} className="flex-shrink-0" />
                       {sidebarOpen && (
@@ -676,7 +613,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                   onClick={() => {
                                     if (isMobile) setSidebarOpen(false);
                                   }}
-                                  className="w-full flex items-center px-2 py-2 rounded-md text-gray-400 hover:bg-slate-700 hover:text-white transition-all duration-200 text-sm"
+                                  className={`w-full flex items-center px-2 py-2 rounded-md transition-all duration-200 text-sm ${getActiveLinkClasses(child.href, true)
+                                    }`}
                                 >
                                   <ChildIcon
                                     size={16}
@@ -694,7 +632,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 );
               }
 
-              // RENDER A LINK FOR REGULAR ITEMS
+              // Regular menu items
               return (
                 <li key={index} className="group">
                   <Link
@@ -702,7 +640,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                     onClick={() => {
                       if (isMobile) setSidebarOpen(false);
                     }}
-                    className={`${commonLinkClasses} ${!sidebarOpen ? "justify-center" : ""
+                    className={`${getActiveLinkClasses(item.href)} ${!sidebarOpen ? "justify-center" : ""
                       }`}
                   >
                     <IconComponent size={20} className="flex-shrink-0" />
@@ -724,21 +662,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Footer */}
         <div className="border-t border-slate-700 bg-slate-800">
           <div className="p-4">
-            {/* {sidebarOpen && (
-              <div className="flex items-center space-x-3 mb-3 p-2 rounded-md hover:bg-slate-700 transition">
-                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                  {getInitials()}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">
-                    {user?.name || "Unknown"}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {userRole}
-                  </p>
-                </div>
-              </div>
-            )} */}
             <button
               onClick={handleLogout}
               className={`cursor-pointer w-full flex items-center px-3 py-2 rounded-md text-gray-300 hover:bg-red-600 hover:text-white transition-all duration-200

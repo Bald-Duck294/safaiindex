@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { MapPin, Navigation, Search, X, Plus, AlertTriangle, Power, PowerOff, Users, EllipsisVertical } from "lucide-react";
+import { MapPin, Navigation, Search, X, Plus, AlertTriangle, Power, PowerOff, Users, EllipsisVertical, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import LocationsApi from "@/lib/api/LocationApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import { useRouter } from "next/navigation";
@@ -18,8 +18,14 @@ function WashroomsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [minRating, setMinRating] = useState("");
-  // const [sortOrder, setSortOrder] = useState("desc");
   const [sortBy, setSortBy] = useState("newest");
+
+  // ✅ NEW: Individual sort states for each column
+  const [nameSortOrder, setNameSortOrder] = useState(null); // null, 'asc', 'desc'
+  const [currentScoreSortOrder, setCurrentScoreSortOrder] = useState(null);
+  const [avgScoreSortOrder, setAvgScoreSortOrder] = useState(null);
+  const [statusSortOrder, setStatusSortOrder] = useState(null);
+
   const [deleteModal, setDeleteModal] = useState({ open: false, location: null });
   const [actionsMenuOpen, setActionsMenuOpen] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -36,7 +42,6 @@ function WashroomsPage() {
   const [cleanerModal, setCleanerModal] = useState({ open: false, location: null });
 
   const router = useRouter();
-
 
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
@@ -68,8 +73,6 @@ function WashroomsPage() {
       <div className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 ${bg} rounded-lg`}>
         <div className="flex items-center gap-1.5">
           <span className={`font-bold text-base ${color}`}>
-            {/* {rating.toFixed(1)} */}
-            {/* {parseFloat(rating).toFixed(2)} */}
             {smartRound(rating)}
           </span>
           <span className={`text-xs font-medium ${color}`}>{label}</span>
@@ -83,15 +86,63 @@ function WashroomsPage() {
     );
   };
 
+  // ✅ NEW: Handle column-specific sorting
+  const handleSort = (column) => {
+    // Reset all other sorts
+    setNameSortOrder(null);
+    setCurrentScoreSortOrder(null);
+    setAvgScoreSortOrder(null);
+    setStatusSortOrder(null);
+
+    switch (column) {
+      case 'name':
+        const newNameOrder = nameSortOrder === 'asc' ? 'desc' : 'asc';
+        setNameSortOrder(newNameOrder);
+        setSortBy(newNameOrder === 'asc' ? 'nameAsc' : 'nameDesc');
+        break;
+
+      case 'currentScore':
+        const newCurrentScoreOrder = currentScoreSortOrder === 'desc' ? 'asc' : 'desc';
+        setCurrentScoreSortOrder(newCurrentScoreOrder);
+        setSortBy(newCurrentScoreOrder === 'desc' ? 'currentScoreDesc' : 'currentScoreAsc');
+        break;
+
+      case 'avgScore':
+        const newAvgScoreOrder = avgScoreSortOrder === 'desc' ? 'asc' : 'desc';
+        setAvgScoreSortOrder(newAvgScoreOrder);
+        setSortBy(newAvgScoreOrder === 'desc' ? 'avgScoreDesc' : 'avgScoreAsc');
+        break;
+
+      case 'status':
+        const newStatusOrder = statusSortOrder === 'active' ? 'inactive' : 'active';
+        setStatusSortOrder(newStatusOrder);
+        setSortBy(newStatusOrder === 'active' ? 'statusActive' : 'statusInactive');
+        break;
+    }
+  };
+
+  // ✅ NEW: Render sort icon
+  const renderSortIcon = (currentOrder) => {
+    if (!currentOrder) {
+      return (
+        <ArrowUpDown className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+      );
+    }
+    if (currentOrder === 'asc' || currentOrder === 'active') {
+      return <ArrowUp className="w-4 h-4 text-blue-600" />;
+    }
+    return <ArrowDown className="w-4 h-4 text-blue-600" />;
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const sortByParam = searchParams.get('sortBy');
     const facilityCompanyIdParam = searchParams.get('facilityCompanyId');
     const facilityCompanyNameParam = searchParams.get('facilityCompanyName');
 
-
     if (sortByParam === 'currentScore') {
-      setSortBy('currentScore');
+      setSortBy('currentScoreDesc');
+      setCurrentScoreSortOrder('desc');
     }
 
     if (facilityCompanyIdParam) {
@@ -100,7 +151,6 @@ function WashroomsPage() {
         setFacilityCompanyName(decodeURIComponent(facilityCompanyNameParam));
       }
     }
-
   }, []);
 
   useEffect(() => {
@@ -149,8 +199,7 @@ function WashroomsPage() {
     fetchList();
   }, [companyId]);
 
-
-
+  // ✅ UPDATED: Enhanced sorting logic
   useEffect(() => {
     let filtered = [...list];
 
@@ -176,18 +225,36 @@ function WashroomsPage() {
     if (minRating) {
       filtered = filtered.filter((item) => item.averageRating !== null && parseFloat(item.averageRating) >= parseFloat(minRating));
     }
-    //  sorting logic
-    // ✅ Updated sorting logic with name sorting
+
+    // ✅ UPDATED: Enhanced sorting with new options
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'currentScore':
+        case 'currentScoreDesc':
           return (b.currentScore || 0) - (a.currentScore || 0);
-        case 'averageScore':
+        case 'currentScoreAsc':
+          return (a.currentScore || 0) - (b.currentScore || 0);
+
+        case 'avgScoreDesc':
           return (b.averageRating || 0) - (a.averageRating || 0);
+        case 'avgScoreAsc':
+          return (a.averageRating || 0) - (b.averageRating || 0);
+
         case 'nameAsc':
-          return a.name.localeCompare(b.name); // A to Z
+          return a.name.localeCompare(b.name);
         case 'nameDesc':
-          return b.name.localeCompare(a.name); // Z to A
+          return b.name.localeCompare(a.name);
+
+        case 'statusActive':
+          // Active first (true/null), then inactive (false)
+          const aStatus = a.status === true || a.status === null ? 1 : 0;
+          const bStatus = b.status === true || b.status === null ? 1 : 0;
+          return bStatus - aStatus;
+        case 'statusInactive':
+          // Inactive first (false), then active (true/null)
+          const aStatusInactive = a.status === true || a.status === null ? 0 : 1;
+          const bStatusInactive = b.status === true || b.status === null ? 0 : 1;
+          return bStatusInactive - aStatusInactive;
+
         case 'asc':
           return new Date(a.created_at) - new Date(b.created_at);
         case 'desc':
@@ -195,7 +262,6 @@ function WashroomsPage() {
           return new Date(b.created_at) - new Date(a.created_at);
       }
     });
-
 
     setFilteredList(filtered);
   }, [searchQuery, minRating, sortBy, list, facilityCompanyId, selectedLocationTypeId, assignmentFilter]);
@@ -300,6 +366,10 @@ function WashroomsPage() {
     setSelectedLocationTypeId("");
     setAssignmentFilter("");
     setSortBy("desc");
+    setNameSortOrder(null);
+    setCurrentScoreSortOrder(null);
+    setAvgScoreSortOrder(null);
+    setStatusSortOrder(null);
   };
 
   const renderCleanerBadge = (cleaners) => {
@@ -422,35 +492,7 @@ function WashroomsPage() {
                   </div>
                 </div>
 
-                {/* ✅ NEW: Quick Sort by Name Buttons (visible on all screen sizes) */}
-                <div className="flex items-center gap-2 lg:hidden">
-                  <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Sort by Name:</span>
-                  <div className="flex gap-1 bg-white border border-slate-300 rounded-lg p-1">
-                    <button
-                      onClick={() => setSortBy('nameAsc')}
-                      className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-all ${sortBy === 'nameAsc' ? 'bg-blue-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
-                        }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                      </svg>
-                      A-Z
-                    </button>
-                    <button
-                      onClick={() => setSortBy('nameDesc')}
-                      className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium transition-all ${sortBy === 'nameDesc' ? 'bg-blue-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
-                        }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-                      </svg>
-                      Z-A
-                    </button>
-                  </div>
-                </div>
-
                 <div className="flex flex-wrap gap-2">
-                  {/* Existing dropdowns */}
                   <select
                     className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={selectedLocationTypeId}
@@ -476,7 +518,7 @@ function WashroomsPage() {
                       }
                     }}
                   >
-                    <option value="">All Companies</option>
+                    <option value="">All Facility Companies</option>
                     {facilityCompanies.map((fc) => (
                       <option key={fc.id} value={fc.id}>{fc.name}</option>
                     ))}
@@ -494,19 +536,6 @@ function WashroomsPage() {
                     <option value="8">8+ Stars</option>
                   </select>
 
-                  <select
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <option value="desc">Newest First</option>
-                    <option value="asc">Oldest First</option>
-                    <option value="currentScore">Current Score (High to Low)</option>
-                    <option value="averageScore">Average Score (High to Low)</option>
-                    <option value="nameAsc">Name (A to Z)</option>
-                    <option value="nameDesc">Name (Z to A)</option>
-                  </select>
-
                   <button
                     onClick={clearAllFilters}
                     className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-all"
@@ -517,50 +546,57 @@ function WashroomsPage() {
                 </div>
               </div>
             </div>
-
           </div>
 
-          {/* Desktop Table View (hidden on mobile) */}
+          {/* Desktop Table View */}
           <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Table Header */}
+            {/* ✅ UPDATED: Table Header with sortable columns */}
             <div className="grid grid-cols-[60px_2fr_1.3fr_1.2fr_1.2fr_1.3fr_1.2fr_auto] gap-3 bg-slate-100 text-slate-700 px-4 py-3 text-sm font-semibold border-b border-slate-200">
               <div className="text-center">Sr No</div>
 
+              {/* ✅ Sortable Name Column */}
               <button
-                onClick={() => setSortBy(sortBy === 'nameAsc' ? 'nameDesc' : 'nameAsc')}
+                onClick={() => handleSort('name')}
                 className="text-left hover:text-blue-600 transition-colors flex items-center gap-1.5 group"
               >
                 <span>Washroom Name</span>
-
-                {/* ✅ Show appropriate icon based on current sort state */}
-                {sortBy === 'nameAsc' ? (
-                  // Up arrow when sorted A to Z
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                ) : sortBy === 'nameDesc' ? (
-                  // Down arrow when sorted Z to A
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                ) : (
-                  // Neutral sort icon when NOT sorted by name
-                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                )}
+                {renderSortIcon(nameSortOrder)}
               </button>
 
-
               <div>Zone Name</div>
-              <div className="text-center">Current Score</div>
-              <div className="text-center">Average Rating</div>
+
+              {/* ✅ Sortable Current Score Column */}
+              <button
+                onClick={() => handleSort('currentScore')}
+                className="text-center hover:text-blue-600 transition-colors flex items-center justify-center gap-1.5 group"
+              >
+                <span>Current Score</span>
+                {renderSortIcon(currentScoreSortOrder)}
+              </button>
+
+              {/* ✅ Sortable Average Rating Column */}
+              <button
+                onClick={() => handleSort('avgScore')}
+                className="text-center hover:text-blue-600 transition-colors flex items-center justify-center gap-1.5 group"
+              >
+                <span>Average Rating</span>
+                {renderSortIcon(avgScoreSortOrder)}
+              </button>
+
               <div>Cleaner Name</div>
               <div>Facility Company</div>
-              <div className="text-center">Status & Action</div>
+
+              {/* ✅ Sortable Status Column */}
+              <button
+                onClick={() => handleSort('status')}
+                className="text-center hover:text-blue-600 transition-colors flex items-center justify-center gap-1.5 group"
+              >
+                <span>Status & Action</span>
+                {renderSortIcon(statusSortOrder)}
+              </button>
             </div>
 
-            {/* Table Body */}
+            {/* Table Body - remains the same */}
             <div className="divide-y divide-slate-200">
               {filteredList.length === 0 ? (
                 <div className="p-8 text-center">
@@ -629,7 +665,7 @@ function WashroomsPage() {
                           }`}
                       >
                         {(item.status === true || item.status === null) ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
-                        Active
+                        {(item.status === true || item.status === null) ? 'Active' : 'Inactive'}
                       </button>
 
                       <button
@@ -662,7 +698,7 @@ function WashroomsPage() {
             </div>
           </div>
 
-          {/* Mobile/Tablet Card View */}
+          {/* Mobile/Tablet Card View - remains the same */}
           <div className="lg:hidden">
             {filteredList.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
@@ -766,7 +802,7 @@ function WashroomsPage() {
             )}
           </div>
 
-          {/* Modals remain the same */}
+          {/* Modals - remain the same */}
           {cleanerModal.open && (
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setCleanerModal({ open: false, location: null })}>
               <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>

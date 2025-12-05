@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 
-// Enhanced Photo Modal Component with Zoom and Navigation
+// ✅ Enhanced Photo Modal with HIGHER z-index
 const PhotoModal = ({ photos, onClose }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [zoomLevel, setZoomLevel] = useState(1);
@@ -11,14 +11,20 @@ const PhotoModal = ({ photos, onClose }) => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-    if (!photos || ((!photos.before || photos.before.length === 0) && (!photos.after || photos.after.length === 0))) {
-        return null;
-    }
+    // ✅ Prevent body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
+    if (!photos || (!photos.before?.length && !photos.after?.length)) return null;
 
     // Combine all photos with labels
     const allPhotos = [
-        ...(photos.before || []).map(url => ({ url, label: 'Before', color: 'blue' })),
-        ...(photos.after || []).map(url => ({ url, label: 'After', color: 'green' }))
+        ...(photos.before?.map(url => ({ url, label: "Before", color: "blue" })) || []),
+        ...(photos.after?.map(url => ({ url, label: "After", color: "green" })) || [])
     ];
 
     const currentPhoto = allPhotos[currentIndex];
@@ -39,10 +45,7 @@ const PhotoModal = ({ photos, onClose }) => {
     };
 
     // Zoom handlers
-    const handleZoomIn = () => {
-        setZoomLevel(prev => Math.min(prev + 0.5, 3));
-    };
-
+    const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.5, 3));
     const handleZoomOut = () => {
         if (zoomLevel > 1) {
             setZoomLevel(prev => Math.max(prev - 0.5, 1));
@@ -50,7 +53,6 @@ const PhotoModal = ({ photos, onClose }) => {
             resetZoom();
         }
     };
-
     const resetZoom = () => {
         setZoomLevel(1);
         setPosition({ x: 0, y: 0 });
@@ -76,28 +78,26 @@ const PhotoModal = ({ photos, onClose }) => {
         }
     };
 
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
+    const handleMouseUp = () => setIsDragging(false);
 
     // Keyboard navigation
     const handleKeyDown = (e) => {
         switch (e.key) {
-            case 'ArrowLeft':
+            case "ArrowLeft":
                 goToPrevious();
                 break;
-            case 'ArrowRight':
+            case "ArrowRight":
                 goToNext();
                 break;
-            case '+':
-            case '=':
+            case "+":
+            case "=":
                 handleZoomIn();
                 break;
-            case '-':
-            case '_':
+            case "-":
+            case "_":
                 handleZoomOut();
                 break;
-            case 'Escape':
+            case "Escape":
                 onClose();
                 break;
             default:
@@ -116,8 +116,9 @@ const PhotoModal = ({ photos, onClose }) => {
     };
 
     return (
+        // ✅ INCREASED z-index to 9999 (above ReportModal's z-50)
         <div
-            className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -146,7 +147,9 @@ const PhotoModal = ({ photos, onClose }) => {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
-                style={{ cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+                style={{
+                    cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+                }}
             >
                 <img
                     src={currentPhoto.url}
@@ -157,17 +160,14 @@ const PhotoModal = ({ photos, onClose }) => {
                         transformOrigin: 'center center'
                     }}
                     onError={(e) => {
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="white"%3EImage not found%3C/text%3E%3C/svg%3E';
+                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='white'%3EImage not found%3C/text%3E%3C/svg%3E`;
                     }}
                     draggable={false}
                 />
 
                 {/* Image Label Badge */}
-                <div
-                    className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${
-                        currentPhoto.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'
-                    }`}
-                >
+                <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                    }`}>
                     {currentPhoto.label}
                 </div>
             </div>
@@ -177,7 +177,7 @@ const PhotoModal = ({ photos, onClose }) => {
                 <button
                     onClick={goToPrevious}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 shadow-lg transition-all hover:scale-110"
-                    title="Previous (←)"
+                    title="Previous"
                 >
                     <ChevronLeft size={32} />
                 </button>
@@ -187,7 +187,7 @@ const PhotoModal = ({ photos, onClose }) => {
                 <button
                     onClick={goToNext}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 shadow-lg transition-all hover:scale-110"
-                    title="Next (→)"
+                    title="Next"
                 >
                     <ChevronRight size={32} />
                 </button>
@@ -238,23 +238,19 @@ const PhotoModal = ({ photos, onClose }) => {
                             setCurrentIndex(idx);
                             resetZoom();
                         }}
-                        className={`relative flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all ${
-                            idx === currentIndex
+                        className={`relative flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
                                 ? `border-${photo.color}-500 ring-2 ring-${photo.color}-400`
-                                : 'border-gray-600 hover:border-gray-400'
-                        }`}
+                                : "border-gray-600 hover:border-gray-400"
+                            }`}
                     >
                         <img
                             src={photo.url}
                             alt={`Thumbnail ${idx + 1}`}
                             className="w-full h-full object-cover"
-                            onError={(e) => (e.target.style.display = 'none')}
+                            onError={(e) => e.target.style.display = 'none'}
                         />
-                        <span
-                            className={`absolute top-1 left-1 ${
-                                photo.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'
-                            } text-white px-1 text-xs font-semibold rounded`}
-                        >
+                        <span className={`absolute top-1 left-1 ${photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                            } text-white px-1 text-xs font-semibold rounded`}>
                             {photo.label[0]}
                         </span>
                     </button>
