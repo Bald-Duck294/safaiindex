@@ -191,7 +191,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
         {
           icon: UserCog,
-          label: "Cleaner Mapping",
+          label: "User Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
           children: [
@@ -310,7 +310,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
         {
           icon: ClipboardList,
-          label: "Cleaner Mapping",
+          label: "User Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
           children: [
@@ -400,7 +400,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
         {
           icon: ClipboardList,
-          label: "Cleaner Mapping",
+          label: "User Mapping",
           hasDropdown: true,
           key: "cleaner-assignments",
           children: [
@@ -491,14 +491,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
     if (isActive) {
       return `${commonLinkClasses} ${isChild
-          ? 'bg-slate-700 text-white border-l-2 border-indigo-500'
-          : 'bg-indigo-600 text-white shadow-lg'
+        ? 'bg-slate-700 text-white border-l-2 border-indigo-500'
+        : 'bg-indigo-600 text-white shadow-lg'
         }`;
     }
 
     return `${commonLinkClasses} ${isChild
-        ? 'text-gray-400 hover:bg-slate-700 hover:text-white'
-        : 'text-gray-300 hover:bg-indigo-600 hover:text-white'
+      ? 'text-gray-400 hover:bg-slate-700 hover:text-white'
+      : 'text-gray-300 hover:bg-indigo-600 hover:text-white'
       }`;
   };
 

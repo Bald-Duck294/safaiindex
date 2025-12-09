@@ -94,6 +94,7 @@ function WashroomsPage() {
     setAvgScoreSortOrder(null);
     setStatusSortOrder(null);
 
+    console.log('Sorting by column:', column);
     switch (column) {
       case 'name':
         const newNameOrder = nameSortOrder === 'asc' ? 'desc' : 'asc';
@@ -121,6 +122,10 @@ function WashroomsPage() {
     }
   };
 
+
+  useEffect(() => {
+    handleSort('name');
+  }, [])
   // ✅ NEW: Render sort icon
   const renderSortIcon = (currentOrder) => {
     if (!currentOrder) {

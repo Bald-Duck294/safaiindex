@@ -26,8 +26,8 @@ export const AssignmentsApi = {
   },
 
   getAllAssignments: async (companyId, role_id) => {
-    console.log(companyId, "company id form api assignments ", )
-console.log()
+    console.log(companyId, "company id form api assignments ",)
+    console.log()
     try {
       const url = `/assignments?company_id=${companyId}&role_id=${role_id}`
 
@@ -122,7 +122,7 @@ console.log()
     }
   },
 
-  getAssignmentsByLocation: async (locationId, companyId , role_id) => {
+  getAssignmentsByLocation: async (locationId, companyId, role_id) => {
     console.log('Fetching assignments for location:', locationId);
     try {
       const params = new URLSearchParams();
@@ -130,8 +130,8 @@ console.log()
         params.append('company_id', companyId);
       }
 
-      if(role_id){
-        params.append('role_id' , role_id);
+      if (role_id) {
+        params.append('role_id', role_id);
       }
       const response = await axiosInstance.get(
         `/assignments/location/${locationId}?${params.toString()}`

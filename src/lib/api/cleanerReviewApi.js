@@ -153,29 +153,7 @@ export const CleanerReviewApi = {
     }
   },
 
-  getReviewsByStatus: async (status, companyId, date = null) => {
-    // console.log('get review by status', status, companyId, date);
 
-    try {
-      let url = `/cleaner-reviews?status=${status}&company_id=${companyId}`;
-
-      if (date) {
-        url += `&date=${date}`;
-      }
-
-      const response = await axiosInstance.get(url);
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      console.error(`Error fetching '${status}' reviews:`, error);
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
-  },
 
   getCleanerReviewsByCleanerId: async (cleanerUserId) => {
     try {
@@ -225,7 +203,7 @@ export const CleanerReviewApi = {
     }
   },
 
-  async getCleanerReviewsByLocationId(locationId, companyId) {
+  async getCleanerReviewsByLocationId(locationId, companyId, take) {
     console.log('Fetching cleaner reviews for location:', locationId, 'company:', companyId);
     try {
       const queryParams = new URLSearchParams();
@@ -233,6 +211,9 @@ export const CleanerReviewApi = {
         queryParams.append("company_id", companyId);
       }
 
+      if (take) {
+        queryParams.append("take", take);
+      }
       const response = await axiosInstance.get(
         `/cleaner-reviews/location/${locationId}?${queryParams.toString()}`
       );

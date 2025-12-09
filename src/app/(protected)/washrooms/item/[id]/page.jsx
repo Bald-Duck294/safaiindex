@@ -53,11 +53,12 @@ const SingleLocation = () => {
   const [imageLoading, setImageLoading] = useState({});
   const [allLocations, setAllLocations] = useState([]);
   const [navigationLoading, setNavigationLoading] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [showAllImages, setShowAllImages] = useState(false);
   const [activeTab, setActiveTab] = useState('user'); // 'user' or 'cleaner'
   const [deleteModal, setDeleteModal] = useState({ open: false, location: null });
   const [deleting, setDeleting] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+
 
   const [cleanerReviews, setCleanerReviews] = useState([]);
   const [cleanerReviewStats, setCleanerReviewStats] = useState(null);
@@ -81,6 +82,23 @@ const SingleLocation = () => {
   const cleanerReviewCount = cleanerReviews.length || 0;
 
   useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (selectedImageIndex === null) return;
+
+      if (e.key === 'ArrowLeft' && selectedImageIndex > 0) {
+        setSelectedImageIndex(selectedImageIndex - 1);
+      } else if (e.key === 'ArrowRight' && selectedImageIndex < location.images.length - 1) {
+        setSelectedImageIndex(selectedImageIndex + 1);
+      } else if (e.key === 'Escape') {
+        setSelectedImageIndex(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedImageIndex, location?.images?.length]);
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!params.id || !finalCompanyId) return;
 
@@ -90,13 +108,14 @@ const SingleLocation = () => {
         const [locationResult, locationsResult, cleanerReviewsResult] = await Promise.all([
           LocationsApi.getLocationById(params.id, finalCompanyId),
           LocationsApi.getAllLocations(finalCompanyId),
-          CleanerReviewApi.getCleanerReviewsByLocationId(params.id, finalCompanyId) // ✅ NEW
+          CleanerReviewApi.getCleanerReviewsByLocationId(params.id, finalCompanyId, 10)
 
         ]);
 
         console.log(locationResult, "locatoin result");
         // console.log(locationsResult, "all loc")
         if (locationResult.success) {
+          console.log(locationResult, "location result")
           setLocation(locationResult.data);
         } else {
           setError(locationResult.error);
@@ -125,6 +144,7 @@ const SingleLocation = () => {
 
     fetchData();
   }, [params.id, finalCompanyId]);
+
 
   const handleEdit = () => {
     router.push(`/washrooms/item/${params.id}/edit?companyId=${finalCompanyId}`);
@@ -160,6 +180,22 @@ const SingleLocation = () => {
     window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank');
   };
 
+
+  // Handler for previous image
+  const handlePreviousImage = (e) => {
+    e.stopPropagation();
+    if (selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1);
+    }
+  };
+
+  // Handler for next image
+  const handleNextImage = (e) => {
+    e.stopPropagation();
+    if (selectedImageIndex < location.images.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1);
+    }
+  };
   const getCurrentLocationIndex = () => {
     return allLocations.findIndex(loc => loc.id === params.id);
   };
@@ -436,15 +472,16 @@ const SingleLocation = () => {
     );
   };
 
-  const renderAssignedCleaners = (assignedCleaners) => {
+  const renderAssignedUsers = (assignedCleaners) => {
+    console.log(assignedCleaners, "assigned cleaners");
     if (!assignedCleaners || assignedCleaners.length === 0) {
       return (
         <div className="bg-gray-50 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
-            Assigned Cleaners
+            Assigned Users
           </h3>
-          <p className="text-sm text-gray-500">No cleaners currently assigned to this location.</p>
+          <p className="text-sm text-gray-500">No User currently assigned to this location.</p>
         </div>
       );
     }
@@ -454,57 +491,71 @@ const SingleLocation = () => {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
-            Assigned Cleaners ({assignedCleaners.length})
+            Assigned Users ({assignedCleaners.length})
           </h3>
           <button
             onClick={() => {
               const params = new URLSearchParams({
                 companyId: finalCompanyId,
                 locationId: location.id,
-                locationName: location.name
+                locationName: location.name,
               });
               router.push(`/assignments/cleaner?${params.toString()}`);
             }}
-            className="cursor-pointer text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+            className="cursor-pointer text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors flex items-center gap-1"
           >
             View All
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
+
         <div className="space-y-3">
           {assignedCleaners.map((assignment) => (
-            <div key={assignment.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+            <div
+              key={assignment.id}
+              className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">{assignment.cleaner?.name || 'Unknown'}</div>
-                  <div className="text-xs text-gray-500 flex items-center gap-3">
-                    {assignment.cleaner?.phone && (
+                  <div className="font-medium text-gray-900">
+                    {assignment?.cleaner_user?.name || "Unknown"}
+                  </div>
+
+                  {/* ✅ ADD ROLE DISPLAY HERE */}
+                  {assignment?.role && (
+                    <div className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                      {assignment.role.name}
+                    </div>
+                  )}
+
+                  <div className="text-xs text-gray-500 flex items-center gap-3 mt-1">
+                    {assignment.cleaner_user?.phone && (
                       <span className="flex items-center gap-1">
                         <Phone className="w-3 h-3" />
-                        {assignment.cleaner.phone}
-                      </span>
-                    )}
-                    {assignment.cleaner?.email && (
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {assignment.cleaner.email}
+                        {assignment?.cleaner_user?.phone}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
+
               <div className="text-right">
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${assignment.status === 'assigned' ? 'text-green-600 bg-green-50' :
-                  assignment.status === 'active' ? 'text-blue-600 bg-blue-50' :
-                    'text-gray-600 bg-gray-50'
-                  }`}>
+                <div
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${assignment.status === "assigned"
+                    ? "text-green-600 bg-green-50"
+                    : assignment.status === "active"
+                      ? "text-blue-600 bg-blue-50"
+                      : "text-gray-600 bg-gray-50"
+                    }`}
+                >
                   {assignment.status}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  Since {formatDate(assignment.assignedOn)}
+                  {/* Since {formatDate(assignment.assignedOn)} */}
+                  {formatDate(assignment.created_at)}
                 </div>
               </div>
             </div>
@@ -515,59 +566,7 @@ const SingleLocation = () => {
   };
 
 
-  const renderImageGallery = (images) => {
-    if (!images || images.length === 0) return null;
 
-    const displayImages = showAllImages ? images : images.slice(0, 4);
-    const remainingCount = images.length - 4;
-
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ImageIcon className="w-5 h-5" />
-            Location Images ({images.length})
-          </h3>
-          {images.length > 4 && (
-            <button
-              onClick={() => setShowAllImages(!showAllImages)}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-            >
-              {showAllImages ? (
-                <>Show Less <ChevronUp className="w-4 h-4" /></>
-              ) : (
-                <>Show All <ChevronDown className="w-4 h-4" /></>
-              )}
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {displayImages.map((image, index) => (
-            <div
-              key={index}
-              className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setSelectedImageIndex(index)}
-            >
-              <img
-                src={image}
-                alt={`Location image ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80";
-                }}
-              />
-              {!showAllImages && index === 3 && remainingCount > 0 && (
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                  <span className="text-white font-semibold">+{remainingCount} more</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   if (loading || navigationLoading) {
     return (
@@ -805,7 +804,7 @@ const SingleLocation = () => {
 
         {/* Assigned Cleaners */}
         <div className="bg-white rounded-lg shadow mb-8 p-6">
-          {renderAssignedCleaners(location.assignedCleaners)}
+          {renderAssignedUsers(location.cleaner_assignments)}
         </div>
 
         {/* Review Stats */}
@@ -1242,30 +1241,57 @@ const SingleLocation = () => {
         </div>
       )}
 
-      {/* Image Modal */}
       {selectedImageIndex !== null && location.images && (
         <div
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImageIndex(null)}
         >
-          <div className="relative max-w-4xl max-h-full">
+          <div className="relative max-w-4xl w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            {/* Main Image */}
             <img
               src={location.images[selectedImageIndex]}
               alt={`Location image ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain rounded-lg"
-              style={{ maxHeight: '90vh' }}
+              className="max-w-full max-h-full object-contain rounded-lg mx-auto"
+              style={{ maxHeight: "90vh" }}
             />
+
+            {/* Close Button */}
             <button
               onClick={() => setSelectedImageIndex(null)}
               className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl font-bold cursor-pointer bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
             >
               ×
             </button>
-            <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-2 rounded-lg">
+
+            {/* Previous Button - ADD THIS */}
+            {selectedImageIndex > 0 && (
+              <button
+                onClick={handlePreviousImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 cursor-pointer bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
+            {/* Next Button - ADD THIS */}
+            {selectedImageIndex < location.images.length - 1 && (
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 cursor-pointer bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
               <p className="text-sm">
                 {selectedImageIndex + 1} of {location.images.length}
               </p>
             </div>
+
+            {/* Keyboard Navigation - ADD THIS */}
+            <div className="sr-only">Press left/right arrow keys to navigate</div>
           </div>
         </div>
       )}
