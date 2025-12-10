@@ -40,9 +40,67 @@ const addLogosToAllPages = (doc) => {
     }
 };
 
+
 /**
- * Export Daily Task Report to PDF
+ * ✅ HELPER: Format duration in human-readable format
  */
+const formatDuration = (minutes) => {
+    if (!minutes || minutes < 0) return "N/A";
+
+    if (minutes < 60) {
+        return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMins = minutes % 60;
+
+    if (remainingMins === 0) {
+        return `${hours} hr${hours !== 1 ? 's' : ''}`;
+    }
+
+    return `${hours} hr${hours !== 1 ? 's' : ''} ${remainingMins} min`;
+};
+
+
+const getTaskInfo = (task) => {
+    const startTime = new Date(task.task_start_time);
+    const endTime = task.task_end_time ? new Date(task.task_end_time) : new Date();
+
+    const durationMs = endTime - startTime;
+    const durationMinutes = Math.floor(durationMs / (1000 * 60));
+    const durationHours = durationMinutes / 60;
+
+    // Check if task is overdue (ongoing for more than 36 hours)
+    if (task.status === 'ongoing' && durationHours > 36) {
+        return {
+            status: 'OVERDUE',
+            duration: durationMinutes,
+            durationDisplay: `${Math.floor(durationHours)} hrs`,
+            isOverdue: true
+        };
+    }
+
+    // Check if task is incomplete (ongoing, between 2-36 hours)
+    if (task.status === 'ongoing' && durationHours >= 2 && durationHours <= 36) {
+        return {
+            status: 'INCOMPLETE',
+            duration: durationMinutes,
+            durationDisplay: formatDuration(durationMinutes),
+            isIncomplete: true
+        };
+    }
+
+    // Normal task
+    return {
+        status: task.status.toUpperCase(),
+        duration: durationMinutes,
+        durationDisplay: formatDuration(durationMinutes),
+        isOverdue: false,
+        isIncomplete: false
+    };
+};
+
+
 const exportDailyTaskToPDF = (data, metadata) => {
     const doc = new jsPDF("l", "mm", "a4");
     const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Daily Task Report";
@@ -65,10 +123,10 @@ const exportDailyTaskToPDF = (data, metadata) => {
             metadata.organization || "N/A",
             reportTitle,
             `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
-            new Date(metadata.generated_on).toLocaleString('en-IN', {
-                day: '2-digit',
-                month: '2-digit',
+            new Date(metadata.generated_on).toLocaleString('en-CA', {
                 year: 'numeric',
+                month: 'short',
+                day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true
@@ -99,7 +157,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
         : 0;
 
     autoTable(doc, {
-        head: [["Total Tasks", "Completed Tasks", "Ongoing Tasks", "Completion Rate"]],
+        head: [["Total Cleanings", "Completed", "Ongoing", "Completion Rate"]],
         body: [[
             metadata.total_tasks,
             metadata.completed_tasks,
@@ -131,7 +189,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(51, 65, 85);
-    doc.text("Task Details", 14, currentY);
+    doc.text("Cleaning Details", 14, currentY);
 
     currentY += 3;
 
@@ -147,27 +205,31 @@ const exportDailyTaskToPDF = (data, metadata) => {
         });
     };
 
-    const tableData = data.map((task, index) => [
-        index + 1,
-        task.cleaner_name,
-        task.washroom_full_name,
-        formatDateTimeForPDF(task.task_start_time),
-        formatDateTimeForPDF(task.task_end_time),
-        task.duration_minutes,
-        task.ai_score.toFixed(1),
-        task.final_rating.toFixed(1),
-        task.status.toUpperCase(),
-    ]);
+    // ✅ UPDATED: Use getTaskInfo for status and duration
+    const tableData = data.map((task, index) => {
+        const taskInfo = getTaskInfo(task);
+        return [
+            index + 1,
+            task.cleaner_name,
+            task.washroom_full_name,
+            formatDateTimeForPDF(task.task_start_time),
+            formatDateTimeForPDF(task.task_end_time),
+            taskInfo.durationDisplay, // ✅ Formatted duration (e.g., "2 hrs 30 min")
+            task.ai_score.toFixed(1),
+            task.washroom_avg_rating.toFixed(1),
+            taskInfo.status, // ✅ Shows COMPLETED, ONGOING, INCOMPLETE, or OVERDUE
+        ];
+    });
 
     autoTable(doc, {
         head: [
             [
                 "#",
                 "Cleaner Name",
-                "Location",
+                "Location / Washroom",
                 "Start Time",
                 "End Time",
-                "Duration (min)",
+                "Duration", // ✅ Changed header
                 "AI Score (0-10)",
                 "Avg. Score/Rating (0-10)",
                 "Status",
@@ -192,7 +254,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
         },
         columnStyles: {
             0: { halign: 'center', cellWidth: 8 },
-            5: { halign: 'center' },
+            5: { halign: 'center' }, // Duration column
             6: { halign: 'center' },
             7: { halign: 'center' },
             8: {
@@ -200,12 +262,19 @@ const exportDailyTaskToPDF = (data, metadata) => {
                 fontStyle: 'bold'
             }
         },
+        // ✅ UPDATED: Color status cells based on status
         didParseCell: function (data) {
             if (data.column.index === 8 && data.section === 'body') {
-                if (data.cell.raw === 'COMPLETED') {
-                    data.cell.styles.textColor = [22, 163, 74];
-                } else if (data.cell.raw === 'ONGOING') {
-                    data.cell.styles.textColor = [234, 179, 8];
+                const status = data.cell.raw;
+                if (status === 'COMPLETED') {
+                    data.cell.styles.textColor = [22, 163, 74]; // Green
+                } else if (status === 'ONGOING') {
+                    data.cell.styles.textColor = [59, 130, 246]; // Blue
+                } else if (status === 'INCOMPLETE') {
+                    data.cell.styles.textColor = [234, 179, 8]; // Orange
+                } else if (status === 'OVERDUE') {
+                    data.cell.styles.textColor = [220, 38, 38]; // Red
+                    data.cell.styles.fontStyle = 'bold';
                 }
             }
         },
@@ -236,9 +305,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
     doc.save(fileName);
 };
 
-/**
- * Export Daily Task Report to EXCEL
- */
+
 const exportDailyTaskToExcel = (data, metadata) => {
     const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Daily Task Report";
 
@@ -251,9 +318,9 @@ const exportDailyTaskToExcel = (data, metadata) => {
         ["Generated On", new Date(metadata.generated_on).toLocaleString('en-IN')],
         [],
         ["Statistics"],
-        ["Total Tasks", metadata.total_tasks],
-        ["Completed Tasks", metadata.completed_tasks],
-        ["Ongoing Tasks", metadata.ongoing_tasks],
+        ["Total Cleanings", metadata.total_tasks],
+        ["Completed", metadata.completed_tasks],
+        ["Ongoing", metadata.ongoing_tasks],
         ["Completion Rate", metadata.total_tasks > 0
             ? ((metadata.completed_tasks / metadata.total_tasks) * 100).toFixed(1) + "%"
             : "0%"],
@@ -275,26 +342,30 @@ const exportDailyTaskToExcel = (data, metadata) => {
     const tableHeaders = [
         "#",
         "Cleaner Name",
-        "Location",
+        "Location / Washroom",
         "Start Time",
         "End Time",
-        "Duration (min)",
+        "Duration", // ✅ Changed header
         "AI Score (0-10)",
-        "Avg Rating (0-10)",
+        "Average Rating (0-10)",
         "Status"
     ];
 
-    const tableData = data.map((task, index) => [
-        index + 1,
-        task.cleaner_name,
-        task.washroom_full_name,
-        formatDateTimeForExcel(task.task_start_time),
-        formatDateTimeForExcel(task.task_end_time),
-        task.duration_minutes,
-        task.ai_score.toFixed(1),
-        task.final_rating.toFixed(1),
-        task.status.toUpperCase(),
-    ]);
+    // ✅ UPDATED: Use getTaskInfo for status and duration
+    const tableData = data.map((task, index) => {
+        const taskInfo = getTaskInfo(task);
+        return [
+            index + 1,
+            task.cleaner_name,
+            task.washroom_full_name,
+            formatDateTimeForExcel(task.task_start_time),
+            formatDateTimeForExcel(task.task_end_time),
+            taskInfo.durationDisplay, // ✅ Formatted duration
+            task.ai_score.toFixed(1),
+            task.washroom_avg_rating.toFixed(1),
+            taskInfo.status, // ✅ Shows COMPLETED, ONGOING, INCOMPLETE, or OVERDUE
+        ];
+    });
 
     const worksheetData = [...headerRows, tableHeaders, ...tableData];
 
@@ -307,7 +378,7 @@ const exportDailyTaskToExcel = (data, metadata) => {
         { wch: 25 },
         { wch: 20 },
         { wch: 20 },
-        { wch: 15 },
+        { wch: 15 }, // Duration column
         { wch: 15 },
         { wch: 15 },
         { wch: 15 },
@@ -320,233 +391,50 @@ const exportDailyTaskToExcel = (data, metadata) => {
 
     ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
 
+    // ✅ BONUS: Add status colors to Excel
+    const statusColIndex = 8; // Status is column I (index 8)
+    const headerRowIndex = headerRows.length + 1; // Account for header rows
+
+    data.forEach((task, dataIndex) => {
+        const taskInfo = getTaskInfo(task);
+        const excelRowIndex = headerRowIndex + dataIndex;
+        const cellRef = `I${excelRowIndex + 1}`; // Excel uses 1-based indexing
+
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: {
+                    bold: true,
+                    color: {
+                        rgb: taskInfo.status === 'COMPLETED' ? "16A34A" : // Green
+                            taskInfo.status === 'OVERDUE' ? "DC2626" :   // Red
+                                taskInfo.status === 'INCOMPLETE' ? "EA930B" : // Orange
+                                    "3B82F6"  // Blue for ONGOING
+                    }
+                },
+                alignment: { horizontal: "center" }
+            };
+        }
+    });
+
     XLSX.utils.book_append_sheet(wb, ws, "Daily Task Report");
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
 };
 
-/**
- * ✅ FIXED: Export Detailed Cleaning Report to EXCEL (WITH PROPER DATA + STATUS + WORKING HYPERLINKS)
- */
-const exportDetailedCleaningToExcel = (data, metadata) => {
-    const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Detailed Cleaning Report";
 
-    const formatScore = (score) => {
-        if (!score && score !== 0) return "N/A";
-        const rounded = Math.round(score * 10) / 10;
-        return rounded % 1 === 0 ? rounded : parseFloat(rounded.toFixed(1));
-    };
-
-    const formatDateTime = (date) => {
-        if (!date) return "Ongoing";
-        return new Date(date).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
-
-    const avgAiScore = data.length > 0
-        ? formatScore(data.reduce((sum, t) => sum + t.ai_score, 0) / data.length)
-        : "N/A";
-    const avgFinalRating = data.length > 0
-        ? formatScore(data.reduce((sum, t) => sum + t.final_rating, 0) / data.length)
-        : "N/A";
-    const completedTasks = data.filter(t => t.status === 'completed').length;
-    const ongoingTasks = data.length - completedTasks;
-
-    const headerRows = [
-        [reportTitle],
-        [],
-        ["Organization", metadata.organization || "N/A"],
-        ["Report Type", reportTitle],
-        ["Date Range", `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`],
-        ["Generated On", new Date(metadata.generated_on).toLocaleString('en-IN')],
-        [],
-        ["Statistics"],
-        ["Total Reviews", data.length],
-        ["Completed Tasks", completedTasks],
-        ["Ongoing Tasks", ongoingTasks],
-        ["Avg AI Score", avgAiScore],
-        ["Avg Final Rating", avgFinalRating],
-        ["Total Images", data.reduce((sum, t) => sum + (t.before_photo?.length || 0) + (t.after_photo?.length || 0), 0)],
-        [],
-    ];
-
-    const tableHeaders = [
-        "#",
-        "Cleaner Name",
-        "Location",
-        "Start Time",
-        "End Time",
-        "AI Score",
-        "Final Rating",
-        "Status",
-        "Before Image 1",
-        "Before Image 2",
-        "Before Image 3",
-        "Before Image 4",
-        "Before Image 5",
-        "After Image 1",
-        "After Image 2",
-        "After Image 3",
-        "After Image 4",
-        "After Image 5"
-    ];
-
-    // ✅ FIXED: Ensure data is properly formatted
-    const tableData = data.map((task, index) => {
-        if (!task) return null; // Skip null entries
-
-        return [
-            index + 1,
-            task.cleaner_name || "",
-            task.washroom_full_name || task.washroom_name || "",
-            formatDateTime(task.task_start_time),
-            formatDateTime(task.task_end_time),
-            formatScore(task.ai_score),
-            formatScore(task.final_rating),
-            task.status ? task.status.toUpperCase() : "ONGOING",
-            task.before_photo?.[0] || "",
-            task.before_photo?.[1] || "",
-            task.before_photo?.[2] || "",
-            task.before_photo?.[3] || "",
-            task.before_photo?.[4] || "",
-            task.after_photo?.[0] || "",
-            task.after_photo?.[1] || "",
-            task.after_photo?.[2] || "",
-            task.after_photo?.[3] || "",
-            task.after_photo?.[4] || ""
-        ];
-    }).filter(row => row !== null); // Remove null entries
-
-    const wb = XLSX.utils.book_new();
-
-    // ✅ Metadata Sheet
-    const wsMetadata = XLSX.utils.aoa_to_sheet(headerRows);
-    wsMetadata['!cols'] = [{ wch: 25 }, { wch: 50 }];
-    XLSX.utils.book_append_sheet(wb, wsMetadata, "Report Info");
-
-    // ✅ FIXED: Cleaning Data Sheet - Proper concatenation
-    const cleaningDataSheet = [tableHeaders, ...tableData]; // ✅ This now works correctly
-    const wsData = XLSX.utils.aoa_to_sheet(cleaningDataSheet);
-
-    console.log(`📊 Excel Data Debug:
-        - Total data rows: ${data.length}
-        - Valid rows: ${tableData.length}
-        - Sheet rows: ${cleaningDataSheet.length}
-        - Headers: ${tableHeaders.length}`);
-
-    // ✅ Add hyperlinks to image cells (only if they exist and are URLs)
-    const range = XLSX.utils.decode_range(wsData['!ref'] || 'A1');
-
-    for (let R = 1; R <= range.e.r; ++R) { // Start from row 1 (after header)
-        // Before Images (columns 8-12, indices 8-12)
-        for (let C = 8; C <= 12; C++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-            const cell = wsData[cellAddress];
-            if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-                cell.l = { Target: cell.v };
-                cell.s = { font: { color: { rgb: "0563C1" }, underline: "single" } }; // Blue underline for links
-            }
-        }
-        // After Images (columns 13-17, indices 13-17)
-        for (let C = 13; C <= 17; C++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-            const cell = wsData[cellAddress];
-            if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-                cell.l = { Target: cell.v };
-                cell.s = { font: { color: { rgb: "0563C1" }, underline: "single" } }; // Blue underline for links
-            }
-        }
-    }
-
-    // ✅ Column widths
-    wsData['!cols'] = [
-        { wch: 5 },    // #
-        { wch: 20 },   // Cleaner
-        { wch: 30 },   // Location
-        { wch: 20 },   // Start Time
-        { wch: 20 },   // End Time
-        { wch: 10 },   // AI Score
-        { wch: 12 },   // Rating
-        { wch: 12 },   // Status
-        { wch: 50 },   // Before 1
-        { wch: 50 },   // Before 2
-        { wch: 50 },   // Before 3
-        { wch: 50 },   // Before 4
-        { wch: 50 },   // Before 5
-        { wch: 50 },   // After 1
-        { wch: 50 },   // After 2
-        { wch: 50 },   // After 3
-        { wch: 50 },   // After 4
-        { wch: 50 }    // After 5
-    ];
-
-    XLSX.utils.book_append_sheet(wb, wsData, "Cleaning Data");
-
-    const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    console.log(`✅ Excel file exported: ${fileName}`);
+const createImageLinksText = (images) => {
+    if (!images || images.length === 0) return "No images";
+    return images.map((_, idx) => `Img${idx + 1}`).join(", ");
 };
 
 /**
- * ✅ FIXED: Export Detailed Cleaning Report to PDF (WITH CLICKABLE HYPERLINKS)
+ * ✅ UNIFIED: Export Detailed Cleaning Report to PDF & EXCEL
  */
-const exportDetailedCleaningToPDF = (data, metadata) => {
-    const doc = new jsPDF("l", "mm", "a4");
+const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
     const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Detailed Cleaning Report";
 
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 58, 138);
-    doc.text(reportTitle, 14, 15);
-
-    doc.setDrawColor(30, 58, 138);
-    doc.setLineWidth(0.5);
-    doc.line(14, 18, 283, 18);
-
-    let currentY = 25;
-
-    autoTable(doc, {
-        head: [["Organization", "Report Type", "Date Range", "Generated On"]],
-        body: [[
-            metadata.organization || "N/A",
-            reportTitle,
-            `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
-            new Date(metadata.generated_on).toLocaleString('en-IN', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            })
-        ]],
-        startY: currentY,
-        theme: "grid",
-        headStyles: {
-            fillColor: [241, 245, 249],
-            textColor: [51, 65, 85],
-            fontStyle: 'bold',
-            fontSize: 9,
-            halign: 'center'
-        },
-        bodyStyles: {
-            fontSize: 9,
-            textColor: [30, 41, 59],
-            halign: 'center',
-            cellPadding: 3,
-        },
-        margin: { left: 14, right: 14 },
-    });
-
-    currentY = doc.lastAutoTable.finalY + 3;
-
+    // Common data processing
     const avgAiScore = data.length > 0
         ? (data.reduce((sum, t) => sum + t.ai_score, 0) / data.length)
         : 0;
@@ -559,46 +447,7 @@ const exportDetailedCleaningToPDF = (data, metadata) => {
     const completedTasks = data.filter(t => t.status === 'completed').length;
     const ongoingTasks = data.length - completedTasks;
 
-    autoTable(doc, {
-        head: [["Total Reviews", "Completed", "Ongoing", "Avg AI Score", "Avg Final Rating", "Total Images"]],
-        body: [[
-            data.length,
-            completedTasks,
-            ongoingTasks,
-            avgAiScore.toFixed(1),
-            avgFinalRating.toFixed(1),
-            totalImages
-        ]],
-        startY: currentY,
-        theme: "grid",
-        headStyles: {
-            fillColor: [16, 185, 129],
-            textColor: 255,
-            fontStyle: 'bold',
-            fontSize: 9,
-            halign: 'center'
-        },
-        bodyStyles: {
-            fontSize: 9,
-            textColor: [30, 41, 59],
-            halign: 'center',
-            cellPadding: 3,
-            fontStyle: 'bold',
-            fillColor: [236, 253, 245]
-        },
-        margin: { left: 14, right: 14 },
-    });
-
-    currentY = doc.lastAutoTable.finalY + 8;
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(51, 65, 85);
-    doc.text("Cleaning Details with Image Links", 14, currentY);
-
-    currentY += 3;
-
-    const formatDateTimeForPDF = (date) => {
+    const formatDateTimeForReport = (date) => {
         if (!date) return "Ongoing";
         return new Date(date).toLocaleString('en-IN', {
             day: '2-digit',
@@ -616,195 +465,452 @@ const exportDetailedCleaningToPDF = (data, metadata) => {
         return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
     };
 
-    // ✅ FIXED: Create image links text instead of full URLs
-    const createImageLinks = (images, maxCount = 5) => {
-        if (!images || images.length === 0) return "No images";
-        return images.slice(0, maxCount).map((_, idx) => `Img${idx + 1}`).join(", ");
-    };
-
-    const tableData = data.map((task, index) => [
-        index + 1,
-        task.cleaner_name,
-        task.washroom_full_name || task.washroom_name,
-        formatDateTimeForPDF(task.task_start_time),
-        formatDateTimeForPDF(task.task_end_time),
-        formatScore(task.ai_score),
-        formatScore(task.final_rating),
-        task.status ? task.status.toUpperCase() : "ONGOING",
-        createImageLinks(task.before_photo),
-        createImageLinks(task.after_photo),
-    ]);
-
-    const tableStartY = currentY;
-
-    autoTable(doc, {
-        head: [[
-            "#",
-            "Cleaner",
-            "Location",
-            "Start Time",
-            "End Time",
-            "AI Score",
-            "Rating",
-            "Status",
-            "Before Images",
-            "After Images",
-        ]],
-        body: tableData,
-        startY: currentY,
-        theme: "grid",
-        headStyles: {
-            fillColor: [37, 99, 235],
-            textColor: 255,
-            fontStyle: 'bold',
-            fontSize: 8,
-            halign: 'center'
-        },
-        bodyStyles: {
-            fontSize: 7,
-            textColor: 50,
-        },
-        alternateRowStyles: {
-            fillColor: [248, 250, 252]
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 8 },
-            5: { halign: 'center' },
-            6: { halign: 'center' },
-            7: {
-                halign: 'center',
-                fontStyle: 'bold'
-            },
-            8: {
-                halign: 'center',
-                textColor: [37, 99, 235],
-                fontStyle: 'italic'
-            },
-            9: {
-                halign: 'center',
-                textColor: [22, 163, 74],
-                fontStyle: 'italic'
-            }
-        },
-        didParseCell: function (data) {
-            if (data.column.index === 7 && data.section === 'body') {
-                if (data.cell.raw === 'COMPLETED') {
-                    data.cell.styles.textColor = [22, 163, 74]; // Green
-                } else if (data.cell.raw === 'ONGOING') {
-                    data.cell.styles.textColor = [234, 179, 8]; // Yellow
-                }
-            }
-        },
-        margin: { left: 14, right: 14 },
-    });
-
-    // ✅ ADD PDF HYPERLINKS for image URLs
-    // We need to add links after the table is created
-    data.forEach((task, taskIndex) => {
+    // Main table data with image links text
+    const tableData = data.map((task, index) => {
+        const taskInfo = getTaskInfo(task);
         const beforeImages = task.before_photo || [];
         const afterImages = task.after_photo || [];
 
-        // Add clickable links for each image URL in the PDF
-        beforeImages.slice(0, 5).forEach((imageUrl, imageIndex) => {
-            if (imageUrl && imageUrl.startsWith('http')) {
-                // Note: Adding interactive links to PDF content created by autoTable is complex
-                // The links are shown as text, users can copy-paste or use the Excel version for clickable links
-                console.log(`📷 Before Image ${imageIndex + 1}: ${imageUrl}`);
+        return [
+            index + 1,
+            task.cleaner_name,
+            task.washroom_full_name || task.washroom_name,
+            formatDateTimeForReport(task.task_start_time),
+            formatDateTimeForReport(task.task_end_time),
+            formatScore(task.ai_score),
+            formatScore(task.final_rating),
+            taskInfo.status,
+            createImageLinksText(beforeImages), // Before images column
+            createImageLinksText(afterImages),  // After images column
+        ];
+    });
+
+    // ==================== PDF EXPORT ====================
+    if (format === 'pdf') {
+        const doc = new jsPDF("l", "mm", "a4");
+        let currentY = 25;
+
+        // Header
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 58, 138);
+        doc.text(reportTitle, 14, 15);
+
+        doc.setDrawColor(30, 58, 138);
+        doc.setLineWidth(0.5);
+        doc.line(14, 18, 283, 18);
+
+        // Metadata table
+        autoTable(doc, {
+            head: [["Organization", "Report Type", "Date Range", "Generated On"]],
+            body: [[
+                metadata.organization || "N/A",
+                reportTitle,
+                `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
+                new Date(metadata.generated_on).toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                })
+            ]],
+            startY: currentY,
+            theme: "grid",
+            headStyles: {
+                fillColor: [241, 245, 249],
+                textColor: [51, 65, 85],
+                fontStyle: 'bold',
+                fontSize: 9,
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 9,
+                textColor: [30, 41, 59],
+                halign: 'center',
+                cellPadding: 3,
+            },
+            margin: { left: 14, right: 14 },
+        });
+
+        currentY = doc.lastAutoTable.finalY + 3;
+
+        // Statistics table
+        autoTable(doc, {
+            head: [["Total Reviews", "Completed", "Ongoing", "Avg AI Score", "Avg Final Rating", "Total Images"]],
+            body: [[
+                data.length,
+                completedTasks,
+                ongoingTasks,
+                avgAiScore.toFixed(1),
+                avgFinalRating.toFixed(1),
+                totalImages
+            ]],
+            startY: currentY,
+            theme: "grid",
+            headStyles: {
+                fillColor: [16, 185, 129],
+                textColor: 255,
+                fontStyle: 'bold',
+                fontSize: 9,
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 9,
+                textColor: [30, 41, 59],
+                halign: 'center',
+                cellPadding: 3,
+                fontStyle: 'bold',
+                fillColor: [236, 253, 245]
+            },
+            margin: { left: 14, right: 14 },
+        });
+
+        currentY = doc.lastAutoTable.finalY + 8;
+
+        // Main details heading
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(51, 65, 85);
+        doc.text("Cleaning Details with Image Links", 14, currentY);
+        currentY += 3;
+
+        // ✅ Store cell positions for overlaying clickable links
+        let cellPositions = [];
+
+        // Main table
+        autoTable(doc, {
+            head: [[
+                "#",
+                "Cleaner",
+                "Location",
+                "Start Time",
+                "End Time",
+                "AI Score",
+                "Average Rating",
+                "Status",
+                "Before Images",
+                "After Images"
+            ]],
+            body: tableData,
+            startY: currentY,
+            theme: "grid",
+            headStyles: {
+                fillColor: [37, 99, 235],
+                textColor: 255,
+                fontStyle: 'bold',
+                fontSize: 8,
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 7,
+                textColor: 50,
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 8 },
+                5: { halign: 'center' },
+                6: { halign: 'center' },
+                7: { halign: 'center', fontStyle: 'bold' },
+                8: {
+                    halign: 'center',
+                    textColor: [37, 99, 235],
+                    fontStyle: 'italic'
+                },
+                9: {
+                    halign: 'center',
+                    textColor: [22, 163, 74],
+                    fontStyle: 'italic'
+                }
+            },
+            didDrawCell: function (cellData) {
+                // ✅ Color status cells
+                if (cellData.column.index === 7 && cellData.section === 'body') {
+                    const status = tableData[cellData.row.index][7];
+                    if (status === 'COMPLETED') {
+                        doc.setTextColor(22, 163, 74);
+                    } else if (status === 'INCOMPLETE') {
+                        doc.setTextColor(234, 179, 8);
+                    } else if (status === 'OVERDUE') {
+                        doc.setTextColor(220, 38, 38);
+                    }
+                }
+
+                // ✅ Store positions of image cells (columns 8 and 9)
+                if (cellData.section === 'body' && (cellData.column.index === 8 || cellData.column.index === 9)) {
+                    cellPositions.push({
+                        rowIndex: cellData.row.index,
+                        colIndex: cellData.column.index,
+                        x: cellData.cell.x,
+                        y: cellData.cell.y,
+                        width: cellData.cell.width,
+                        height: cellData.cell.height,
+                        pageNumber: doc.internal.getCurrentPageInfo().pageNumber
+                    });
+                }
+            },
+            margin: { left: 14, right: 14 },
+        });
+
+        // ✅ FIXED: Add clickable link rectangles over each "ImgX" text
+        data.forEach((task, taskIndex) => {
+            const beforeImages = task.before_photo || [];
+            const afterImages = task.after_photo || [];
+
+            // Find cells for this row
+            const beforeCell = cellPositions.find(c => c.rowIndex === taskIndex && c.colIndex === 8);
+            const afterCell = cellPositions.find(c => c.rowIndex === taskIndex && c.colIndex === 9);
+
+            // Set font for width calculation
+            doc.setFontSize(7);
+
+            // Add links for BEFORE images
+            if (beforeCell && beforeImages.length > 0) {
+                // Go to the correct page
+                doc.setPage(beforeCell.pageNumber);
+
+                const textParts = beforeImages.map((_, idx) => `Img${idx + 1}`);
+                const fullText = textParts.join(", ");
+                const textWidth = doc.getTextWidth(fullText);
+                const startX = beforeCell.x + (beforeCell.width - textWidth) / 2;
+                const linkY = beforeCell.y + (beforeCell.height / 2) - 1;
+
+                let currentX = startX;
+                beforeImages.forEach((url, idx) => {
+                    const linkText = `Img${idx + 1}`;
+                    const linkWidth = doc.getTextWidth(linkText);
+
+                    // Add clickable link rectangle
+                    doc.link(currentX, linkY, linkWidth, 3.5, { url: url });
+
+                    // Move to next position (add width + comma + space)
+                    currentX += linkWidth;
+                    if (idx < beforeImages.length - 1) {
+                        currentX += doc.getTextWidth(", ");
+                    }
+                });
+            }
+
+            // Add links for AFTER images
+            if (afterCell && afterImages.length > 0) {
+                // Go to the correct page
+                doc.setPage(afterCell.pageNumber);
+
+                const textParts = afterImages.map((_, idx) => `Img${idx + 1}`);
+                const fullText = textParts.join(", ");
+                const textWidth = doc.getTextWidth(fullText);
+                const startX = afterCell.x + (afterCell.width - textWidth) / 2;
+                const linkY = afterCell.y + (afterCell.height / 2) - 1;
+
+                let currentX = startX;
+                afterImages.forEach((url, idx) => {
+                    const linkText = `Img${idx + 1}`;
+                    const linkWidth = doc.getTextWidth(linkText);
+
+                    // Add clickable link rectangle
+                    doc.link(currentX, linkY, linkWidth, 3.5, { url: url });
+
+                    // Move to next position
+                    currentX += linkWidth;
+                    if (idx < afterImages.length - 1) {
+                        currentX += doc.getTextWidth(", ");
+                    }
+                });
             }
         });
 
-        afterImages.slice(0, 5).forEach((imageUrl, imageIndex) => {
-            if (imageUrl && imageUrl.startsWith('http')) {
-                console.log(`📷 After Image ${imageIndex + 1}: ${imageUrl}`);
-            }
-        });
-    });
+        // Add note
+        currentY = doc.lastAutoTable.finalY + 5;
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "italic");
+        doc.text("Note: Image links (Img1, Img2, etc.) in the table are clickable. Full URLs available in Excel export.", 14, currentY);
 
-    currentY = doc.lastAutoTable.finalY + 8;
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text("Note: Image links are labeled as Img1, Img2, etc. Full clickable URLs available in Excel export.", 14, currentY);
+        addLogosToAllPages(doc);
 
-    // ✅ Add URL reference section (alternative to hyperlinks)
-    currentY += 8;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(37, 99, 235);
-    doc.text("Image URLs Reference", 14, currentY);
-
-    currentY += 5;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(50);
-
-    let urlY = currentY;
-    data.slice(0, 3).forEach((task, taskIndex) => { // Show first 3 tasks' image URLs
-        if (urlY > 190) {
-            doc.addPage();
-            urlY = 15;
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                doc.internal.pageSize.width / 2,
+                doc.internal.pageSize.height - 10,
+                { align: 'center' }
+            );
+            doc.text(
+                `Generated on ${new Date().toLocaleString('en-IN')}`,
+                14,
+                doc.internal.pageSize.height - 10
+            );
         }
 
-        const beforeImages = task.before_photo || [];
-        const afterImages = task.after_photo || [];
-
-        if (beforeImages.length > 0 || afterImages.length > 0) {
-            doc.setTextColor(51, 65, 85);
-            doc.setFont("helvetica", "bold");
-            doc.text(`Task ${taskIndex + 1} - ${task.cleaner_name}`, 14, urlY);
-            urlY += 4;
-
-            doc.setTextColor(37, 99, 235);
-            doc.setFont("helvetica", "normal");
-            beforeImages.slice(0, 3).forEach((url, idx) => {
-                if (urlY > 190) {
-                    doc.addPage();
-                    urlY = 15;
-                }
-                doc.textWithLink(`Before Image ${idx + 1}: ${url}`, 14, urlY, { pageNumber: 1 });
-                doc.setTextColor(37, 99, 235);
-                urlY += 3;
-            });
-
-            doc.setTextColor(22, 163, 74);
-            afterImages.slice(0, 3).forEach((url, idx) => {
-                if (urlY > 190) {
-                    doc.addPage();
-                    urlY = 15;
-                }
-                doc.textWithLink(`After Image ${idx + 1}: ${url}`, 14, urlY, { pageNumber: 1 });
-                doc.setTextColor(22, 163, 74);
-                urlY += 3;
-            });
-
-            urlY += 2;
-        }
-    });
-
-    addLogosToAllPages(doc);
-
-    const pageCount = doc.internal.getNumberOfPages();
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.text(
-            `Page ${i} of ${pageCount}`,
-            doc.internal.pageSize.width / 2,
-            doc.internal.pageSize.height - 10,
-            { align: 'center' }
-        );
-        doc.text(
-            `Generated on ${new Date().toLocaleString('en-IN')}`,
-            14,
-            doc.internal.pageSize.height - 10
-        );
+        const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
+        doc.save(fileName);
+        console.log(`✅ PDF file exported: ${fileName}`);
     }
 
-    const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
-    doc.save(fileName);
-    console.log(`✅ PDF file exported: ${fileName}`);
-};
+    // ==================== EXCEL EXPORT ====================
+    else if (format === 'excel') {
+        const headerRows = [
+            [reportTitle],
+            [],
+            ["Organization", metadata.organization || "N/A"],
+            ["Report Type", reportTitle],
+            ["Date Range", `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`],
+            ["Generated On", new Date(metadata.generated_on).toLocaleString('en-IN')],
+            [],
+            ["Statistics"],
+            ["Total Reviews", data.length],
+            ["Completed", completedTasks],
+            ["Ongoing", ongoingTasks],
+            ["Avg AI Score", avgAiScore.toFixed(1)],
+            ["Avg Final Rating", avgFinalRating.toFixed(1)],
+            ["Total Images", totalImages],
+            [],
+        ];
 
+        const tableHeaders = [
+            "#",
+            "Cleaner Name",
+            "Location / Washroom",
+            "Start Time",
+            "End Time",
+            "AI Score (0-10)",
+            "Average Rating (0-10)",
+            "Status",
+            "Before Images",
+            "After Images"
+        ];
+
+        // Excel table data - we'll add hyperlinks separately
+        const excelTableData = tableData.map(row => [...row]);
+
+        const worksheetData = [...headerRows, tableHeaders, ...excelTableData];
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+        ws["!cols"] = [
+            { wch: 5 },
+            { wch: 20 },
+            { wch: 25 },
+            { wch: 20 },
+            { wch: 20 },
+            { wch: 12 },
+            { wch: 12 },
+            { wch: 12 },
+            { wch: 20 }, // Before images column
+            { wch: 20 }  // After images column
+        ];
+
+        // Format title
+        ws["A1"].s = {
+            font: { bold: true, sz: 16, color: { rgb: "1E3A8A" } },
+            alignment: { horizontal: "center" },
+        };
+
+        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }];
+
+        const headerRowIndex = headerRows.length;
+
+        // ✅ Add hyperlinks to Excel image cells
+        data.forEach((task, dataIndex) => {
+            const taskInfo = getTaskInfo(task);
+            const excelRowIndex = headerRowIndex + 1 + dataIndex;
+
+            // Format status column
+            const statusCellRef = `H${excelRowIndex + 1}`;
+            if (ws[statusCellRef]) {
+                ws[statusCellRef].s = {
+                    font: {
+                        bold: true,
+                        color: {
+                            rgb: taskInfo.status === 'COMPLETED' ? "16A34A" :
+                                taskInfo.status === 'OVERDUE' ? "DC2626" :
+                                    taskInfo.status === 'INCOMPLETE' ? "EA930B" :
+                                        "EA930B"
+                        }
+                    },
+                    alignment: { horizontal: "center" }
+                };
+            }
+
+            // ✅ Add clickable hyperlinks for BEFORE images in Excel
+            const beforeImages = task.before_photo || [];
+            const beforeCellRef = `I${excelRowIndex + 1}`;
+            if (beforeImages.length > 0 && ws[beforeCellRef]) {
+                // Create hyperlink formula for first image
+                const firstImageUrl = beforeImages[0];
+                ws[beforeCellRef].l = { Target: firstImageUrl, Tooltip: "Click to view image" };
+                ws[beforeCellRef].s = {
+                    font: { color: { rgb: "2563EB" }, underline: true },
+                    alignment: { horizontal: "center" }
+                };
+            }
+
+            // ✅ Add clickable hyperlinks for AFTER images in Excel
+            const afterImages = task.after_photo || [];
+            const afterCellRef = `J${excelRowIndex + 1}`;
+            if (afterImages.length > 0 && ws[afterCellRef]) {
+                // Create hyperlink formula for first image
+                const firstImageUrl = afterImages[0];
+                ws[afterCellRef].l = { Target: firstImageUrl, Tooltip: "Click to view image" };
+                ws[afterCellRef].s = {
+                    font: { color: { rgb: "16A34A" }, underline: true },
+                    alignment: { horizontal: "center" }
+                };
+            }
+        });
+
+        // ✅ Add separate sheet with full image URLs
+        const imageUrlsData = [
+            ["Image URLs Reference"],
+            []
+        ];
+
+        data.forEach((task, taskIndex) => {
+            const beforeImages = task.before_photo || [];
+            const afterImages = task.after_photo || [];
+
+            if (beforeImages.length > 0 || afterImages.length > 0) {
+                imageUrlsData.push([`Task ${taskIndex + 1} - ${task.cleaner_name}`]);
+                imageUrlsData.push([]);
+
+                if (beforeImages.length > 0) {
+                    imageUrlsData.push(["Before Images"]);
+                    beforeImages.forEach((url, idx) => {
+                        imageUrlsData.push([`Image ${idx + 1}`, url]);
+                    });
+                    imageUrlsData.push([]);
+                }
+
+                if (afterImages.length > 0) {
+                    imageUrlsData.push(["After Images"]);
+                    afterImages.forEach((url, idx) => {
+                        imageUrlsData.push([`Image ${idx + 1}`, url]);
+                    });
+                    imageUrlsData.push([]);
+                }
+            }
+        });
+
+        const wsUrls = XLSX.utils.aoa_to_sheet(imageUrlsData);
+        wsUrls["!cols"] = [{ wch: 30 }, { wch: 80 }];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Detailed Report");
+        XLSX.utils.book_append_sheet(wb, wsUrls, "Image URLs");
+
+        const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        console.log(`✅ Excel file exported: ${fileName}`);
+    }
+};
 
 /**
  * Export Zone-wise Report to PDF
@@ -1179,7 +1285,17 @@ const exportWashroomReportToPDF = (data, metadata) => {
 
     let currentY = 25;
 
+    const formatDateForReport = (dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}/${month}/${day}`;
+    };
+
     // ✅ Metadata Section
+    formatDateForReport();
     if (isSingleWashroom) {
         autoTable(doc, {
             head: [["Organization", "Zone/Type", "Address", "City/State", "Date Range", "Report Type", "Generated On"]],
@@ -1188,9 +1304,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 metadata.washroom_type || "N/A",
                 metadata.washroom_address || "N/A",
                 [metadata.washroom_city, metadata.washroom_state].filter(Boolean).join(', ') || "N/A",
-                `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
-
-                reportTitle,
+                `${formatDateForReport(metadata.date_range?.start)} to ${formatDateForReport(metadata.date_range?.end)}`, reportTitle,
                 new Date(metadata.generated_on).toLocaleString('en-IN', {
                     day: '2-digit',
                     month: '2-digit',
@@ -1199,8 +1313,6 @@ const exportWashroomReportToPDF = (data, metadata) => {
                     minute: '2-digit',
                     hour12: true
                 }),
-
-
             ]],
             startY: currentY,
             theme: "grid",
@@ -1216,6 +1328,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 textColor: [30, 41, 59],
                 halign: 'center',
                 cellPadding: 3,
+
             },
             columnStyles: {
                 0: { halign: 'left', cellWidth: 30 },
@@ -1225,19 +1338,15 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 4: { halign: 'center', cellWidth: 40 }
             },
             margin: { left: 14, right: 14 },
-
         });
-
     }
     else {
-
         autoTable(doc, {
             head: [["Organization", "Report Type", "Date Range", "Generated On"]],
             body: [[
                 metadata.organization || "N/A",
                 reportTitle,
-                `${metadata.date_range?.start || 'N/A'} to ${metadata.date_range?.end || 'N/A'}`,
-                new Date(metadata.generated_on).toLocaleString('en-IN', {
+                `${formatDateForReport(metadata.date_range?.start)} to ${formatDateForReport(metadata.date_range?.end)}`, new Date(metadata.generated_on).toLocaleString('en-IN', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -1262,9 +1371,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 cellPadding: 3,
             },
             margin: { left: 14, right: 14 },
-
         });
-
     }
 
     currentY = doc.lastAutoTable.finalY + 3;
@@ -1273,14 +1380,14 @@ const exportWashroomReportToPDF = (data, metadata) => {
     if (isSingleWashroom) {
         // Summary Stats
         autoTable(doc, {
-            head: [["Washroom", "Total Cleanings", "Completed", "Ongoing", "Avg Rating", "Avg Duration (min)"]],
+            head: [["Washroom", "Total Cleanings", "Completed", "Ongoing", "Avg Rating", "Avg Duration"]],
             body: [[
                 metadata.washroom_name || "N/A",
                 metadata.total_cleanings || 0,
                 metadata.completed || 0,
                 metadata.ongoing || 0,
                 metadata.avg_rating ? metadata.avg_rating.toFixed(1) : "N/A",
-                metadata.avg_cleaning_duration || 0
+                metadata.avg_cleaning_duration ? formatDuration(metadata.avg_cleaning_duration) : "N/A"
             ]],
             startY: currentY,
             theme: "grid",
@@ -1316,17 +1423,25 @@ const exportWashroomReportToPDF = (data, metadata) => {
             });
         };
 
-        const tableData = data.map((cleaning, index) => [
-            index + 1,
-            cleaning.cleaner_name || "N/A",
-            formatDateTime(cleaning.start_time),
-            formatDateTime(cleaning.end_time),
-            cleaning.duration_minutes || 0,
-            cleaning.rating ? cleaning.rating.toFixed(1) : "N/A",
-            cleaning.status ? cleaning.status.toUpperCase() : "N/A",
-            cleaning.before_image_count || 0,
-            cleaning.after_image_count || 0
-        ]);
+        const tableData = data.map((cleaning, index) => {
+            const taskInfo = cleaning.duration_minutes ? getTaskInfo({
+                task_start_time: cleaning.start_time,
+                task_end_time: cleaning.end_time,
+                status: cleaning.status
+            }) : null;
+
+            return [
+                index + 1,
+                cleaning.cleaner_name || "N/A",
+                formatDateTime(cleaning.start_time),
+                formatDateTime(cleaning.end_time),
+                taskInfo ? taskInfo.durationDisplay : (cleaning.duration_minutes ? formatDuration(cleaning.duration_minutes) : "N/A"),
+                cleaning.rating ? cleaning.rating.toFixed(1) : "N/A",
+                taskInfo ? taskInfo.status : (cleaning.status ? cleaning.status.toUpperCase() : "N/A"),
+                cleaning.before_image_count || 0,
+                cleaning.after_image_count || 0
+            ];
+        });
 
         autoTable(doc, {
             head: [[
@@ -1334,7 +1449,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 "Cleaner",
                 "Start Time",
                 "End Time",
-                "Duration (min)",
+                "Duration",
                 "Rating",
                 "Status",
                 "Before",
@@ -1365,6 +1480,25 @@ const exportWashroomReportToPDF = (data, metadata) => {
                 7: { halign: 'center' },
                 8: { halign: 'center' }
             },
+            // ✅ Color code status cells
+            didParseCell: function (data) {
+                if (data.column.index === 6 && data.section === 'body') {
+                    const status = data.cell.raw;
+                    if (status === 'COMPLETED') {
+                        data.cell.styles.textColor = [22, 163, 74]; // Green (text-green-700)
+                        data.cell.styles.fillColor = [220, 252, 231]; // Light green (bg-green-100)
+                    } else if (status === 'ONGOING') {
+                        data.cell.styles.textColor = [161, 98, 7]; // Yellow-700 (text-yellow-700)
+                        data.cell.styles.fillColor = [254, 249, 195]; // Yellow-100 (bg-yellow-100)
+                    } else if (status === 'INCOMPLETE') {
+                        data.cell.styles.textColor = [234, 179, 8]; // Orange
+                        data.cell.styles.fillColor = [255, 237, 213]; // Orange-100
+                    } else if (status === 'OVERDUE') {
+                        data.cell.styles.textColor = [220, 38, 38]; // Red
+                        data.cell.styles.fillColor = [254, 226, 226]; // Red-100
+                    }
+                }
+            },
             margin: { left: 14, right: 14 },
         });
     }
@@ -1372,13 +1506,13 @@ const exportWashroomReportToPDF = (data, metadata) => {
     else {
         // Summary Stats
         autoTable(doc, {
-            head: [["Total Washrooms", "Completed", "Ongoing", "Avg Rating", "Avg Duration (min)"]],
+            head: [["Total Washrooms", "Completed", "Ongoing", "Avg Rating", "Avg Duration"]],
             body: [[
                 metadata.total_washrooms || 0,
                 metadata.completed || 0,
                 metadata.ongoing || 0,
                 metadata.avg_rating ? metadata.avg_rating.toFixed(1) : "N/A",
-                metadata.avg_cleaning_duration || 0
+                metadata.avg_cleaning_duration ? formatDuration(metadata.avg_cleaning_duration) : "N/A"
             ]],
             startY: currentY,
             theme: "grid",
@@ -1417,6 +1551,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
         const tableData = data.map((washroom, index) => [
             index + 1,
             washroom.name || "N/A",
+            washroom.address || "N/A",
             washroom.type || "N/A",
             washroom.cleaner_name || "N/A",
             washroom.avg_rating ? washroom.avg_rating.toFixed(1) : "N/A",
@@ -1429,12 +1564,13 @@ const exportWashroomReportToPDF = (data, metadata) => {
             head: [[
                 "#",
                 "Washroom",
+                "Address",
                 "Type",
                 "Cleaner",
                 "Avg Rating",
                 "Status",
                 "Images",
-                "Last Cleaned"
+                "Last Activity"
             ]],
             body: tableData,
             startY: currentY,
@@ -1449,15 +1585,42 @@ const exportWashroomReportToPDF = (data, metadata) => {
             bodyStyles: {
                 fontSize: 7,
                 textColor: 50,
+                cellPadding: 2,
+                overflow: 'linebreak',  // ✅ Wraps text to multiple lines
+                valign: 'top'
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252]
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
-                4: { halign: 'center' },
-                5: { halign: 'center', fontStyle: 'bold' },
-                6: { halign: 'center' }
+                1: { halign: 'left', overflow: 'linebreak' },
+                2: { halign: 'left', overflow: 'linebreak' },
+                3: { halign: 'left', overflow: 'linebreak' },
+                4: { halign: 'left', overflow: 'linebreak' },
+                5: { halign: 'center', },
+                6: { halign: 'center', },
+                7: { halign: 'center', },
+                8: { halign: 'left', overflow: 'linebreak' }
+            },
+            // ✅ Color code status cells
+            didParseCell: function (data) {
+                if (data.column.index === 6 && data.section === 'body') {
+                    const status = data.cell.raw;
+                    if (status === 'COMPLETED') {
+                        data.cell.styles.textColor = [22, 163, 74]; // Green (text-green-700)
+                        data.cell.styles.fillColor = [220, 252, 231]; // Light green (bg-green-100)
+                    } else if (status === 'ONGOING') {
+                        data.cell.styles.textColor = [161, 98, 7]; // Yellow-700 (text-yellow-700)
+                        data.cell.styles.fillColor = [254, 249, 195]; // Yellow-100 (bg-yellow-100)
+                    } else if (status === 'INCOMPLETE') {
+                        data.cell.styles.textColor = [234, 179, 8]; // Orange
+                        data.cell.styles.fillColor = [255, 237, 213]; // Orange-100
+                    } else if (status === 'OVERDUE') {
+                        data.cell.styles.textColor = [220, 38, 38]; // Red
+                        data.cell.styles.fillColor = [254, 226, 226]; // Red-100
+                    }
+                }
             },
             margin: { left: 14, right: 14 },
         });
@@ -1486,6 +1649,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(fileName);
 };
+
 
 
 const exportWashroomReportToExcel = (data, metadata) => {
@@ -1765,7 +1929,7 @@ const exportWashroomReportToExcel = (data, metadata) => {
             "Avg Rating",
             "Status",
             "Total Images",
-            "Last Cleaned"
+            "Last Activity"
         ];
 
         const headerRow = worksheetData.length + 1;
@@ -2644,7 +2808,7 @@ const exportCleanerReportToPDF = (data, metadata) => {
             record.washroom_name || "N/A",
             record.zone_type || "N/A",
             record.time || "N/A",
-            record.duration || 0,
+            (record.status === 'Incomplete') ? "N/A" : record.duration,
             record.rating ? (typeof record.rating === 'number' ? record.rating.toFixed(1) : record.rating) : "N/A",
             record.status ? record.status.toUpperCase() : "N/A"
         ]);
@@ -3012,7 +3176,7 @@ const exportCleanerReportToExcel = (data, metadata) => {
                 record.washroom_name || "N/A",
                 record.zone_type || "N/A",
                 record.time || "N/A",
-                record.duration || 0,
+                (record.status === 'Incomplete') ? "N/A" : record.duration,
                 record.rating ? (typeof record.rating === 'number' ? record.rating.toFixed(1) : record.rating) : "N/A",
                 record.status ? record.status.toUpperCase() : "N/A"
             ];
@@ -3167,7 +3331,7 @@ export const exportToPDF = (data, metadata, reportType = "zone_wise") => {
         exportAiScoringToPDF(data, metadata);
     }
     else if (reportType === "detailed_cleaning") {
-        exportDetailedCleaningToPDF(data, metadata);
+        exportDetailedCleaningReport(data, metadata, 'pdf')
     }
     else if (reportType === "cleaner_performance_summary") {
         exportCleanerPerformanceSummaryToPDF(data, metadata);
@@ -3198,7 +3362,7 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
         exportCleanerPerformanceSummaryToExcel(data, metadata);
     }
     else if (reportType === "detailed_cleaning") {
-        exportDetailedCleaningToExcel(data, metadata);
+        exportDetailedCleaningReport(data, metadata, 'excel')
     }
     else if (reportType === "washroom_report") {
         exportWashroomReportToExcel(data, metadata);

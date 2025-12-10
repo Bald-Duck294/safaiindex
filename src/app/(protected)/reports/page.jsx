@@ -23,7 +23,7 @@ import { useSelector } from "react-redux";
 const REPORT_TYPES = [
   {
     value: "daily_task",
-    label: "Daily Cleaning Report",
+    label: "Cleaning Report",
     description: "View cleaner tasks with AI scores and compliance",
     endpoint: "daily-task",
   },
@@ -38,6 +38,13 @@ const REPORT_TYPES = [
     label: "Cleaner Report",
     description: "View individual cleaner or all cleaners performance",
     endpoint: "cleaner-report"
+  },
+
+  {
+    value: "detailed_cleaning",
+    label: "Detailed Cleaning Report",
+    description: "Aggregate performance metrics for cleaners.",
+    endpoint: "detailed-cleaning",
   },
   {
     value: "zone_wise",
@@ -57,12 +64,6 @@ const REPORT_TYPES = [
     description: "Aggregate performance metrics for cleaners.",
     endpoint: "cleaner-performance-summary",
   },
-  {
-    value: "detailed_cleaning",
-    label: "Detailed Cleaning Report",
-    description: "Aggregate performance metrics for cleaners.",
-    endpoint: "detailed-cleaning",
-  }
 ];
 
 const getTodayDate = () => {
@@ -305,6 +306,16 @@ export default function ReportsPage() {
   const generateReportName = (defaultReportType) => {
     const isSingleDate = startDate === endDate;
 
+    if (selectedReportType === "daily_task") {
+      if (isSingleDate) {
+        return "Daily_Cleaning_Report";
+
+      } else {
+        return "Cleaning_Report";
+      }
+    }
+
+
     if (selectedReportType === "washroom_report") {
       if (selectedLocation) {
         const locationName = locations.find(loc => loc.id === selectedLocation)?.name || "Washroom";
@@ -336,6 +347,9 @@ export default function ReportsPage() {
 
     return defaultReportType || "Report";
   };
+
+
+
   const getCurrentFilters = () => ({
     zone: selectedZone ? zones.find(z => z.id === selectedZone)?.name : null,
     location: selectedLocation ? locations.find(l => l.id === selectedLocation)?.display_name : null,
@@ -376,6 +390,7 @@ export default function ReportsPage() {
           ...params,
           ...(selectedLocation && { location_id: selectedLocation }),
           ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+          ...(selectedZone && { type_id: selectedZone }),
           ...(statusFilter !== "all" && { status_filter: statusFilter }),
           ...(effectiveStartDate && { start_date: effectiveStartDate }),
           ...(effectiveEndDate && { end_date: effectiveEndDate }),
@@ -396,6 +411,14 @@ export default function ReportsPage() {
           ...params,
           ...(selectedCleaner && { cleaner_id: selectedCleaner }),
           ...(statusFilter !== "all" && { status_filter: statusFilter }),
+        };
+      }
+      else if (selectedReportType === "detailed_cleaning") {
+        params = {
+          ...params,
+          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+          ...(statusFilter !== "all" && { status_filter: statusFilter }),
+          ...(selectedLocation && { location_id: selectedLocation }),
         };
       }
 
@@ -459,6 +482,35 @@ export default function ReportsPage() {
     }
   };
 
+  const handleStartDateChange = (e) => {
+    const newStartDte = e.target.value;
+
+    if (endDate && newStartDte > endDate) {
+      setEndDate(newStartDte);
+      toast.info("End date adjusted to match start date");
+      return;
+    }
+
+    setStartDate(newStartDte);
+
+  }
+
+  const handleEndDateChange = (e) => {
+    const newDate = e.target.value;
+
+    // If end date is smaller than start date
+    if (startDate && newEndDate < startDate) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+
+    // end date should not be bigger than start date
+    if (endDate > todayDate) {
+      toast.error("End date cannot be in the future");
+      // setEndDate(todayDate)
+      return;
+    }
+  }
   return (
     <>
       <Toaster position="top-right" />
@@ -618,6 +670,7 @@ export default function ReportsPage() {
                   </div>
                 )}
 
+
               {/* Start Date */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -627,7 +680,8 @@ export default function ReportsPage() {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={handleStartDateChange}
+                  max={endDate || todayDate}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
@@ -641,7 +695,9 @@ export default function ReportsPage() {
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                  max={todayDate}
+                  onChange={handleEndDateChange}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>

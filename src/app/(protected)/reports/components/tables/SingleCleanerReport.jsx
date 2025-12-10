@@ -154,7 +154,7 @@ function SingleCleanerReport({ data, metadata }) {
                         {typeof record.rating === 'number' ? record.rating.toFixed(1) : record.rating}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-slate-600">{record.duration}</td>
+                    <td className="px-4 py-3 text-center text-slate-600">{(record.status === 'Incomplete') ? 'N/A' : record.duration}</td>
                   </tr>
                 ))
               ) : (

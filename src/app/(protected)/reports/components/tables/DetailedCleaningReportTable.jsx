@@ -265,7 +265,7 @@ export default function DetailedCleaningReportTable({ data, metadata }) {
                                 AI Score
                             </th>
                             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">
-                                Rating
+                                Average Rating
                             </th>
                             {/* ✅ ADDED STATUS COLUMN */}
                             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">

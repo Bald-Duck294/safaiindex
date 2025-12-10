@@ -429,7 +429,7 @@ function AllWashroomsTable({ data, metadata }) {
                                     Images
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                                    Last Cleaned
+                                    Last Activity
                                 </th>
                             </tr>
                         </thead>
@@ -440,7 +440,7 @@ function AllWashroomsTable({ data, metadata }) {
                                         <td className="px-4 py-3">
                                             <p className="font-medium text-slate-800">{washroom.name || "N/A"}</p>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">
+                                        <td className="px-4 py-3 text-sm text-slate-600 max-w-xs break-words">
                                             {washroom.address || "N/A"}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-slate-700">
