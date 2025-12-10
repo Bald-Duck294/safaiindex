@@ -281,7 +281,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
         margin: { left: 14, right: 14 },
     });
 
-    addLogosToAllPages(doc);
+  //  addLogosToAllPages(doc);
 
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
@@ -729,7 +729,7 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
         doc.setFont("helvetica", "italic");
         doc.text("Note: Image links (Img1, Img2, etc.) in the table are clickable. Full URLs available in Excel export.", 14, currentY);
 
-        addLogosToAllPages(doc);
+      //  addLogosToAllPages(doc);
 
         // Footer
         const pageCount = doc.internal.getNumberOfPages();
@@ -996,7 +996,7 @@ const exportZoneWiseToPDF = (data, metadata) => {
         margin: { left: 14, right: 14 },
     });
 
-    addLogosToAllPages(doc);
+ //   addLogosToAllPages(doc);
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(fileName);
@@ -1148,7 +1148,7 @@ const exportAiScoringToPDF = (data, metadata) => {
         }
     });
 
-    addLogosToAllPages(doc);
+   // addLogosToAllPages(doc);
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(fileName);
@@ -1226,7 +1226,7 @@ export const exportCleanerPerformanceSummaryToPDF = (data, metadata) => {
         startY: 35,
     });
 
-    addLogosToAllPages(doc);
+    //addLogosToAllPages(doc);
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}.pdf`;
     doc.save(fileName);
@@ -1626,7 +1626,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
         });
     }
 
-    addLogosToAllPages(doc);
+ //   addLogosToAllPages(doc);
 
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
@@ -2947,7 +2947,7 @@ const exportCleanerReportToPDF = (data, metadata) => {
     }
 
     // ✅ Add footers and page numbers
-    addLogosToAllPages(doc);
+    //addLogosToAllPages(doc);
 
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);

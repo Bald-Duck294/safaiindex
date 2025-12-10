@@ -46,24 +46,24 @@ const REPORT_TYPES = [
     description: "Aggregate performance metrics for cleaners.",
     endpoint: "detailed-cleaning",
   },
-  {
-    value: "zone_wise",
-    label: "Zone-wise Report",
-    description: "Location-wise cleaner activity and scores",
-    endpoint: "zone-wise",
-  },
-  {
-    value: "ai_scoring",
-    label: "AI Scoring Report",
-    description: "Track the average AI hygiene score and improvement trend for each location.",
-    endpoint: "ai-scoring",
-  },
-  {
-    value: "cleaner_performance_summary",
-    label: "Cleaner Performance Summary",
-    description: "Aggregate performance metrics for cleaners.",
-    endpoint: "cleaner-performance-summary",
-  },
+  // {
+  //   value: "zone_wise",
+  //   label: "Zone-wise Report",
+  //   description: "Location-wise cleaner activity and scores",
+  //   endpoint: "zone-wise",
+  // },
+  // {
+  //   value: "ai_scoring",
+  //   label: "AI Scoring Report",
+  //   description: "Track the average AI hygiene score and improvement trend for each location.",
+  //   endpoint: "ai-scoring",
+  // },
+  // {
+  //   value: "cleaner_performance_summary",
+  //   label: "Cleaner Performance Summary",
+  //   description: "Aggregate performance metrics for cleaners.",
+  //   endpoint: "cleaner-performance-summary",
+  // },
 ];
 
 const getTodayDate = () => {
