@@ -1118,7 +1118,9 @@ import {
   Home,
   Building2,
   Users,
-  Camera
+  Camera,
+  Droplets,
+  Armchair,
 } from 'lucide-react';
 
 import { Country, State, City } from 'country-state-city';
@@ -1188,12 +1190,16 @@ const EditLocationPage = () => {
       men: {
         wc: 0,
         indian: 0,
-        urinal: 0
+        urinal: 0,
+        shower: 0,
+        basin: 0
       },
       women: {
         wc: 0,
         indian: 0,
-        urinal: 0
+        urinal: 0,
+        shower: 0,
+        basin: 0
       }
 
     }
@@ -1843,6 +1849,20 @@ const EditLocationPage = () => {
 
   const navigationInfo = getNavigationInfo();
 
+  const updateUsageCategory = (gender, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      usage_category: {
+        ...prev.usage_category,
+        [gender]: {
+          ...prev.usage_category[gender],
+          [field]: value === '' ? 0 : parseInt(value)
+        }
+      }
+    }));
+  };
+
+
   return (
     <>
       <Toaster position="top-right" />
@@ -2221,187 +2241,180 @@ const EditLocationPage = () => {
 
 
               {/* ✅ ADD THIS - Usage Category Section */}
+              {/* ✅ Usage Category Section */}
               <div className="col-span-2">
-                <h3 className="text-sm font-medium text-slate-700 mb-3">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Droplets className="h-5 w-5 text-blue-600" />
                   Usage Category
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Men Section */}
-                  <div className="p-4 border border-blue-300 rounded-lg bg-blue-50/50">
-                    <h4 className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-1.5">
-                      <Users className="w-4 h-4" />
-                      Men
-                    </h4>
-                    <div className="space-y-2.5">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          WC (Western)
-                        </label>
+                  <div className="p-5 border-2 border-blue-200 rounded-xl bg-gradient-to-br from-blue-50 via-white to-blue-50 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
+                        <Users className="w-4 h-4 text-white" />
+                      </div>
+                      <h4 className="text-base font-semibold text-blue-800">Men's Facilities</h4>
+                    </div>
+                    <div className="space-y-3">
+                      {/* WC */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">WC</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.men.wc}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                men: {
-                                  ...prev.usage_category.men,
-                                  wc: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                          onChange={(e) => updateUsageCategory('men', 'wc', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Indian
-                        </label>
+                      {/* Indian */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">Indian</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.men.indian}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                men: {
-                                  ...prev.usage_category.men,
-                                  indian: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                          onChange={(e) => updateUsageCategory('men', 'indian', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Urinals
-                        </label>
+                      {/* Urinals */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">Urinals</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.men.urinals}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                men: {
-                                  ...prev.usage_category.men,
-                                  urinals: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                          onChange={(e) => updateUsageCategory('men', 'urinals', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* ✅ NEW: Shower */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
+                          <Droplets className="w-3.5 h-3.5 text-blue-600" />
+                          Shower
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.men.shower}
+                          onChange={(e) => updateUsageCategory('men', 'shower', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* ✅ NEW: Basin */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
+                          <Armchair className="w-3.5 h-3.5 text-blue-600" />
+                          Basin
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.men.basin}
+                          onChange={(e) => updateUsageCategory('men', 'basin', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Women Section */}
-                  <div className="p-4 border border-pink-300 rounded-lg bg-pink-50/50">
-                    <h4 className="text-sm font-medium text-pink-700 mb-3 flex items-center gap-1.5">
-                      <Users className="w-4 h-4" />
-                      Women
-                    </h4>
-                    <div className="space-y-2.5">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          WC (Western)
-                        </label>
+                  <div className="p-5 border-2 border-pink-200 rounded-xl bg-gradient-to-br from-pink-50 via-white to-pink-50 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-pink-200">
+                      <div className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center shadow-sm">
+                        <Users className="w-4 h-4 text-white" />
+                      </div>
+                      <h4 className="text-base font-semibold text-pink-800">Women's Facilities</h4>
+                    </div>
+                    <div className="space-y-3">
+                      {/* WC */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">WC</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.women.wc}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                women: {
-                                  ...prev.usage_category.women,
-                                  wc: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                          onChange={(e) => updateUsageCategory('women', 'wc', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Indian
-                        </label>
+                      {/* Indian */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">Indian</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.women.indian}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                women: {
-                                  ...prev.usage_category.women,
-                                  indian: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                          onChange={(e) => updateUsageCategory('women', 'indian', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Urinals
-                        </label>
+                      {/* Urinals */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20">Urinals</span>
                         <input
                           type="number"
                           min="0"
                           placeholder="0"
                           value={formData.usage_category.women.urinals}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            setFormData(prev => ({
-                              ...prev,
-                              usage_category: {
-                                ...prev.usage_category,
-                                women: {
-                                  ...prev.usage_category.women,
-                                  urinals: value
-                                }
-                              }
-                            }));
-                          }}
-                          className="w-full p-2 text-sm border border-slate-200 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-pink-400 focus:border-pink-400"
+                          onChange={(e) => updateUsageCategory('women', 'urinals', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                        />
+                      </div>
+
+                      {/* ✅ NEW: Shower */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
+                          <Droplets className="w-3.5 h-3.5 text-pink-600" />
+                          Shower
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.women.shower}
+                          onChange={(e) => updateUsageCategory('women', 'shower', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                        />
+                      </div>
+
+                      {/* ✅ NEW: Basin */}
+                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
+                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
+                          <Armchair className="w-3.5 h-3.5 text-pink-600" />
+                          Basin
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={formData.usage_category.women.basin}
+                          onChange={(e) => updateUsageCategory('women', 'basin', e.target.value)}
+                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+
 
 
               {/* ========== SECTION 2: ADDRESS DETAILS ========== */}

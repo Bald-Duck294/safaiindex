@@ -353,7 +353,8 @@ const SingleLocation = () => {
               const data = usageCategory[key];
               if (!data) return null;
 
-              const totalCount = (data.wc || 0) + (data.indian || 0) + (data.urinals || 0);
+              // ✅ Updated: Include shower and basin in total count
+              const totalCount = (data.wc || 0) + (data.indian || 0) + (data.urinals || 0) + (data.shower || 0) + (data.basin || 0);
 
               return (
                 <div key={key} className={`${bgColor} rounded-lg p-4 border ${borderColor}`}>
@@ -389,6 +390,22 @@ const SingleLocation = () => {
                       </div>
                     )}
 
+                    {/* ✅ NEW: Shower */}
+                    {data.shower > 0 && (
+                      <div className="flex items-center justify-between bg-white rounded-md px-3 py-2 text-sm">
+                        <span className="font-medium text-gray-700">🚿 Shower</span>
+                        <span className={`font-bold ${textColor}`}>{data.shower}</span>
+                      </div>
+                    )}
+
+                    {/* ✅ NEW: Basin */}
+                    {data.basin > 0 && (
+                      <div className="flex items-center justify-between bg-white rounded-md px-3 py-2 text-sm">
+                        <span className="font-medium text-gray-700">🚰 Basin</span>
+                        <span className={`font-bold ${textColor}`}>{data.basin}</span>
+                      </div>
+                    )}
+
                     {totalCount === 0 && (
                       <div className="text-center py-2 text-sm text-gray-500">
                         No facilities available
@@ -403,6 +420,7 @@ const SingleLocation = () => {
       </div>
     );
   };
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
