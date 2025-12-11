@@ -693,6 +693,7 @@ function WashroomsPage() {
                             onClose={() => setActionsMenuOpen(null)}
                             onDelete={(location) => setDeleteModal({ open: true, location })}
                             onEdit={(locationId) => router.push(`/locations/${locationId}/edit`)}
+                            location_id={item.id}
                           />
                         )}
                       </div>

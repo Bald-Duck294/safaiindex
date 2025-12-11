@@ -352,10 +352,10 @@ const Header = ({ pageTitle }) => {
           <>
             <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
             <span
-              className="truncate mr-[1rem]"
+              className="truncate mr-[1rem] text-[12px] sm:text-[1.2rem]"
               title={company.name}
             >
-              {truncateCompanyName(company.name)}
+              {(company.name)}
             </span>
           </>
         );

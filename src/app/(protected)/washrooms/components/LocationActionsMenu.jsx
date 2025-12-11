@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Users } from "lucide-react";
+import { Users, Trash, Edit, Delete } from "lucide-react";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import { useSelector } from "react-redux"; // ✅ Import useSelector
 export default function LocationActionsMenu({
@@ -10,6 +10,7 @@ export default function LocationActionsMenu({
     onClose,
     onDelete,
     onEdit,
+    location_id,
 }) {
     const router = useRouter();
     const { companyId } = useCompanyId();
@@ -41,6 +42,16 @@ export default function LocationActionsMenu({
         onClose();
     };
 
+    const handleDelete = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (onDelete) {
+            onDelete(item);
+        }
+        onClose();
+    }
+
     return (
         <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
             {/* View Cleaners */}
@@ -52,6 +63,7 @@ export default function LocationActionsMenu({
                 View Cleaners
             </button>
 
+
             {/* View Supervisor */}
             {canViewSupervisor && (
                 <button
@@ -62,6 +74,29 @@ export default function LocationActionsMenu({
                     View Supervisor
                 </button>
             )}
-        </div>
+
+            {
+                canViewSupervisor &&
+                (<button
+                    onMouseDown={(e) => router.push(`/washrooms/item/${location_id}/edit?companyId=${companyId}`)} // ✅ Changed from onClick
+                    className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                    <Edit className="h-4 w-4 text-yellow-300" />
+                    Edit Washroom
+                </button>)
+            }
+
+
+            {
+                canViewSupervisor &&
+                (<button
+                    onMouseDown={handleDelete} // ✅ Changed from onClick
+                    className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                    <Delete className="h-4 w-4 text-red-600" />
+                    Delete Washroom
+                </button>)
+            }
+        </div >
     );
 }
