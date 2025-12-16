@@ -37,6 +37,8 @@
     "react-leaflet": "^5.0.0",
     "react-redux": "^9.2.0",
     "react-select": "^5.10.2",
+    "react-virtualized": "^9.22.6",
+    "react-window": "^2.2.3",
     "recharts": "^3.1.2",
     "redux-persist": "^6.0.0",
     "xlsx": "^0.18.5",
@@ -46,6 +48,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "24.5.2",
+    "@types/react-virtualized": "^9.22.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "tailwindcss": "^4"

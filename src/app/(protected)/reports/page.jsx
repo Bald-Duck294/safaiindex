@@ -46,6 +46,13 @@ const REPORT_TYPES = [
     description: "Aggregate performance metrics for cleaners.",
     endpoint: "detailed-cleaning",
   },
+  {
+    value: "washroom_hygiene_trend",
+    label: "Washroom Hygiene Trend",
+    description: "View daily hygiene scores across all washrooms",
+    endpoint: "washroom-daily-scores"
+  }
+
   // {
   //   value: "zone_wise",
   //   label: "Zone-wise Report",
@@ -178,6 +185,7 @@ export default function ReportsPage() {
   const [showModal, setShowModal] = useState(false);
 
   const [showNoDataModal, setShowNoDataModal] = useState(false);
+  const [detailedReportDate, setDetailedReportDate] = useState(todayDate);
 
   const [flag, setFlag] = useState(true);
 
@@ -511,6 +519,18 @@ export default function ReportsPage() {
       return;
     }
   }
+
+  const handleDetailedReportDateChange = (e) => {
+    const newDate = e.target.value;
+
+    if (newDate > todayDate) {
+      setDetailedReportDate(todayDate);
+      toast.error("Date cannot be in the future");
+      return;
+    }
+
+    setDetailedReportDate(newDate);
+  }
   return (
     <>
       <Toaster position="top-right" />
@@ -671,36 +691,60 @@ export default function ReportsPage() {
                 )}
 
 
-              {/* Start Date */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-1" />
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={handleStartDateChange}
-                  max={endDate || todayDate}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
+              {/* ✅ Conditional Date Picker based on Report Type */}
+              {selectedReportType === "detailed_cleaning" ? (
+                // Single Date for Detailed Cleaning Report
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Choose Date
+                  </label>
+                  <input
+                    type="date"
+                    value={detailedReportDate}
+                    max={todayDate}
+                    onChange={handleDetailedReportDateChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select a single date for detailed report
+                  </p>
+                </div>
+              ) : (
+                // Date Range for Other Reports
+                <>
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={handleStartDateChange}
+                      max={endDate || todayDate}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  </div>
 
-              {/* End Date */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-1" />
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  max={todayDate}
-                  onChange={handleEndDateChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate}
+                      max={todayDate}
+                      onChange={handleEndDateChange}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Status Filter */}
               {(selectedReportType === "daily_task" ||

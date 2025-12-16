@@ -27,6 +27,11 @@ const addLogosToHeader = (doc, pageWidth = 297) => {
     }
 };
 
+const formatScore = (score) => {
+    if (!score && score !== 0) return "N/A";
+    const rounded = Math.round(score * 10) / 10;
+    return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+};
 // ✅ HELPER FUNCTION: Add logos to all pages
 const addLogosToAllPages = (doc) => {
     const pageCount = doc.internal.getNumberOfPages();
@@ -281,7 +286,7 @@ const exportDailyTaskToPDF = (data, metadata) => {
         margin: { left: 14, right: 14 },
     });
 
-  //  addLogosToAllPages(doc);
+    //  addLogosToAllPages(doc);
 
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
@@ -428,9 +433,8 @@ const createImageLinksText = (images) => {
     return images.map((_, idx) => `Img${idx + 1}`).join(", ");
 };
 
-/**
- * ✅ UNIFIED: Export Detailed Cleaning Report to PDF & EXCEL
- */
+
+
 const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
     const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Detailed Cleaning Report";
 
@@ -459,11 +463,7 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
         });
     };
 
-    const formatScore = (score) => {
-        if (!score && score !== 0) return "N/A";
-        const rounded = Math.round(score * 10) / 10;
-        return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
-    };
+
 
     // Main table data with image links text
     const tableData = data.map((task, index) => {
@@ -474,14 +474,15 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
         return [
             index + 1,
             task.cleaner_name,
-            task.washroom_full_name || task.washroom_name,
+            task.zone_name,
+            task.washroom_name,
             formatDateTimeForReport(task.task_start_time),
             formatDateTimeForReport(task.task_end_time),
             formatScore(task.ai_score),
             formatScore(task.final_rating),
             taskInfo.status,
-            createImageLinksText(beforeImages), // Before images column
-            createImageLinksText(afterImages),  // After images column
+            createImageLinksText(beforeImages.slice(0, 6)), // Before images column
+            createImageLinksText(afterImages.slice(0, 6)),  // After images column
         ];
     });
 
@@ -584,6 +585,7 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
             head: [[
                 "#",
                 "Cleaner",
+                "Zone Name",
                 "Location",
                 "Start Time",
                 "End Time",
@@ -618,12 +620,21 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
                 8: {
                     halign: 'center',
                     textColor: [37, 99, 235],
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
                 },
                 9: {
                     halign: 'center',
                     textColor: [22, 163, 74],
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    cellWidth: 45
+
+                },
+                10: {
+                    halign: 'center',
+                    textColor: [101, 148, 224],
+                    fontStyle: 'italic',
+                    cellWidth: 45
+
                 }
             },
             didDrawCell: function (cellData) {
@@ -729,7 +740,7 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
         doc.setFont("helvetica", "italic");
         doc.text("Note: Image links (Img1, Img2, etc.) in the table are clickable. Full URLs available in Excel export.", 14, currentY);
 
-      //  addLogosToAllPages(doc);
+        //  addLogosToAllPages(doc);
 
         // Footer
         const pageCount = doc.internal.getNumberOfPages();
@@ -912,9 +923,514 @@ const exportDetailedCleaningReport = (data, metadata, format = 'pdf') => {
     }
 };
 
-/**
- * Export Zone-wise Report to PDF
- */
+
+
+
+const getScoreColor = (score) => {
+    if (!score && score !== 0) return { fillColor: [226, 232, 240], textColor: [100, 116, 139] };
+    if (score >= 9) return { fillColor: [187, 247, 208], textColor: [20, 83, 45] }; // Green
+    if (score >= 8) return { fillColor: [187, 247, 208], textColor: [22, 101, 52] }; // Light Green
+    if (score >= 7) return { fillColor: [254, 243, 199], textColor: [113, 63, 18] }; // Yellow
+    if (score >= 6) return { fillColor: [254, 215, 170], textColor: [124, 45, 18] }; // Orange
+    return { fillColor: [254, 202, 202], textColor: [127, 29, 29] }; // Red
+};
+
+// ==================== FIXED HYGIENE TREND PDF EXPORT ====================
+
+const exportHygieneTrendToPDF = (data, metadata) => {
+    const reportTitle = metadata?.dynamic_report_name || metadata?.report_type || "Hygiene Trend Report";
+    const doc = new jsPDF("l", "mm", "a4"); 
+    let currentY = 25;
+
+    // ============ HEADER ============
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 58, 138);
+    doc.text(reportTitle, 14, 15);
+
+    doc.setDrawColor(30, 58, 138);
+    doc.setLineWidth(0.5);
+    doc.line(14, 18, 283, 18);
+
+    // ============ EXTRACT DATE COLUMNS FROM DATA ============
+    // Since metadata.date_columns is empty, extract from first washroom's daily_scores
+    let dateColumns = [];
+    if (data && data.length > 0 && data[0].daily_scores) {
+        dateColumns = Object.keys(data[0].daily_scores).sort();
+
+        // Format dates to "DD MMM" (e.g., "15 Nov")
+        dateColumns = dateColumns.map(dateStr => {
+            const date = new Date(dateStr);
+            const day = date.getDate();
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const month = monthNames[date.getMonth()];
+            return { key: dateStr, label: `${day} ${month}` };
+        });
+    }
+
+    console.log(`📅 Extracted ${dateColumns.length} date columns`);
+
+    // ============ SUMMARY STATISTICS ============
+    const totalWashrooms = metadata?.total_washrooms || data?.length || 0;
+    const totalDays = dateColumns.length;
+    const overallAvgScore = metadata?.overall_avg_score || 0;
+
+    // Calculate top & low performers
+    let topPerformer = "N/A", topPerformerScore = 0;
+    let lowPerformer = "N/A", lowPerformerScore = 10;
+
+    if (data && data.length > 0) {
+        const sorted = [...data].sort((a, b) => b.average_score - a.average_score);
+        topPerformer = sorted[0]?.washroom_name || "N/A";
+        topPerformerScore = sorted[0]?.average_score || 0;
+
+        const sortedLow = [...data].sort((a, b) => a.average_score - b.average_score);
+        lowPerformer = sortedLow[0]?.washroom_name || "N/A";
+        lowPerformerScore = sortedLow[0]?.average_score || 10;
+    }
+
+    // Count scores in ranges
+    const excellentCount = data?.filter(w => w.average_score >= 9).length || 0;
+    const goodCount = data?.filter(w => w.average_score >= 7 && w.average_score < 9).length || 0;
+    const averageCount = data?.filter(w => w.average_score >= 5 && w.average_score < 7).length || 0;
+    const poorCount = data?.filter(w => w.average_score < 5).length || 0;
+
+    // ============ METADATA TABLE ============
+    autoTable(doc, {
+        head: [["Organization", "Date Range", "Total Washrooms", "Generated On"]],
+        body: [[
+            metadata?.organization || "N/A",
+            `${metadata?.date_range?.start || "N/A"} to ${metadata?.date_range?.end || "N/A"}`,
+            totalWashrooms,
+            new Date(metadata?.generated_on).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+            }),
+        ]],
+        startY: currentY,
+        theme: "grid",
+        headStyles: {
+            fillColor: [241, 245, 249],
+            textColor: [51, 65, 85],
+            fontStyle: "bold",
+            fontSize: 9,
+            halign: "center",
+        },
+        bodyStyles: {
+            fontSize: 9,
+            textColor: [30, 41, 59],
+            halign: "center",
+            cellPadding: 3,
+        },
+        margin: { left: 14, right: 14 },
+    });
+
+    currentY = doc.lastAutoTable.finalY + 3;
+
+    // ============ STATISTICS SUMMARY TABLE ============
+    autoTable(doc, {
+        head: [["Overall Avg Score", "Top Performer", "Low Performer", "Excellent (9+)", "Good (7-9)", "Average (5-7)", "Poor (<5)"]],
+        body: [[
+            formatScore(overallAvgScore),
+            `${topPerformer} (${formatScore(topPerformerScore)})`,
+            `${lowPerformer} (${formatScore(lowPerformerScore)})`,
+            excellentCount,
+            goodCount,
+            averageCount,
+            poorCount,
+        ]],
+        startY: currentY,
+        theme: "grid",
+        headStyles: {
+            fillColor: [16, 185, 129],
+            textColor: 255,
+            fontStyle: "bold",
+            fontSize: 8,
+            halign: "center",
+        },
+        bodyStyles: {
+            fontSize: 8,
+            textColor: [30, 41, 59],
+            halign: "center",
+            cellPadding: 3,
+            fontStyle: "bold",
+            fillColor: [236, 253, 245],
+        },
+        margin: { left: 14, right: 14 },
+    });
+
+    currentY = doc.lastAutoTable.finalY + 5;
+
+    // ============ MAIN TABLE HEADING ============
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(51, 65, 85);
+    doc.text("Daily Hygiene Trend - Washroom Wise", 14, currentY);
+    currentY += 3;
+
+    // ============ BUILD TABLE DATA ============
+    const dailyScoresArray = data?.map((washroom, index) => {
+        const dailyScores = dateColumns.map(dateObj => {
+            return formatScore(washroom.daily_scores?.[dateObj.key]);
+        });
+
+        return [
+            index + 1,
+            washroom.washroom_name,
+            washroom.city || "N/A",
+            washroom.zone_type || "N/A",
+            ...dailyScores,
+            formatScore(washroom.average_score),
+        ];
+    }) || [];
+
+    // ============ BUILD COLUMN HEADERS ============
+    const tableHeaders = [
+        "Sr",
+        "Washroom",
+        "City",
+        "Zone",
+        ...dateColumns.map(d => d.label),
+        "Avg",
+    ];
+
+    // ============ DYNAMIC COLUMN WIDTHS (CRITICAL FOR FITTING ALL DATES) ============
+    const dateColumnCount = dateColumns.length;
+    const fixedColumnsWidth = 8 + 35 + 15 + 20 + 10; // Sr + Washroom + City + Zone + Avg
+    const availableWidth = 297 - 28; // Page width - margins
+    const remainingWidth = availableWidth - fixedColumnsWidth;
+    const dateColumnWidth = Math.max(6, Math.floor(remainingWidth / dateColumnCount)); // Min 6mm per date
+
+    console.log(`📏 Date column width: ${dateColumnWidth}mm for ${dateColumnCount} dates`);
+
+    const columnStyles = {
+        0: { halign: "center", cellWidth: 8 },
+        1: { halign: "left", cellWidth: 35 },
+        2: { halign: "center", cellWidth: 15 },
+        3: { halign: "center", cellWidth: 20 },
+    };
+
+    // Add date column styles
+    dateColumns.forEach((_, idx) => {
+        columnStyles[4 + idx] = {
+            halign: "center",
+            cellWidth: dateColumnWidth,
+            fontSize: 5.5  // Very small font for dates
+        };
+    });
+
+    // Average column
+    columnStyles[4 + dateColumns.length] = {
+        halign: "center",
+        cellWidth: 10,
+        fontStyle: "bold"
+    };
+
+    // ============ MAIN TABLE WITH COLOR CODING ============
+    autoTable(doc, {
+        head: [tableHeaders],
+        body: dailyScoresArray,
+        startY: currentY,
+        theme: "grid",
+        headStyles: {
+            fillColor: [37, 99, 235],
+            textColor: 255,
+            fontStyle: "bold",
+            fontSize: 5.5,
+            halign: "center",
+            cellPadding: 1,
+        },
+        bodyStyles: {
+            fontSize: 5.5,
+            textColor: 50,
+            cellPadding: 1,
+        },
+        alternateRowStyles: {
+            fillColor: [248, 250, 252],
+        },
+        columnStyles: columnStyles,
+        didDrawCell: function (cellData) {
+            const columnIndex = cellData.column.index;
+            const isDateColumn = columnIndex >= 4 && columnIndex < 4 + dateColumns.length;
+            const isAvgColumn = columnIndex === 4 + dateColumns.length;
+
+            // Color code both date columns and average column
+            if ((isDateColumn || isAvgColumn) && cellData.section === "body") {
+                const scoreValue = dailyScoresArray[cellData.row.index]?.[columnIndex];
+
+                if (scoreValue && scoreValue !== "N/A") {
+                    const numScore = parseFloat(scoreValue);
+                    const colors = getScoreColor(numScore);
+
+                    // Draw colored background
+                    doc.setFillColor(...colors.fillColor);
+                    doc.rect(
+                        cellData.cell.x,
+                        cellData.cell.y,
+                        cellData.cell.width,
+                        cellData.cell.height,
+                        "F"
+                    );
+
+                    // Draw text with appropriate color
+                    doc.setTextColor(...colors.textColor);
+                    doc.setFontSize(5.5);
+                    if (isAvgColumn) {
+                        doc.setFont("helvetica", "bold");
+                    }
+                    doc.text(
+                        scoreValue,
+                        cellData.cell.x + cellData.cell.width / 2,
+                        cellData.cell.y + cellData.cell.height / 2,
+                        { align: "center", baseline: "middle" }
+                    );
+                }
+            }
+        },
+        margin: { left: 14, right: 14 },
+    });
+
+    currentY = doc.lastAutoTable.finalY + 5;
+
+    // ============ LEGEND ============
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(51, 65, 85);
+    doc.text("Score Legend:", 14, currentY);
+    currentY += 4;
+
+    const legendItems = [
+        { color: [187, 247, 208], text: "Excellent (9.0 - 10.0)" },
+        { color: [254, 243, 199], text: "Good (7.0 - 8.9)" },
+        { color: [254, 215, 170], text: "Average (5.0 - 6.9)" },
+        { color: [254, 202, 202], text: "Poor (< 5.0)" },
+    ];
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    legendItems.forEach((item) => {
+        doc.setFillColor(...item.color);
+        doc.rect(14, currentY - 2, 3, 3, "F");
+        doc.setTextColor(51, 65, 85);
+        doc.text(item.text, 18, currentY);
+        currentY += 4;
+    });
+
+    // ============ PAGE FOOTER ============
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(
+            `Page ${i} of ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 8,
+            { align: "center" }
+        );
+        doc.text(
+            `Generated on ${new Date().toLocaleString("en-IN")}`,
+            14,
+            doc.internal.pageSize.height - 8
+        );
+    }
+
+    const fileName = `${reportTitle.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+    doc.save(fileName);
+    console.log(`✅ Hygiene Trend PDF exported: ${fileName} with ${dateColumns.length} date columns`);
+};
+
+
+const exportHygieneTrendToExcel = (data, metadata) => {
+    const reportTitle = metadata?.dynamic_report_name || metadata?.report_type || "Hygiene Trend Report";
+    const dateColumns = metadata?.date_columns || [];
+
+    // Calculate statistics
+    const totalWashrooms = metadata?.total_washrooms || 0;
+    const totalDays = metadata?.total_days || 0;
+    const overallAvgScore = metadata?.overall_avg_score || 0;
+
+    let topPerformer = "N/A", topPerformerScore = 0;
+    let lowPerformer = "N/A", lowPerformerScore = 10;
+
+    if (data && data.length > 0) {
+        const sorted = [...data].sort((a, b) => b.average_score - a.average_score);
+        topPerformer = sorted[0]?.washroom_name || "N/A";
+        topPerformerScore = sorted[0]?.average_score || 0;
+
+        const sortedLow = [...data].sort((a, b) => a.average_score - b.average_score);
+        lowPerformer = sortedLow[0]?.washroom_name || "N/A";
+        lowPerformerScore = sortedLow[0]?.average_score || 10;
+    }
+
+    const excellentCount = data?.filter(w => w.average_score >= 9).length || 0;
+    const goodCount = data?.filter(w => w.average_score >= 7 && w.average_score < 9).length || 0;
+    const averageCount = data?.filter(w => w.average_score >= 5 && w.average_score < 7).length || 0;
+    const poorCount = data?.filter(w => w.average_score < 5).length || 0;
+
+    // ============ BUILD HEADER ROWS ============
+    const headerRows = [
+        [reportTitle],
+        [],
+        ["Organization", metadata?.organization || "N/A"],
+        ["Date Range", `${metadata?.date_range?.start || "N/A"} to ${metadata?.date_range?.end || "N/A"}`],
+        ["Total Washrooms", totalWashrooms],
+        ["Total Days", totalDays],
+        ["Generated On", new Date(metadata?.generated_on).toLocaleString("en-IN")],
+        [],
+        ["Summary Statistics"],
+        ["Overall Average Score", formatScore(overallAvgScore)],
+        ["Top Performer", `${topPerformer} (${formatScore(topPerformerScore)})`],
+        ["Low Performer", `${lowPerformer} (${formatScore(lowPerformerScore)})`],
+        ["Excellent Count (9+)", excellentCount],
+        ["Good Count (7-9)", goodCount],
+        ["Average Count (5-7)", averageCount],
+        ["Poor Count (<5)", poorCount],
+        [],
+    ];
+
+    // ============ BUILD TABLE HEADERS ============
+    const tableHeaders = [
+        "Sr No",
+        "Washroom Name",
+        "City",
+        "Zone Type",
+        "Assigned Cleaners",
+        ...dateColumns,
+        "Average Score",
+    ];
+
+    // ============ BUILD TABLE DATA ============
+    const tableData = data?.map((washroom, index) => {
+        const dailyScores = metadata?.date_columns?.map((_, idx) => {
+            const dateKey = Object.keys(washroom.daily_scores || {})[idx];
+            return formatScore(washroom.daily_scores?.[dateKey]);
+        }) || [];
+
+        return [
+            index + 1,
+            washroom.washroom_name,
+            washroom.city || "N/A",
+            washroom.zone_type || "N/A",
+            washroom.assigned_cleaners?.join(", ") || "N/A",
+            ...dailyScores,
+            formatScore(washroom.average_score),
+        ];
+    }) || [];
+
+    // ============ COMBINE DATA ============
+    const worksheetData = [...headerRows, tableHeaders, ...tableData];
+
+    // ============ CREATE WORKBOOK ============
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // ============ SET COLUMN WIDTHS ============
+    const colWidths = [8, 22, 12, 12, 25, ...dateColumns.map(() => 14), 14];
+    ws["!cols"] = colWidths.map(wch => ({ wch }));
+
+    // ============ FORMAT TITLE ============
+    ws["A1"].s = {
+        font: { bold: true, sz: 16, color: { rgb: "1E3A8A" } },
+        alignment: { horizontal: "center", vertical: "center" },
+    };
+
+    // ============ MERGE TITLE ============
+    ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: tableHeaders.length - 1 } },
+    ];
+
+    // ============ FORMAT HEADER ROW ============
+    const headerRowIndex = headerRows.length;
+    for (let col = 0; col < tableHeaders.length; col++) {
+        const cellRef = XLSX.utils.encode_col(col) + (headerRowIndex + 1);
+        if (ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "2563EB" } },
+                alignment: { horizontal: "center", vertical: "center" },
+            };
+        }
+    }
+
+    // ============ COLOR CODE DATA ROWS ============
+    const rgbToHex = (rgb) => {
+        return (
+            "FF" +
+            rgb.map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("").toUpperCase()
+        );
+    };
+
+    tableData.forEach((row, rowIdx) => {
+        const excelRowIndex = headerRowIndex + 1 + rowIdx;
+
+        for (let col = 5; col < tableHeaders.length; col++) {
+            const cellRef = XLSX.utils.encode_col(col) + (excelRowIndex + 1);
+            const scoreValue = row[col];
+            if (scoreValue && scoreValue !== "N/A" && ws[cellRef]) {
+                const numScore = parseFloat(scoreValue);
+                const colors = getScoreColor(numScore);
+
+                ws[cellRef].s = {
+                    fill: { fgColor: { rgb: rgbToHex(colors.fillColor) } },
+                    font: {
+                        color: { rgb: rgbToHex(colors.textColor) },
+                        bold: col === tableHeaders.length - 1
+                    },
+                    alignment: { horizontal: "center" },
+                };
+            }
+        }
+    });
+
+    // ============ CREATE SUMMARY SHEET ============
+    const summaryData = [
+        ["Hygiene Trend Report Summary"],
+        [],
+        ["Metric", "Value"],
+        ["Organization", metadata?.organization || "N/A"],
+        ["Report Period", `${metadata?.date_range?.start || "N/A"} to ${metadata?.date_range?.end || "N/A"}`],
+        ["Total Washrooms", totalWashrooms],
+        ["Total Days", totalDays],
+        ["Overall Average Score", formatScore(overallAvgScore)],
+        [],
+        ["Performance Distribution"],
+        ["Excellent (9+)", excellentCount],
+        ["Good (7-9)", goodCount],
+        ["Average (5-7)", averageCount],
+        ["Poor (<5)", poorCount],
+        [],
+        ["Top & Low Performers"],
+        ["Top Performer", `${topPerformer} (${formatScore(topPerformerScore)})`],
+        ["Low Performer", `${lowPerformer} (${formatScore(lowPerformerScore)})`],
+    ];
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary["!cols"] = [{ wch: 25 }, { wch: 40 }];
+
+    wsSummary["A1"].s = {
+        font: { bold: true, sz: 14, color: { rgb: "1E3A8A" } },
+    };
+
+    // ============ ADD SHEETS TO WORKBOOK ============
+    XLSX.utils.book_append_sheet(wb, ws, "Hygiene Trend");
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    // ============ SAVE FILE ============
+    const fileName = `${reportTitle.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    console.log(`✅ Hygiene Trend Excel exported: ${fileName}`);
+};
+
+
 const exportZoneWiseToPDF = (data, metadata) => {
     const doc = new jsPDF("l", "mm", "a4");
     const reportTitle = metadata.dynamic_report_name || metadata.report_type || "Zone-wise Report";
@@ -996,7 +1512,7 @@ const exportZoneWiseToPDF = (data, metadata) => {
         margin: { left: 14, right: 14 },
     });
 
- //   addLogosToAllPages(doc);
+    //   addLogosToAllPages(doc);
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(fileName);
@@ -1148,7 +1664,7 @@ const exportAiScoringToPDF = (data, metadata) => {
         }
     });
 
-   // addLogosToAllPages(doc);
+    // addLogosToAllPages(doc);
 
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(fileName);
@@ -1626,7 +2142,7 @@ const exportWashroomReportToPDF = (data, metadata) => {
         });
     }
 
- //   addLogosToAllPages(doc);
+    //   addLogosToAllPages(doc);
 
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
@@ -3341,6 +3857,9 @@ export const exportToPDF = (data, metadata, reportType = "zone_wise") => {
     else if (reportType === "cleaner_report") {
         exportCleanerReportToPDF(data, metadata);
     }
+    else if (reportType === "washroom_hygiene_trend") {
+        exportHygieneTrendToPDF(data, metadata);
+    }
     else {
         console.error("Unknown report type:", reportType);
     }
@@ -3369,6 +3888,9 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
     }
     else if (reportType === "cleaner_report") {
         exportCleanerReportToExcel(data, metadata);
+    }
+    else if (reportType === "washroom_hygiene_trend") {
+        exportHygieneTrendToExcel(data, metadata);
     }
     else {
         console.error("Unknown report type:", reportType);

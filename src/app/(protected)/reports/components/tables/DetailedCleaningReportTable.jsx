@@ -5,6 +5,7 @@ import {
     User, Star, TrendingUp, Eye, Clock, CheckCircle,
     AlertTriangle, Camera, Shield, Timer, MapPin
 } from "lucide-react";
+
 import PhotoModal from "./../PhotoModal";
 
 // ✅ Enhanced Time Display with Date + Status
@@ -369,7 +370,7 @@ export default function DetailedCleaningReportTable({ data, metadata }) {
                                     {/* Before Images */}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1 justify-center">
-                                            {task.before_photo?.slice(0, 3).map((url, idx) => (
+                                            {task.before_photo?.slice(0, 2).map((url, idx) => (
                                                 <a
                                                     key={idx}
                                                     href={url}
@@ -400,7 +401,7 @@ export default function DetailedCleaningReportTable({ data, metadata }) {
                                     {/* After Images */}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1 justify-center">
-                                            {task.after_photo?.slice(0, 3).map((url, idx) => (
+                                            {task.after_photo?.slice(0, 2).map((url, idx) => (
                                                 <a
                                                     key={idx}
                                                     href={url}
@@ -527,7 +528,7 @@ export default function DetailedCleaningReportTable({ data, metadata }) {
                                     <div>
                                         <p className="text-xs font-medium text-slate-600 mb-1">Before Images</p>
                                         <div className="flex flex-wrap gap-1">
-                                            {task.before_photo?.slice(0, 5).map((url, idx) => (
+                                            {task.before_photo?.slice(0, 2).map((url, idx) => (
                                                 <a
                                                     key={idx}
                                                     href={url}
@@ -553,7 +554,7 @@ export default function DetailedCleaningReportTable({ data, metadata }) {
                                     <div>
                                         <p className="text-xs font-medium text-slate-600 mb-1">After Images</p>
                                         <div className="flex flex-wrap gap-1">
-                                            {task.after_photo?.slice(0, 5).map((url, idx) => (
+                                            {task.after_photo?.slice(0, 2).map((url, idx) => (
                                                 <a
                                                     key={idx}
                                                     href={url}

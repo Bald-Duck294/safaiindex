@@ -20,7 +20,6 @@ function WashroomsPage() {
   const [minRating, setMinRating] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
-  // ✅ NEW: Individual sort states for each column
   const [nameSortOrder, setNameSortOrder] = useState(null); // null, 'asc', 'desc'
   const [currentScoreSortOrder, setCurrentScoreSortOrder] = useState(null);
   const [avgScoreSortOrder, setAvgScoreSortOrder] = useState(null);
@@ -851,9 +850,30 @@ function WashroomsPage() {
                 </div>
                 <div className="mb-6">
                   <p className="text-sm text-slate-700">
-                    Are you sure you want to {(statusModal.location?.status === true || statusModal.location?.status === null) ? 'disable' : 'enable'} "<strong>{statusModal.location?.name}</strong>"?
+                    Are you sure you want to {(statusModal.location?.status === true || statusModal.location?.status === null)
+                      ? 'disable'
+                      : 'enable'
+                    }
+                    <strong> "{statusModal.location?.name}"</strong>?
                   </p>
+
+                  {(statusModal.location?.status === true || statusModal.location?.status === null) && (
+                    <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
+                      ⚠️ Disabling this washroom will automatically <strong>unassign all cleaners</strong> currently assigned to it.
+                      <br />
+                      They will need to be <strong>manually re-assigned</strong> when the washroom is enabled again.
+                    </p>
+                  )}
+
+                  {statusModal.location?.status === false && (
+                    <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
+                      ℹ️ Enabling this washroom will <strong>not automatically assign cleaners</strong>.
+                      <br />
+                      Please assign cleaners manually after activation.
+                    </p>
+                  )}
                 </div>
+
                 <div className="flex gap-3 justify-end">
                   <button onClick={() => setStatusModal({ open: false, location: null })} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
                   <button
