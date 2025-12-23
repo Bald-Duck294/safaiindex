@@ -98,6 +98,89 @@ const getTaskInfo = (task) => {
 };
 
 export default function DailyCleaningReportTable({ data, metadata }) {
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: 'asc',
+    });
+
+    const handleSort = (key) => {
+        setSortConfig((prev) => {
+            if (prev.key === key) {
+                return {
+                    key,
+                    direction: prev.direction === 'asc' ? 'desc' : 'asc',
+                };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
+
+    const getSortedData = () => {
+        if (!data || !sortConfig.key) return data;
+
+        const sorted = [...data];
+
+        sorted.sort((a, b) => {
+            const dir = sortConfig.direction === 'asc' ? 1 : -1;
+
+            switch (sortConfig.key) {
+                case 'cleaner_name': {
+                    const nameA = (a.cleaner_name || '').toLowerCase();
+                    const nameB = (b.cleaner_name || '').toLowerCase();
+                    if (nameA < nameB) return -1 * dir;
+                    if (nameA > nameB) return 1 * dir;
+                    return 0;
+                }
+                case 'washroom': {
+                    const washroomA = (a.washroom_full_name || '').toLowerCase();
+                    const washroomB = (b.washroom_full_name || '').toLowerCase();
+                    if (washroomA < washroomB) return -1 * dir;
+                    if (washroomA > washroomB) return 1 * dir;
+                    return 0;
+                }
+                case 'start_time': {
+                    const dateA = new Date(a.task_start_time || 0).getTime();
+                    const dateB = new Date(b.task_start_time || 0).getTime();
+                    return (dateA - dateB) * dir;
+                }
+                case 'end_time': {
+                    const dateA = new Date(a.task_end_time || 0).getTime();
+                    const dateB = new Date(b.task_end_time || 0).getTime();
+                    return (dateA - dateB) * dir;
+                }
+                case 'duration': {
+                    const taskInfoA = getTaskInfo(a);
+                    const taskInfoB = getTaskInfo(b);
+                    return (taskInfoA.duration - taskInfoB.duration) * dir;
+                }
+                case 'ai_score': {
+                    const scoreA = Number(a.ai_score) || 0;
+                    const scoreB = Number(b.ai_score) || 0;
+                    return (scoreA - scoreB) * dir;
+                }
+                case 'avg_rating': {
+                    const ratingA = Number(a.washroom_avg_rating) || 0;
+                    const ratingB = Number(b.washroom_avg_rating) || 0;
+                    return (ratingA - ratingB) * dir;
+                }
+                case 'status': {
+                    const taskInfoA = getTaskInfo(a);
+                    const taskInfoB = getTaskInfo(b);
+                    const statusA = taskInfoA.status.toLowerCase();
+                    const statusB = taskInfoB.status.toLowerCase();
+                    if (statusA < statusB) return -1 * dir;
+                    if (statusA > statusB) return 1 * dir;
+                    return 0;
+                }
+                default:
+                    return 0;
+            }
+        });
+
+        return sorted;
+    };
+
+    const sortedData = getSortedData();
 
     const getScoreColor = (score) => {
         if (score >= 8) return "text-green-600 bg-green-50";
@@ -183,20 +266,78 @@ export default function DailyCleaningReportTable({ data, metadata }) {
                 <table className="w-full">
                     <thead className="bg-slate-100 border-b border-slate-200">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Sr. No.</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Cleaner Name</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Location / Washroom</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Start Time</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">End Time</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Duration</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">AI Score</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg. Score/Rating</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                Sr. No.
+                            </th>
+
+                            {/* Sortable: Cleaner Name */}
+                            <th
+                                onClick={() => handleSort('cleaner_name')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Cleaner Name {sortConfig.key === 'cleaner_name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: Location/Washroom */}
+                            <th
+                                onClick={() => handleSort('washroom')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Location / Washroom {sortConfig.key === 'washroom' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: Start Time */}
+                            <th
+                                onClick={() => handleSort('start_time')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Start Time {sortConfig.key === 'start_time' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: End Time */}
+                            <th
+                                onClick={() => handleSort('end_time')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                End Time {sortConfig.key === 'end_time' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: Duration */}
+                            <th
+                                onClick={() => handleSort('duration')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Duration {sortConfig.key === 'duration' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: AI Score */}
+                            <th
+                                onClick={() => handleSort('ai_score')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                AI Score {sortConfig.key === 'ai_score' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: Avg Rating */}
+                            <th
+                                onClick={() => handleSort('avg_rating')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Avg. Score/Rating {sortConfig.key === 'avg_rating' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+
+                            {/* Sortable: Status */}
+                            <th
+                                onClick={() => handleSort('status')}
+                                className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-200"
+                            >
+                                Status {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                        {data && data.length > 0 ? (
-                            data.map((task, index) => {
+                        {sortedData && sortedData.length > 0 ? (
+                            sortedData.map((task, index) => {
                                 const taskInfo = getTaskInfo(task);
 
                                 return (

@@ -7,6 +7,7 @@ import { CompanyApi } from "../../../lib/api/companyApi";
 import toast, { Toaster } from "react-hot-toast";
 import { Plus, Edit, Trash2, Eye, ArrowLeft, Download } from "lucide-react";
 import Loader from '@/components/ui/Loader'; // ✅ Import universal Loader
+import { useCompanyId } from "@/lib/providers/CompanyProvider";
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState([]);
@@ -23,6 +24,7 @@ export default function CompaniesPage() {
   });
 
   const router = useRouter();
+  const { setCompanyId } = useCompanyId();
 
   // ✅ Date formatting function
   const formatDate = (dateString) => {
@@ -233,8 +235,13 @@ export default function CompaniesPage() {
   };
 
   const handleViewCompany = (companyId) => {
-    router.push(`/clientDashboard/${companyId}`);
+    // normalize to string/number once
+    const id = String(companyId);
+
+    setCompanyId(id);
+    router.push(`/clientDashboard/${id}`);
   };
+
 
   if (isLoading || !hasInitialized) {
     return (

@@ -7,8 +7,10 @@ import React, { useState, useRef } from "react";
 
 import {
     User, Star, TrendingUp, Eye, Clock, CheckCircle,
-    AlertTriangle, Camera, Shield, Timer, MapPin
+    AlertTriangle, Camera, Shield, Timer, MapPin,
+    ChevronsUpDown, ChevronUp, ChevronDown
 } from "lucide-react";
+
 import { List } from "react-virtualized";
 import "react-virtualized/styles.css";
 import PhotoModal from "./../PhotoModal";
@@ -163,6 +165,87 @@ export default function DetailedCleaningReportTableVirtualized({ data, metadata 
 
     // ✅ NEW: Control when to use virtualization
     const USE_VIRTUALIZATION = data.length > 15;
+
+    const [sortConfig, setSortConfig] = useState({
+        key: null,        // 'cleaner', 'zone', 'ai_score', 'final_rating', 'status'
+        direction: 'asc', // 'asc' | 'desc'
+    });
+
+
+    const handleSort = (key) => {
+        setSortConfig((prev) => {
+            // toggle direction if same key
+            if (prev.key === key) {
+                return {
+                    key,
+                    direction: prev.direction === 'asc' ? 'desc' : 'asc',
+                };
+            }
+            // new key -> default asc
+            return { key, direction: 'asc' };
+        });
+    };
+
+    const getSortedData = () => {
+        if (!sortConfig.key) return data;
+
+        const sorted = [...data];
+
+        sorted.sort((a, b) => {
+            const dir = sortConfig.direction === 'asc' ? 1 : -1;
+
+            switch (sortConfig.key) {
+                case 'cleaner': {
+                    const nameA = (a.cleaner_name || '').toLowerCase();
+                    const nameB = (b.cleaner_name || '').toLowerCase();
+                    if (nameA < nameB) return -1 * dir;
+                    if (nameA > nameB) return 1 * dir;
+                    return 0;
+                }
+                case 'washroom': {
+                    const zoneA = (a.washroom_name || a.washroom_full_name || '').toLowerCase();
+                    const zoneB = (b.washroom_name || b.washroom_full_name || '').toLowerCase();
+                    if (zoneA < zoneB) return -1 * dir;
+                    if (zoneA > zoneB) return 1 * dir;
+                    return 0;
+                }
+                case 'ai_score': {
+                    const valA = Number(a.ai_score) || 0;
+                    const valB = Number(b.ai_score) || 0;
+                    return (valA - valB) * dir;
+                }
+                case 'final_rating': {
+                    const valA = Number(a.final_rating) || 0;
+                    const valB = Number(b.final_rating) || 0;
+                    return (valA - valB) * dir;
+                }
+                case 'status': {
+                    const statusOrder = (s) => (s === 'completed' ? 1 : 2); // completed first
+                    const valA = statusOrder(a.status);
+                    const valB = statusOrder(b.status);
+                    return (valA - valB) * dir;
+                }
+                default:
+                    return 0;
+            }
+        });
+
+        return sorted;
+    };
+
+    const sortedData = getSortedData();
+    // const USE_VIRTUALIZATION = sortedData.length > 15;
+
+    const SortIcon = ({ columnKey }) => {
+        if (sortConfig.key !== columnKey) {
+            return <ChevronsUpDown className="w-3 h-3 text-slate-400 ml-1" />;
+        }
+        return sortConfig.direction === 'asc' ? (
+            <ChevronUp className="w-3 h-3 text-slate-600 ml-1" />
+        ) : (
+            <ChevronDown className="w-3 h-3 text-slate-600 ml-1" />
+        );
+    };
 
     console.log(data, "Data");
     const getScoreColor = (score) => {
@@ -322,7 +405,7 @@ export default function DetailedCleaningReportTableVirtualized({ data, metadata 
 
     // ✅ NEW: Virtualized Row Wrapper
     const VirtualRow = ({ index, style }) => {
-        const task = data[index];
+        const task = sortedData[index];
         return <TableRow task={task} style={style} />;
     };
 
@@ -396,34 +479,83 @@ export default function DetailedCleaningReportTableVirtualized({ data, metadata 
             <div className="overflow-hidden rounded-lg border border-slate-200 bg-white hidden lg:block">
                 {/* Header - DIV Grid */}
                 <div className="grid grid-cols-9 gap-3 bg-slate-100 border-b border-slate-200 px-4 py-3 text-xs font-semibold text-slate-600 uppercase sticky top-0 z-10">
-                    <div>Cleaner</div>
-                    <div>Zone / Location</div>
+                    {/* Cleaner (sortable) */}
+                    <button
+                        type="button"
+                        onClick={() => handleSort('cleaner')}
+                        className="flex items-center gap-1 text-left hover:text-slate-900"
+                    >
+                        <span>Cleaner</span>
+                        <SortIcon columnKey="cleaner" />
+                    </button>
+
+                    {/* Zone / Location (sortable) */}
+                    <button
+                        type="button"
+                        onClick={() => handleSort('washroom')}
+                        className="flex items-center gap-1 text-left hover:text-slate-900"
+                    >
+                        <span>Zone / Location</span>
+                        <SortIcon columnKey="zone" />
+                    </button>
+
+                    {/* Time Info (not sortable for now) */}
                     <div>Time Info</div>
-                    <div className="text-center">AI Score</div>
-                    <div className="text-center">Avg Rating</div>
-                    <div className="text-center">Status</div>
+
+                    {/* AI Score (sortable) */}
+                    <button
+                        type="button"
+                        onClick={() => handleSort('ai_score')}
+                        className="flex items-center justify-center gap-1 hover:text-slate-900"
+                    >
+                        <span>AI Score</span>
+                        <SortIcon columnKey="ai_score" />
+                    </button>
+
+                    {/* Avg Rating (sortable) */}
+                    <button
+                        type="button"
+                        onClick={() => handleSort('final_rating')}
+                        className="flex items-center justify-center gap-1 hover:text-slate-900"
+                    >
+                        <span>Avg Rating</span>
+                        <SortIcon columnKey="final_rating" />
+                    </button>
+
+                    {/* Status (sortable) */}
+                    <button
+                        type="button"
+                        onClick={() => handleSort('status')}
+                        className="flex items-center justify-center gap-1 hover:text-slate-900"
+                    >
+                        <span>Status</span>
+                        <SortIcon columnKey="status" />
+                    </button>
+
+                    {/* Non-sortable columns */}
                     <div className="text-center">Before</div>
                     <div className="text-center">After</div>
                     <div className="text-center">Actions</div>
                 </div>
 
+
                 {/* Body - Virtualized or Regular */}
-                {data && data.length > 0 ? (
+                {sortedData && sortedData.length > 0 ? (
                     USE_VIRTUALIZATION ? (
                         // ✅ Virtualized List
                         <List
                             width={1200}
                             height={600}
-                            rowCount={data.length}
+                            rowCount={sortedData.length}
                             rowHeight={180}
                             rowRenderer={({ index, key, style }) => (
-                                <TableRow key={key} task={data[index]} style={style} />
+                                <TableRow key={key} task={sortedData[index]} style={style} />
                             )}
                         />
                     ) : (
                         // ✅ Regular rendering
                         <div>
-                            {data.map((task) => (
+                            {sortedData.map((task) => (
                                 <TableRow key={task.task_id} task={task} />
                             ))}
                         </div>
@@ -439,14 +571,136 @@ export default function DetailedCleaningReportTableVirtualized({ data, metadata 
 
             {/* ✅ Mobile Card View - Keep unchanged */}
             <div className="lg:hidden divide-y divide-slate-200 bg-white rounded-lg border border-slate-200">
-                {data && data.length > 0 ? (
-                    data.map((task) => (
+                {sortedData && sortedData.length > 0 ? (
+                    sortedData.map((task) => (
                         <div
                             key={task.task_id}
                             className={`p-4 space-y-3 ${task.is_overdue ? 'bg-red-50' : ''}`}
                         >
-                            {/* ... keep your existing mobile card view code ... */}
-                            {/* (Copy the entire mobile section from your original code) */}
+                            {/* Header */}
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <User className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-slate-800">{task.cleaner_name}</p>
+                                        {task.zone_name && task.zone_name !== "N/A" && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium mt-1">
+                                                <MapPin className="w-3 h-3" />
+                                                {task.zone_name}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* ✅ Mobile Status Badge */}
+                                {task.status === 'completed' ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                                        <CheckCircle className="w-3 h-3" />
+                                        COMPLETED
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
+                                        <Clock className="w-3 h-3" />
+                                        ONGOING
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Location */}
+                            <div>
+                                <p className="text-sm font-medium text-slate-600">Location</p>
+                                <p className="text-sm text-slate-800">{task.washroom_name || task.washroom_full_name}</p>
+                            </div>
+
+                            {/* Time Info */}
+                            <div>
+                                <p className="text-sm font-medium text-slate-600 mb-1">Time Info</p>
+                                <SmartTimeDisplay task={task} />
+                            </div>
+
+                            {/* Scores */}
+                            <div className="flex gap-2">
+                                <div className={`flex-1 px-3 py-2 rounded border ${getScoreColor(task.ai_score)}`}>
+                                    <p className="text-xs font-medium mb-1">AI Score</p>
+                                    <div className="flex items-center gap-1">
+                                        <Star className="w-4 h-4" />
+                                        <span className="font-bold text-lg">{formatScore(task.ai_score)}</span>
+                                    </div>
+                                </div>
+                                <div className={`flex-1 px-3 py-2 rounded border ${getScoreColor(task.final_rating)}`}>
+                                    <p className="text-xs font-medium mb-1">Rating</p>
+                                    <div className="flex items-center gap-1">
+                                        <TrendingUp className="w-4 h-4" />
+                                        <span className="font-bold text-lg">{formatScore(task.final_rating)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Images */}
+                            <div className="space-y-2">
+                                {/* Before Images */}
+                                <div>
+                                    <p className="text-xs font-medium text-slate-600 mb-1">Before Images</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {task.before_photo?.slice(0, 2).map((url, idx) => (
+                                            <a
+                                                key={idx}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-16 h-16 rounded border-2 border-blue-300 overflow-hidden"
+                                            >
+                                                <img
+                                                    src={url}
+                                                    alt={`Before ${idx + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => e.target.style.display = 'none'}
+                                                />
+                                            </a>
+                                        ))}
+                                        {!task.before_photo?.length && (
+                                            <span className="text-xs text-slate-400">No images</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* After Images */}
+                                <div>
+                                    <p className="text-xs font-medium text-slate-600 mb-1">After Images</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {task.after_photo?.slice(0, 2).map((url, idx) => (
+                                            <a
+                                                key={idx}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-16 h-16 rounded border-2 border-green-300 overflow-hidden"
+                                            >
+                                                <img
+                                                    src={url}
+                                                    alt={`After ${idx + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => e.target.style.display = 'none'}
+                                                />
+                                            </a>
+                                        ))}
+                                        {!task.after_photo?.length && (
+                                            <span className="text-xs text-slate-400">No images</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* View All Button */}
+                            <button
+                                onClick={() => openImageModal(task.before_photo, task.after_photo)}
+                                disabled={!task.before_photo?.length && !task.after_photo?.length}
+                                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Eye className="w-4 h-4" />
+                                View All Images
+                            </button>
                         </div>
                     ))
                 ) : (

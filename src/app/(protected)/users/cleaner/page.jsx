@@ -6,7 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { Plus, Edit, Trash2, Users, Search, Eye } from "lucide-react";
 import { UsersApi } from "@/lib/api/usersApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
-
+import { useRouter } from "next/navigation";
 // Role hierarchy definition - lower numbers have higher authority
 const ROLE_HIERARCHY = {
     1: { name: 'Superadmin', level: 1 },
@@ -36,7 +36,7 @@ export default function UsersPage() {
     const currentUser = useSelector((state) => state.auth.user);
     const { companyId } = useCompanyId();
 
-
+    const router = useRouter();
     const user = useSelector((state) => state.auth.user);
     const userRoleId = user?.role_id;
     const isPermitted = userRoleId === 1 || userRoleId === 2;
@@ -286,7 +286,7 @@ export default function UsersPage() {
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
                                                         <button
-                                                            onClick={() => navigateTo(`/users/view/${user.id}?companyId=${companyId}`)}
+                                                            onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
                                                             className="p-2 cursor-pointer text-green-600 bg-green-100 rounded-md hover:bg-green-200 transition"
                                                             title="View User"
                                                         >
@@ -295,7 +295,7 @@ export default function UsersPage() {
                                                         {canManageUser(user) && (
                                                             <>
                                                                 <button
-                                                                    onClick={() => navigateTo(`/users/${user.id}?companyId=${companyId}`)}
+                                                                    onClick={() => router.push(`/users/${user.id}?companyId=${companyId}`)}
                                                                     className=" cursor-pointer p-2 text-sky-600 bg-sky-100 rounded-md hover:bg-sky-200 transition"
                                                                     title="Edit User"
                                                                 >

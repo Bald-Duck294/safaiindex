@@ -4,12 +4,18 @@ import React, { useRef, useState, useEffect } from "react";
 import { MapPin, Star, Calendar, Award, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 export default function WashroomHygieneTrendTable({ data, metadata }) {
-    // ✅ NEW: Scroll state management
+    // ✅ Scroll state management
     const tableContainerRef = useRef(null);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [maxScroll, setMaxScroll] = useState(0);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+
+    // ✅ NEW: Sort state management
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: 'asc',
+    });
 
     const formatScore = (score) => {
         if (!score && score !== 0) return "-";
@@ -25,7 +31,66 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
         return "bg-red-100 text-red-800 font-semibold";
     };
 
-    // ✅ NEW: Update scroll state
+    // ✅ NEW: Sort handler
+    const handleSort = (key) => {
+        setSortConfig((prev) => {
+            if (prev.key === key) {
+                return {
+                    key,
+                    direction: prev.direction === 'asc' ? 'desc' : 'asc',
+                };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
+
+    // ✅ NEW: Get sorted data
+    const getSortedData = () => {
+        if (!data || !sortConfig.key) return data;
+
+        const sorted = [...data];
+
+        sorted.sort((a, b) => {
+            const dir = sortConfig.direction === 'asc' ? 1 : -1;
+
+            switch (sortConfig.key) {
+                case 'washroom_name': {
+                    const nameA = (a.washroom_name || '').toLowerCase();
+                    const nameB = (b.washroom_name || '').toLowerCase();
+                    if (nameA < nameB) return -1 * dir;
+                    if (nameA > nameB) return 1 * dir;
+                    return 0;
+                }
+                case 'zone_type': {
+                    const zoneA = (a.zone_type || '').toLowerCase();
+                    const zoneB = (b.zone_type || '').toLowerCase();
+                    if (zoneA < zoneB) return -1 * dir;
+                    if (zoneA > zoneB) return 1 * dir;
+                    return 0;
+                }
+                case 'city': {
+                    const cityA = (a.city || '').toLowerCase();
+                    const cityB = (b.city || '').toLowerCase();
+                    if (cityA < cityB) return -1 * dir;
+                    if (cityA > cityB) return 1 * dir;
+                    return 0;
+                }
+                case 'average_score': {
+                    const scoreA = Number(a.average_score) || 0;
+                    const scoreB = Number(b.average_score) || 0;
+                    return (scoreA - scoreB) * dir;
+                }
+                default:
+                    return 0;
+            }
+        });
+
+        return sorted;
+    };
+
+    const sortedData = getSortedData();
+
+    // ✅ Update scroll state
     const updateScrollState = () => {
         if (tableContainerRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = tableContainerRef.current;
@@ -36,14 +101,14 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
         }
     };
 
-    // ✅ NEW: Setup scroll listener
+    // ✅ Setup scroll listener
     useEffect(() => {
         updateScrollState();
         window.addEventListener("resize", updateScrollState);
         return () => window.removeEventListener("resize", updateScrollState);
     }, [data]);
 
-    // ✅ NEW: Scroll functions
+    // ✅ Scroll functions
     const scrollTo = (direction) => {
         if (tableContainerRef.current) {
             const scrollAmount = direction === "left" ? -300 : 300;
@@ -103,8 +168,8 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                         <div>
                             <p className="text-sm text-amber-600 font-medium">Top Performer</p>
                             <p className="text-sm font-bold text-amber-900 mt-1 truncate">
-                                {data?.length > 0
-                                    ? [...data].sort((a, b) => b.average_score - a.average_score)[0]?.washroom_name?.substring(0, 20)
+                                {sortedData?.length > 0
+                                    ? [...sortedData].sort((a, b) => b.average_score - a.average_score)[0]?.washroom_name?.substring(0, 20)
                                     : "N/A"}
                             </p>
                         </div>
@@ -113,9 +178,9 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                 </div>
             </div>
 
-            {/* ✅ NEW: Desktop Table with Scroll Controls */}
+            {/* ✅ Desktop Table with Scroll Controls */}
             <div className="hidden lg:block">
-                {/* ✅ NEW: Scroll Hint Banner */}
+                {/* ✅ Scroll Hint Banner */}
                 {canScrollRight && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -133,7 +198,7 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                     </div>
                 )}
 
-                {/* ✅ NEW: Scroll Control Buttons & Progress Bar */}
+                {/* ✅ Scroll Control Buttons & Progress Bar */}
                 <div className="flex items-center justify-between mb-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2">
                         <button
@@ -154,7 +219,7 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                         </button>
                     </div>
 
-                    {/* ✅ NEW: Scroll Progress Bar */}
+                    {/* ✅ Scroll Progress Bar */}
                     <div className="flex-1 mx-4">
                         <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
                             <div
@@ -193,8 +258,8 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                     </div>
                 </div>
 
-                {/* ✅ UPDATED: Table with ref and enhanced scrollbar */}
-                <div 
+                {/* ✅ Table with sorting */}
+                <div
                     ref={tableContainerRef}
                     onScroll={updateScrollState}
                     className="overflow-x-auto rounded-lg border border-slate-200 bg-white scroll-smooth"
@@ -203,7 +268,7 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                         scrollbarColor: "#cbd5e1 #f1f5f9"
                     }}
                 >
-                    {/* ✅ NEW: Custom Scrollbar Styles */}
+                    {/* ✅ Custom Scrollbar Styles */}
                     <style jsx>{`
                         div::-webkit-scrollbar {
                             height: 12px;
@@ -225,11 +290,31 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                     <table className="w-full">
                         <thead className="bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
                             <tr>
-                                {/* ✅ UPDATED: Added shadows to sticky columns */}
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase sticky left-0 bg-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Sr No</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase sticky left-[60px] bg-slate-100 min-w-[200px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Washroom</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Zone</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Cleaners</th>
+                                {/* Non-sortable: Sr No */}
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase sticky left-0 bg-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                    Sr No
+                                </th>
+
+                                {/* Sortable: Washroom */}
+                                <th
+                                    onClick={() => handleSort('washroom_name')}
+                                    className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase sticky left-[60px] bg-slate-100 min-w-[200px] shadow-[2px_0_5px_rgba(0,0,0,0.05)] cursor-pointer hover:bg-slate-200"
+                                >
+                                    Washroom {sortConfig.key === 'washroom_name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                </th>
+
+                                {/* Sortable: Zone */}
+                                <th
+                                    onClick={() => handleSort('zone_type')}
+                                    className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase cursor-pointer hover:bg-slate-200"
+                                >
+                                    Zone {sortConfig.key === 'zone_type' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                </th>
+
+                                {/* Non-sortable: Cleaners */}
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                                    Cleaners
+                                </th>
 
                                 {metadata?.date_columns?.map((date, idx) => (
                                     <th key={idx} className="px-3 py-3 text-center text-xs font-semibold text-slate-600 uppercase min-w-[80px]">
@@ -237,14 +322,20 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                                     </th>
                                 ))}
 
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase sticky right-0 bg-slate-100 shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">Average</th>
+                                {/* Sortable: Average */}
+                                <th
+                                    onClick={() => handleSort('average_score')}
+                                    className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase sticky right-0 bg-slate-100 shadow-[-2px_0_5px_rgba(0,0,0,0.05)] cursor-pointer hover:bg-slate-200"
+                                >
+                                    Average {sortConfig.key === 'average_score' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {data?.map((washroom) => (
+                            {sortedData?.map((washroom, index) => (
                                 <tr key={washroom.washroom_id} className="hover:bg-slate-50 border-b border-slate-100">
-                                    {/* ✅ UPDATED: Added shadows to sticky cells */}
-                                    <td className="px-4 py-3 sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.03)]">{washroom.sr_no}</td>
+                                    {/* ✅ UPDATED: Use index from sorted data */}
+                                    <td className="px-4 py-3 sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.03)]">{index + 1}</td>
                                     <td className="px-4 py-3 sticky left-[60px] bg-white shadow-[2px_0_5px_rgba(0,0,0,0.03)]">
                                         <p className="font-medium text-sm">{washroom.washroom_name}</p>
                                         <p className="text-xs text-slate-500">{washroom.city}</p>
@@ -281,7 +372,7 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
 
             {/* Mobile View */}
             <div className="lg:hidden space-y-4">
-                {data?.map((washroom) => (
+                {sortedData?.map((washroom) => (
                     <div key={washroom.washroom_id} className="bg-white rounded-lg border p-4">
                         <div className="flex justify-between mb-2">
                             <div>
@@ -294,7 +385,7 @@ export default function WashroomHygieneTrendTable({ data, metadata }) {
                             </div>
                         </div>
 
-                        {/* ✅ NEW: Mobile Scroll Hint */}
+                        {/* ✅ Mobile Scroll Hint */}
                         <div className="bg-blue-50 rounded p-2 mb-2 flex items-center gap-2">
                             <ChevronRight className="w-4 h-4 text-blue-600 animate-bounce" />
                             <p className="text-xs text-blue-700">Swipe to see all dates →</p>

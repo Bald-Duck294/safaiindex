@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import { UsersApi } from "@/lib/api/usersApi";
 import LocationsApi from "@/lib/api/LocationApi";
 import { AssignmentsApi } from "@/lib/api/assignmentsApi";
@@ -49,6 +50,7 @@ const AddAssignmentPage = () => {
 
   const userDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
+  const router = useRouter();
 
   // ✅ UPDATED: Filter out role_id 1 and 2, then get unique roles
   const assignableUsers = allUsers.filter(u => u.role_id !== 1 && u.role_id !== 2);
@@ -365,7 +367,7 @@ const AddAssignmentPage = () => {
         setLocationSearchTerm("");
 
         setTimeout(() => {
-          window.location.href = `/cleaner-assignments?companyId=${companyId}`;
+          router.push(`/cleaner-assignments?companyId=${companyId}`);
         }, 1000);
       } else if (successCount > 0 && failureCount > 0) {
         toast(

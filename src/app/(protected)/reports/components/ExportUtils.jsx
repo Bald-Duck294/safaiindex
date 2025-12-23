@@ -939,7 +939,7 @@ const getScoreColor = (score) => {
 
 const exportHygieneTrendToPDF = (data, metadata) => {
     const reportTitle = metadata?.dynamic_report_name || metadata?.report_type || "Hygiene Trend Report";
-    const doc = new jsPDF("l", "mm", "a4"); 
+    const doc = new jsPDF("l", "mm", "a4");
     let currentY = 25;
 
     // ============ HEADER ============

@@ -151,6 +151,14 @@ const NoDataModal = ({ isOpen, onClose, filters }) => {
   );
 };
 
+const toastInfo = (message) => {
+  toast(message, {
+    icon: 'ℹ️',
+    style: {
+
+    }
+  })
+}
 export default function ReportsPage() {
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
@@ -225,7 +233,21 @@ export default function ReportsPage() {
     }
   }, [selectedLocation, companyId]);
 
-  // ✅ Fetch functions
+  useEffect(() => {
+    if (selectedReportType === "washroom_hygiene_trend") {
+      const maxAllowedEndDate = getMaxEndDate(startDate);
+
+      if (!endDate || endDate > maxAllowedEndDate) {
+        setEndDate(maxAllowedEndDate);
+        toast.success("End date set to maximum allowed (31 days)", {
+          duration: 2000,
+        });
+      }
+    }
+  }, [selectedReportType, startDate]);
+
+
+  //  Fetch functions
   const fetchZones = async () => {
     try {
       const response = await ReportsApi.getAvailableZones(companyId);
@@ -387,6 +409,10 @@ export default function ReportsPage() {
         ...(endDate && { end_date: endDate }),
       };
 
+      let detailed_cleaning_params = {
+        company_id: companyId,
+        ...(detailedReportDate && { detailed_report_date: detailedReportDate })
+      }
       if (selectedReportType === "daily_task") {
         const today = new Date().toISOString().split('T')[0];
         if (!effectiveStartDate) effectiveStartDate = today;
@@ -418,12 +444,14 @@ export default function ReportsPage() {
         params = {
           ...params,
           ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+          ...(selectedLocation && { location_id: selectedLocation }),
           ...(statusFilter !== "all" && { status_filter: statusFilter }),
         };
       }
       else if (selectedReportType === "detailed_cleaning") {
         params = {
-          ...params,
+          ...detailed_cleaning_params,
+          // ...(detailedReportDate && { detailed_report_date: detailedReportDate }),
           ...(selectedCleaner && { cleaner_id: selectedCleaner }),
           ...(statusFilter !== "all" && { status_filter: statusFilter }),
           ...(selectedLocation && { location_id: selectedLocation }),
@@ -491,34 +519,70 @@ export default function ReportsPage() {
   };
 
   const handleStartDateChange = (e) => {
-    const newStartDte = e.target.value;
+    const newStartDate = e.target.value;
 
-    if (endDate && newStartDte > endDate) {
-      setEndDate(newStartDte);
-      toast.info("End date adjusted to match start date");
+    // ✅ Check if start date is in future
+    if (newStartDate > todayDate) {
+      toast.error("Start date cannot be in the future");
       return;
     }
 
-    setStartDate(newStartDte);
+    setStartDate(newStartDate);
 
-  }
+    // ✅ Special handling for Washroom Hygiene Trend (31-day limit)
+    if (selectedReportType === "washroom_hygiene_trend") {
+      const maxAllowedEndDate = getMaxEndDate(newStartDate);
+
+      // If current end date exceeds 31-day limit, adjust it
+      if (endDate && endDate > maxAllowedEndDate) {
+        setEndDate(maxAllowedEndDate);
+        toast
+
+      }
+
+      // If end date is before new start date, set it to start date
+      if (endDate && endDate < newStartDate) {
+        setEndDate(newStartDate);
+        toast.error("End date adjusted to match start date");
+      }
+    } else {
+      // ✅ For other reports, only adjust if end date is before start date
+      if (endDate && newStartDate > endDate) {
+        setEndDate(newStartDate);
+        toast.error("End date adjusted to match start date");
+      }
+    }
+  };
+
 
   const handleEndDateChange = (e) => {
-    const newDate = e.target.value;
+    const newEndDate = e.target.value;
 
-    // If end date is smaller than start date
+    // ✅ Check if end date is in future
+    if (newEndDate > todayDate) {
+      toast.error("End date cannot be in the future");
+      return;
+    }
+
+    // ✅ Check if end date is before start date
     if (startDate && newEndDate < startDate) {
       toast.error("End date cannot be before start date");
       return;
     }
 
-    // end date should not be bigger than start date
-    if (endDate > todayDate) {
-      toast.error("End date cannot be in the future");
-      // setEndDate(todayDate)
-      return;
+    // ✅ Special handling for Washroom Hygiene Trend (31-day limit)
+    if (selectedReportType === "washroom_hygiene_trend") {
+      const maxAllowedEndDate = getMaxEndDate(startDate);
+
+      if (newEndDate > maxAllowedEndDate) {
+        toast.error("Date range cannot exceed 31 days");
+        return;
+      }
     }
-  }
+
+    setEndDate(newEndDate);
+  };
+
 
   const handleDetailedReportDateChange = (e) => {
     const newDate = e.target.value;
@@ -531,6 +595,23 @@ export default function ReportsPage() {
 
     setDetailedReportDate(newDate);
   }
+
+  const getMaxEndDate = (startDate) => {
+
+    console.log('in get max  end date')
+    if (!startDate) return new Date().toISOString().split("T")[0];
+
+    const maxDate = new Date(startDate);
+    maxDate.setDate(maxDate.getDate() + 31);
+
+    const today = new Date();
+
+    return maxDate > today
+      ? today.toISOString().split("T")[0]
+      : maxDate.toISOString().split("T")[0];
+  }
+
+
   return (
     <>
       <Toaster position="top-right" />
@@ -729,20 +810,36 @@ export default function ReportsPage() {
                   </div>
 
                   {/* End Date */}
+                  {/* End Date */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       <Calendar className="w-4 h-4 inline mr-1" />
                       End Date
+                      {selectedReportType === "washroom_hygiene_trend" && (
+                        <span className="text-xs text-amber-600 ml-2">
+                          (Max 31 days from start)
+                        </span>
+                      )}
                     </label>
                     <input
                       type="date"
                       value={endDate}
                       min={startDate}
-                      max={todayDate}
+                      max={
+                        selectedReportType === "washroom_hygiene_trend"
+                          ? getMaxEndDate(startDate)  // ✅ Dynamic 31-day limit
+                          : todayDate                  // ✅ Normal limit (today)
+                      }
                       onChange={handleEndDateChange}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
+                    {selectedReportType === "washroom_hygiene_trend" && startDate && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Max date: {getMaxEndDate(startDate)}
+                      </p>
+                    )}
                   </div>
+
                 </>
               )}
 

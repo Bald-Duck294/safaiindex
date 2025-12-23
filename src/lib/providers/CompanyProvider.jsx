@@ -1,8 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { createContext, useContext, useEffect, useState, Suspense } from 'react';
+import { useSelector } from 'react-redux';
+import { usePathname } from 'next/navigation';
+
+
+
+const STORAGE_KEY = "saaf_selected_company_id";
 
 const CompanyContext = createContext({
     companyId: null,
@@ -11,36 +15,71 @@ const CompanyContext = createContext({
 });
 
 function CompanyProviderImpl({ children }) {
-    const [companyId, setCompanyId] = useState(null);
+
+    const { user } = useSelector((state) => state.auth);
     const pathname = usePathname();
-    const searchParams = useSearchParams();
+    const [selectedCompanyId, setSelectedCompanyId] = useState(() => {
+        if (typeof window === "undefined") return null;
+        try {
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            return stored || null;
+        } catch {
+            return null;
+        }
+    });
+
+
+    const safeSetSelectedCompanyId = (id) => {
+        setSelectedCompanyId(id);
+        if (typeof window === "undefined") return;
+        if (id) {
+            window.localStorage.setItem(STORAGE_KEY, String(id));
+        } else {
+            window.localStorage.removeItem(STORAGE_KEY);
+        }
+    };
+
+
+    const globalRoutes = [
+        '/dashboard',
+        '/companies',
+        '/role/superadmin',
+        '/role/admin',
+        '/role/supervisor',
+        '/score-management',
+        '/registered-users'
+    ];
 
     useEffect(() => {
-        const getCompanyId = () => {
-            // Method 1: From clientDashboard route
-            if (pathname.startsWith('/clientDashboard/')) {
-                const segments = pathname.split('/');
-                return segments[2] || null;
+        if (user?.role_id === 1) {
+            const isGlobalRoute = globalRoutes.some((route) => pathname.startsWith(route));
+            if (isGlobalRoute) {
+                safeSetSelectedCompanyId(null);
             }
+        }
+    }, [pathname, user?.role_id]);
 
-            // Method 2: From search parameters
-            const paramCompanyId = searchParams.get('companyId');
-            if (paramCompanyId && paramCompanyId !== 'null' && paramCompanyId !== 'undefined') {
-                return paramCompanyId;
-            }
 
-            return null;
-        };
 
-        const newCompanyId = getCompanyId();
-        // console.log("company_id from context", newCompanyId);
-        setCompanyId(newCompanyId);
-    }, [pathname, searchParams]);
+    const companyId = (() => {
+        // non-superadmin: always their assigned company
+        if (user?.role_id !== 1 && user?.company_id) {
+            return String(user.company_id);
+        }
+
+        // superadmin: use selected company (can be null)
+        if (user?.role_id === 1) {
+            return selectedCompanyId || null;
+        }
+
+        return null;
+    })();
+
 
     const value = {
         companyId,
         hasCompanyContext: !!companyId,
-        setCompanyId
+        setCompanyId: safeSetSelectedCompanyId // Only superadmin should call this
     };
 
     return (
@@ -50,6 +89,8 @@ function CompanyProviderImpl({ children }) {
     );
 }
 
+
+// Export the wrapper component with Suspense
 export function CompanyProvider({ children }) {
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -60,6 +101,7 @@ export function CompanyProvider({ children }) {
     );
 }
 
+// Export the hook to use the context
 export function useCompanyId() {
     const context = useContext(CompanyContext);
     if (!context) {

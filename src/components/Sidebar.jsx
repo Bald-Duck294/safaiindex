@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { logout } from "../store/slices/authSlice.js";
 
 import {
@@ -15,11 +15,8 @@ import {
   Users,
   UserCog,
   PlusCircle,
-  Bath,
   Toilet,
   ClipboardList,
-  CheckCircle,
-  ClipboardCheck,
   UserCheck,
   ChevronLeft,
   ChevronRight,
@@ -32,104 +29,105 @@ import {
   Building,
   MessageSquare,
   FileText,
-  CalendarClock
+  ShieldCheck,
+  Award
 } from "lucide-react";
 import Link from "next/link";
-import toast from "react-hot-toast";
+import { useCompanyId } from "@/lib/providers/CompanyProvider.jsx";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobile, setIsMobile] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); // ⭐ NEW: Track hover state
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  const getRoleText = () => {
-    if (!user || !user.role_id) {
-      return "User";
-    }
-    switch (user.role_id) {
-      case 1:
-        return "Super Admin";
-      case 2:
-        return "Admin";
-      case 3:
-        return "Supervisor";
-      default:
-        return "User";
-    }
-  };
-
-  const userRole = getRoleText();
-
-  const getCompanyContext = () => {
-    if (pathname.startsWith('/clientDashboard/')) {
-      const segments = pathname.split('/');
-      return segments[2];
-    }
-
-    const companyId = searchParams.get('companyId');
-    if (companyId) {
-      return companyId;
-    }
-
-    return null;
-  };
-
-  const companyId = getCompanyContext();
+  const { companyId, hasCompanyContext } = useCompanyId();
   const isSuperadmin = user?.role_id === 1;
   const isOnMainDashboard = pathname === '/dashboard';
-  const hasCompanyContext = !!companyId;
 
-  // ✅ NEW: Function to check if a route is active
+  const getRoleText = () => {
+    if (!user || !user.role_id) return "User";
+    switch (user.role_id) {
+      case 1: return "Super Admin";
+      case 2: return "Admin";
+      case 3: return "Supervisor";
+      default: return "User";
+    }
+  };
+
   const isRouteActive = (href) => {
     if (!href) return false;
-
-    // Exact match for dashboard routes
     if (href === '/dashboard' && pathname === '/dashboard') return true;
     if (href.startsWith('/clientDashboard/') && pathname.startsWith('/clientDashboard/')) return true;
-
-    // For routes with query params, match the base path
     const [basePath] = href.split('?');
     return pathname.startsWith(basePath);
   };
 
-  // ✅ NEW: Function to check if any child route is active
   const isDropdownActive = (children) => {
     if (!children) return false;
     return children.some(child => isRouteActive(child.href));
   };
 
-  // ✅ NEW: Auto-expand dropdown if child route is active
-  useEffect(() => {
-    const newOpenDropdowns = {};
-
-    menuItems.forEach(item => {
-      if (item.hasDropdown && item.children) {
-        const isActive = isDropdownActive(item.children);
-        if (isActive) {
-          newOpenDropdowns[item.key] = true;
-        }
-      }
-    });
-
-    setOpenDropdowns(prev => ({ ...prev, ...newOpenDropdowns }));
-  }, [pathname, searchParams]); // Re-run when route changes
-
   const getMenuItems = () => {
-    // ... your existing getMenuItems logic remains exactly the same ...
-    if (isSuperadmin && isOnMainDashboard && !hasCompanyContext) {
+    if (isSuperadmin && !hasCompanyContext) {
       return [
-        { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }
+        {
+          icon: LayoutDashboard,
+          label: "Dashboard",
+          href: "/dashboard"
+        },
+        {
+          icon: Building2,
+          label: "Organizations",
+          href: "/companies"
+        },
+        {
+          icon: Award,
+          label: "Score Management",
+          href: "/score-management"
+        },
+        {
+          icon: ShieldCheck,
+          label: "Role Management",
+          hasDropdown: true,
+          key: "role-management",
+          children: [
+            {
+              icon: List,
+              label: "Super Admins",
+              href: "/role/superadmin",
+            },
+            {
+              icon: List,
+              label: "Admins",
+              href: "/role/admin",
+            },
+            {
+              icon: List,
+              label: "Supervisors",
+              href: "/role/supervisor",
+            },
+            {
+              icon: List,
+              label: "Cleaners",
+              href: "/role/cleaner",
+            },
+          ],
+        },
       ];
     }
 
-    if (hasCompanyContext && user?.role_id === 1) {
+    if (hasCompanyContext && isSuperadmin) {
       return [
-        { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+        {
+          icon: LayoutDashboard,
+          label: "Main Dashboard",
+          href: "/dashboard"
+        },
         {
           icon: Building2,
           label: "Client Dashboard",
@@ -247,7 +245,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
       ];
     }
-    else if (hasCompanyContext && user?.role_id === 2) {
+
+    if (hasCompanyContext && user?.role_id === 2) {
       return [
         {
           icon: Building,
@@ -331,11 +330,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           label: "Locate On Map",
           href: `/locations?companyId=${companyId}`
         },
-        // {
-        //   icon: List,
-        //   label: "shift",
-        //   href: `/shift?companyId=${companyId}`
-        // },
         {
           icon: ClipboardList,
           label: "Cleaner Activity",
@@ -353,7 +347,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         },
       ];
     }
-    else if (hasCompanyContext && user?.role_id === 3) {
+
+    if (hasCompanyContext && user?.role_id === 3) {
       return [
         {
           icon: Building,
@@ -445,6 +440,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const menuItems = filterMenuByPermissions(getMenuItems());
 
   useEffect(() => {
+    const newOpenDropdowns = {};
+
+    menuItems.forEach(item => {
+      if (item.hasDropdown && item.children) {
+        const isActive = isDropdownActive(item.children);
+        if (isActive) {
+          newOpenDropdowns[item.key] = true;
+        }
+      }
+    });
+
+    setOpenDropdowns(prev => ({ ...prev, ...newOpenDropdowns }));
+  }, [pathname, companyId]);
+
+  useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
@@ -458,7 +468,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const toggleDropdown = (key) => {
-    if (!sidebarOpen) {
+    if (!sidebarOpen && !isHovered) { // ⭐ UPDATED: Check hover state
       setSidebarOpen(true);
       setTimeout(() => {
         setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -473,19 +483,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     router.push("/login");
   };
 
-  const getInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  // ⭐ NEW: Hover handlers (desktop only)
+  const handleMouseEnter = () => {
+    if (!isMobile) {
+      setIsHovered(true);
+      setSidebarOpen(true);
+    }
   };
 
-  // ✅ UPDATED: Base link classes
+  const handleMouseLeave = () => {
+    if (!isMobile) {
+      setIsHovered(false);
+      setSidebarOpen(false);
+    }
+  };
+
   const commonLinkClasses = "flex items-center px-3 py-3 rounded-md cursor-pointer relative overflow-hidden transition-all duration-200";
 
-  // ✅ NEW: Function to get active link classes
   const getActiveLinkClasses = (href, isChild = false) => {
     const isActive = isRouteActive(href);
 
@@ -502,7 +516,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       }`;
   };
 
-  // ✅ NEW: Function to get dropdown button classes
   const getDropdownButtonClasses = (item) => {
     const isActive = isDropdownActive(item.children);
     const isOpen = openDropdowns[item.key];
@@ -530,9 +543,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - ⭐ ADDED: onMouseEnter and onMouseLeave */}
       <div
-        className={`fixed lg:static top-0 left-0 h-full flex flex-col bg-slate-900 text-gray-200 shadow-2xl transition-all duration-300 z-50
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`fixed lg:static top-0 left-0 h-full flex flex-col bg-slate-900 text-gray-200 shadow-2xl transition-all duration-300 ease-in-out z-50
           ${sidebarOpen ? "w-64" : "w-16"}
           ${isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"}
         `}
@@ -540,7 +555,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800 min-h-[60px]">
           {sidebarOpen && (
-            <h1 className="text-lg font-semibold text-white tracking-wide">
+            <h1 className="text-lg font-semibold text-white tracking-wide transition-opacity duration-300">
               Dashboard
             </h1>
           )}
@@ -559,11 +574,19 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 mt-2"
+        <nav
+          className="flex-1 overflow-y-auto p-3 mt-2"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#475569 #1e293b'
-          }}>
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+        >
+          <style jsx>{`
+            nav::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+
           <ul className="space-y-1">
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
@@ -593,15 +616,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         </>
                       )}
                       {!sidebarOpen && (
-                        <div className="absolute left-16 bg-slate-800 text-white px-2 py-1 rounded-md text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap">
+                        <div className="absolute left-16 bg-slate-800 text-white px-2 py-1 rounded-md text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50">
                           {item.label}
                         </div>
                       )}
                     </button>
                     {sidebarOpen && (
                       <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${isDropdownOpen ? "max-h-40" : "max-h-0"
-                          }`}
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          isDropdownOpen ? "max-h-60" : "max-h-0"
+                        }`}
                       >
                         <ul className="ml-6 mt-1 space-y-1 border-l border-slate-700 pl-3">
                           {item.children?.map((child, childIndex) => {
@@ -648,7 +672,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       <span className="ml-3 font-medium">{item.label}</span>
                     )}
                     {!sidebarOpen && (
-                      <div className="absolute left-16 bg-slate-800 text-white px-2 py-1 rounded-md text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap">
+                      <div className="absolute left-16 bg-slate-800 text-white px-2 py-1 rounded-md text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50">
                         {item.label}
                       </div>
                     )}

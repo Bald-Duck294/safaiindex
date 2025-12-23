@@ -130,6 +130,7 @@ export default function ClientDashboard() {
       return;
     }
 
+    
     const fetchDashboardData = async () => {
       const todayDate = getTodayDate();
       const { startOfDay } = getTodayDateRange();

@@ -62,7 +62,7 @@ const MapView = () => {
     }
 
     fetchLocations();
-  }, [fetchLocations , companyId]);
+  }, [fetchLocations, companyId]);
 
   // Handle search input changes
   const handleInputChange = (e) => {
