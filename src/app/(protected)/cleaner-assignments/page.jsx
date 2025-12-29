@@ -9,7 +9,19 @@ import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import Loader from '@/components/ui/Loader';
 import { Search, Filter, UserCheck, MapPin, Trash2, Edit, Plus, X } from "lucide-react";
 
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
+
 export default function AssignmentListPage() {
+
+  useRequirePermission(MODULES.ASSIGNMENTS);
+
+  const { canAdd, canUpdate, canDelete } = usePermissions();
+  const canAddAssignment = canAdd(MODULES.ASSIGNMENTS);
+  const canEditAssignment = canUpdate(MODULES.ASSIGNMENTS);
+  const canDeleteAssignment = canDelete(MODULES.ASSIGNMENTS);
+
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -74,7 +86,63 @@ export default function AssignmentListPage() {
     }
   };
 
+  // const handleDelete = async (id) => {
+  //   if (!confirm("Are you sure you want to delete this assignment?")) return;
+
+  //   setDeleting(id);
+  //   try {
+  //     const res = await AssignmentsApi.deleteAssignment(id);
+  //     if (res.success) {
+  //       toast.success("Assignment deleted!");
+  //       fetchAssignments();
+  //     } else {
+  //       toast.error(res.error);
+  //     }
+  //   } catch (error) {
+  //     console.error('Delete assignment error:', error);
+  //     toast.error('Failed to delete assignment');
+  //   } finally {
+  //     setDeleting(null);
+  //   }
+  // };
+
+  // ✅ NEW: Handle status toggle
+  // const handleStatusToggle = async (assignment) => {
+  //   const newStatus = assignment.status === "assigned" ? "unassigned" : "assigned";
+
+  //   if (!confirm(`Change status from "${assignment.status}" to "${newStatus}"?`)) {
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await AssignmentsApi.updateAssignment(assignment.id, {
+  //       status: newStatus,
+  //       cleaner_user_id: assignment.cleaner_user_id,
+  //       company_id: assignment.company_id || companyId,
+  //       location_id: assignment.location_id,
+  //       role_id: assignment.role_id,
+  //     });
+
+  //     if (res.success) {
+  //       toast.success(`Status changed to ${newStatus}!`);
+  //       fetchAssignments(); // Refresh the list
+  //     } else {
+  //       toast.error(res.error || "Failed to update status");
+  //     }
+  //   } catch (error) {
+  //     console.error("Status update error:", error);
+  //     toast.error("Failed to update status");
+  //   }
+  // };
+
+
+
   const handleDelete = async (id) => {
+    if (!canDeleteAssignment) {
+      toast.error("You don't have permission to delete assignments");
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this assignment?")) return;
 
     setDeleting(id);
@@ -94,8 +162,12 @@ export default function AssignmentListPage() {
     }
   };
 
-  // ✅ NEW: Handle status toggle
   const handleStatusToggle = async (assignment) => {
+    if (!canEditAssignment) {
+      toast.error("You don't have permission to update assignments");
+      return;
+    }
+
     const newStatus = assignment.status === "assigned" ? "unassigned" : "assigned";
 
     if (!confirm(`Change status from "${assignment.status}" to "${newStatus}"?`)) {
@@ -113,7 +185,7 @@ export default function AssignmentListPage() {
 
       if (res.success) {
         toast.success(`Status changed to ${newStatus}!`);
-        fetchAssignments(); // Refresh the list
+        fetchAssignments();
       } else {
         toast.error(res.error || "Failed to update status");
       }
@@ -233,13 +305,15 @@ export default function AssignmentListPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Cleaner Assignments</h1>
             <p className="text-sm text-slate-500 mt-1">Manage your cleaner-location mappings</p>
           </div>
-          <Link
-            href={`/cleaner-assignments/add?companyId=${companyId}`}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg w-full sm:w-auto justify-center"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Assignment</span>
-          </Link>
+          {canAddAssignment && (
+            <Link
+              href={`/cleaner-assignments/add?companyId=${companyId}`}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg w-full sm:w-auto justify-center"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Assignment</span>
+            </Link>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -618,14 +692,18 @@ export default function AssignmentListPage() {
                         <td className="px-4 py-4">
                           <button
                             onClick={() => handleStatusToggle(assignment)}
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer ${assignment.status === "assigned"
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
-                              : assignment.status === "unassigned"
-                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                            disabled={!canEditAssignment}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md ${canEditAssignment ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                              } ${assignment.status === "assigned"
+                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                : assignment.status === "unassigned"
+                                  ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                               }`}
-                            title="Click to toggle status"
+                            title={canEditAssignment ? "Click to toggle status" : "No permission to update"}
                           >
+
+
                             {assignment.status}
                             <svg
                               className="w-3 h-3 ml-1"
@@ -657,7 +735,7 @@ export default function AssignmentListPage() {
                             >
                               <Edit className="w-4 h-4" />
                             </Link> */}
-                            <button
+                            {/* <button
                               onClick={() => handleDelete(assignment.id)}
                               disabled={deleting === assignment.id}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
@@ -668,7 +746,22 @@ export default function AssignmentListPage() {
                               ) : (
                                 <Trash2 className="w-4 h-4" />
                               )}
-                            </button>
+                            </button> */}
+
+                            {canDeleteAssignment && (
+                              <button
+                                onClick={() => handleDelete(assignment.id)}
+                                disabled={deleting === assignment.id}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Delete"
+                              >
+                                {deleting === assignment.id ? (
+                                  <Loader size="small" color="#dc2626" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -699,32 +792,26 @@ export default function AssignmentListPage() {
                         </p>
                       </div>
                     </div>
+
                     <button
                       onClick={() => handleStatusToggle(assignment)}
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer ${assignment.status === "assigned"
-                        ? "bg-green-100 text-green-800 hover:bg-green-200"
-                        : assignment.status === "unassigned"
-                          ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                      disabled={!canEditAssignment}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all hover:scale-105 hover:shadow-md ${canEditAssignment ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                        } ${assignment.status === "assigned"
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : assignment.status === "unassigned"
+                            ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                            : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                         }`}
-                      title="Click to toggle status"
+                      title={canEditAssignment ? "Click to toggle status" : "No permission to update"}
                     >
                       {assignment.status}
-                      <svg
-                        className="w-3 h-3 ml-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                        />
-                      </svg>
+                      {canEditAssignment && (
+                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      )}
                     </button>
-
                   </div>
 
                   <div className="space-y-2 mb-4">
@@ -749,32 +836,40 @@ export default function AssignmentListPage() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2 pt-3 border-t border-slate-200">
-                    <Link
-                      href={`/cleaner-assignments/${assignment.id}?companyId=${companyId}`}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(assignment.id)}
-                      disabled={deleting === assignment.id}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50"
-                    >
-                      {deleting === assignment.id ? (
-                        <>
-                          <Loader size="small" color="#ffffff" />
-                          <span>Deleting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </>
+                  {/* ✅ Only show action buttons if user has permissions */}
+                  {(canEditAssignment || canDeleteAssignment) && (
+                    <div className="flex gap-2 pt-3 border-t border-slate-200">
+                      {canEditAssignment && (
+                        <Link
+                          href={`/cleaner-assignments/${assignment.id}?companyId=${companyId}`}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </Link>
                       )}
-                    </button>
-                  </div>
+                      {canDeleteAssignment && (
+                        <button
+                          onClick={() => handleDelete(assignment.id)}
+                          disabled={deleting === assignment.id}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50"
+                        >
+                          {deleting === assignment.id ? (
+                            <>
+                              <Loader size="small" color="#ffffff" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               ))}
             </div>

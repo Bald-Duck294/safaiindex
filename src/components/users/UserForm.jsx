@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import roleApi from "@/lib/api/roleApi";
+import roleApi from "@/lib/api/rolesApi";
 import LocationsApi from "@/lib/api/LocationApi";
 import { CompanyApi } from "@/lib/api/companyApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 
-export default function UserForm({ initialData, onSubmit, isEditing = false }) {
+export default function UserForm({ initialData, onSubmit, isEditing = false, canSubmit = true }) {
 
     const { companyId } = useCompanyId(); // Current user's company context
 
@@ -55,8 +55,8 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 const rolesRes = await roleApi.getAllRoles(companyId);
                 console.log(rolesRes, "roles res");
                 if (rolesRes.success) {
-                    const filteredRoles = (rolesRes.data?.data || []).filter(role => role.id !== 1);
-                    console.log(`Filtered ${rolesRes.data?.data?.length || 0} roles to ${filteredRoles.length} (excluded superadmin)`);
+                    const filteredRoles = (rolesRes.data?.roles || []).filter(role => role.id !== 1);
+                    console.log(`Filtered ${rolesRes.data?.roles?.length || 0} roles to ${filteredRoles.length} (excluded superadmin)`);
                     // setRoles(rolesRes.data?.data || []);
                     setRoles(filteredRoles);
 
@@ -305,10 +305,11 @@ export default function UserForm({ initialData, onSubmit, isEditing = false }) {
                 >
                     Cancel
                 </button>
+
                 <button
                     type="submit"
                     className="cursor-pointer px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
-                    disabled={isLoadingData || !isFormValid()}
+                    disabled={isLoadingData || !isFormValid() || !canSubmit}
                 >
                     {isEditing ? 'Save Changes' : 'Create User'}
                 </button>

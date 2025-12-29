@@ -198,6 +198,7 @@ import useNotifications from "@/lib/hooks/useNotifications.js";
 import { useDeleteFCMTokenMutation, useSaveFCMTokenMutation } from "@/store/slices/notificationApi.js";
 import { deleteFCMToken } from "@/lib/firebase/fcm.js";
 import { resetNotifications } from "@/store/slices/notificationSlice.js";
+import { useCompanyId } from "@/lib/providers/CompanyProvider.jsx";
 const Header = ({ pageTitle }) => {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -214,26 +215,26 @@ const Header = ({ pageTitle }) => {
   const [loadingCompany, setLoadingCompany] = useState(false);
 
   // Get company_id from BOTH sources (params OR searchParams)
-  const getCompanyId = () => {
-    const queryCompanyId = searchParams.get('companyId');
+  // const getCompanyId = () => {
+  //   const queryCompanyId = searchParams.get('companyId');
 
-    if (params && queryCompanyId) {
-      return queryCompanyId;
-    }
+  //   if (params && queryCompanyId) {
+  //     return queryCompanyId;
+  //   }
 
-    if (params.id) {
-      return params.id;
-    }
+  //   if (params.id) {
+  //     return params.id;
+  //   }
 
-    if (queryCompanyId) {
-      return queryCompanyId;
-    }
+  //   if (queryCompanyId) {
+  //     return queryCompanyId;
+  //   }
 
-    return null;
-  };
+  //   return null;
+  // };
 
-  const companyId = getCompanyId();
-
+  const { companyId } = useCompanyId();
+  // console.log("Company ID in Header:", companyId);
   // Fetch company information when companyId changes
   useEffect(() => {
     if (!companyId || companyId === 'null' || companyId === null) {
@@ -272,7 +273,7 @@ const Header = ({ pageTitle }) => {
 
         try {
           await deleteFcmTokenFromBackend({ userId: user?.id }).unwrap();
-          console.log('deleted token form backend')
+          // console.log('deleted token form backend')
         } catch (error) {
           console.log(error, "error")
         }

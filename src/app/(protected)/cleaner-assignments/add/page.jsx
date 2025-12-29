@@ -8,6 +8,9 @@ import { UsersApi } from "@/lib/api/usersApi";
 import LocationsApi from "@/lib/api/LocationApi";
 import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 import {
   ClipboardPlus,
   User,
@@ -24,6 +27,12 @@ import {
 } from "lucide-react";
 
 const AddAssignmentPage = () => {
+
+  useRequirePermission(MODULES.ASSIGNMENTS);
+
+  const { canAdd } = usePermissions();
+  const canAddAssignment = canAdd(MODULES.ASSIGNMENTS);
+
   // --- STATE MANAGEMENT ---
   const [assignmentMode, setAssignmentMode] = useState("multi");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -250,6 +259,12 @@ const AddAssignmentPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+
+    if (!canAddAssignment) {
+      return toast.error("You don't have permission to add assignments");
+    }
+
 
     // Validation
     if (assignmentMode === "multi") {
@@ -543,6 +558,23 @@ const AddAssignmentPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Permission Warning */}
+          {!canAddAssignment && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-red-800 mb-1">
+                    No Permission
+                  </h4>
+                  <p className="text-sm text-red-700">
+                    You don't have permission to create assignments. Please contact your administrator.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* ✅ NEW: Role Filter at Top (Outside Dropdown) */}
@@ -953,12 +985,14 @@ const AddAssignmentPage = () => {
             <div className="pt-4 sm:pt-6 border-t border-slate-200">
               <button
                 type="submit"
-                disabled={isLoading || isValidating}
+                disabled={isLoading || isValidating || !canAddAssignment}
                 className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${assignmentMode === "multi"
                   ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
                   : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
                   }`}
+                title={!canAddAssignment ? "You don't have permission to add assignments" : ""}
               >
+
                 {isValidating ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />

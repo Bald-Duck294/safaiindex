@@ -20,6 +20,10 @@ import {
 import { CleanerReviewApi } from "@/lib/api/cleanerReviewApi";
 import toast, { Toaster } from "react-hot-toast";
 
+
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
+
 // Helper function to clean malformed strings
 const cleanString = (str) => {
   if (!str) return '';
@@ -70,6 +74,9 @@ const getTimeElapsed = (startTime) => {
 };
 
 export default function ReviewDetails() {
+
+  useRequirePermission(MODULES.CLEANER_ACTIVITY);
+
   const params = useParams();
   const router = useRouter();
   const reviewId = params?.id;

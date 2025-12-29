@@ -5,6 +5,8 @@ import ReviewContent from './ReviewContent';
 // import useCompanyId from '@/lib/utils/getCompanyId';
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
 
 // A simple loading UI to show while the main component loads.
 const Loading = () => {
@@ -16,7 +18,7 @@ const Loading = () => {
 };
 
 export default function CleanerReviewPage() {
-
+  useRequirePermission(MODULES.CLEANER_ACTIVITY);
   const { companyId } = useCompanyId();
   return (
     <Suspense fallback={<Loading />}>

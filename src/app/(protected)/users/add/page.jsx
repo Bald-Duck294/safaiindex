@@ -2,28 +2,35 @@
 
 import { UsersApi } from "@/lib/api/usersApi";
 import { useRouter } from "next/navigation";
-// import roleApi from "@/lib/api/roleApi";    
 import toast, { Toaster } from "react-hot-toast";
-// import UserForm from "@/app/components/users/UserForm";
 import UserForm from "@/components/users/UserForm";
 import { ArrowLeft } from "lucide-react";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
+
 export default function AddUserPage() {
-  // Navigation handler using standard web APIs
-
   const router = useRouter();
+  const { companyId } = useCompanyId();
 
-  const {companyId} = useCompanyId();
+  // ✅ Page protection
+  useRequirePermission(MODULES.USERS);
 
-  console.log(companyId, 'companyId from add usere');
+  // ✅ Permission check
+  const { canAdd } = usePermissions();
+  const canAddUser = canAdd(MODULES.USERS);
+
+  console.log(companyId, 'companyId from add user');
+  
   const handleAddUser = async (formData) => {
     const toastId = toast.loading("Creating user...");
     const response = await UsersApi.createUser(formData, companyId);
 
     if (response.success) {
       toast.success("User created successfully!", { id: toastId });
-      router.push(`/users?companyId=${companyId}`); // ✅ use Next router
+      router.push(`/users?companyId=${companyId}`);
     } else {
       toast.error(response.error || "Failed to create user.", { id: toastId });
     }
@@ -40,11 +47,15 @@ export default function AddUserPage() {
           </button>
           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6">Add New User</h1>
-            <UserForm onSubmit={handleAddUser} />
+            
+            {/* ✅ PASS canAddUser to form */}
+            <UserForm 
+              onSubmit={handleAddUser} 
+              canSubmit={canAddUser} // ✅ Changed from canEdit to canSubmit
+            />
           </div>
         </div>
       </div>
     </>
   );
 }
-

@@ -1,12 +1,18 @@
+// src/app/(protected)/location-types/add/page.jsx
 "use client";
+
 import { useEffect, useState } from "react";
 import CreateForm from "../CreateForm";
 import TreeView from "../TreeView";
 import locationTypesApi from "@/lib/api/locationTypesApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import toast, { Toaster } from "react-hot-toast";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
 
 export default function AddLocationTypesPage() {
+  useRequirePermission(MODULES.LOCATION_TYPES, { action: 'add' });
+
   const [types, setTypes] = useState([]);
   const { companyId } = useCompanyId();
 
@@ -27,7 +33,6 @@ export default function AddLocationTypesPage() {
 
   return (
     <>
-      {/* ✅ Add Toaster component here */}
       <Toaster
         position="top-right"
         toastOptions={{

@@ -1,23 +1,11 @@
+// src/components/Sidebar.jsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, usePathname } from "next/navigation";
 import { logout } from "../store/slices/authSlice.js";
-
 import {
-  LayoutDashboard,
-  Building2,
-  List,
-  FolderTree,
-  FolderPlus,
-  UserPlus,
-  Users,
-  UserCog,
-  PlusCircle,
-  Toilet,
-  ClipboardList,
-  UserCheck,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -25,20 +13,22 @@ import {
   LogOut,
   Menu,
   X,
-  MapPin,
-  Building,
-  MessageSquare,
-  FileText,
-  ShieldCheck,
-  Award
+  Building
 } from "lucide-react";
 import Link from "next/link";
 import { useCompanyId } from "@/lib/providers/CompanyProvider.jsx";
+import {
+  getSuperadminMainMenu,
+  getSuperadminCompanyMenu,
+  getAdminMenu,
+  getFullCompanyMenuTemplate,
+} from "@/lib/config/menuConfig";
+import { filterMenuByPermissions } from "@/lib/utils/menuFilter";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobile, setIsMobile] = useState(false);
-  const [isHovered, setIsHovered] = useState(false); // ⭐ NEW: Track hover state
+  const [isHovered, setIsHovered] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -46,403 +36,75 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const pathname = usePathname();
 
   const { companyId, hasCompanyContext } = useCompanyId();
-  const isSuperadmin = user?.role_id === 1;
-  const isOnMainDashboard = pathname === '/dashboard';
 
-  const getRoleText = () => {
-    if (!user || !user.role_id) return "User";
-    switch (user.role_id) {
-      case 1: return "Super Admin";
-      case 2: return "Admin";
-      case 3: return "Supervisor";
-      default: return "User";
+
+  const getMenuItems = () => {
+    // CASE 1: Superadmin on main dashboard (no company context)
+    if (user?.role_id === 1 && !hasCompanyContext) {
+      return getSuperadminMainMenu();
     }
-  };
 
+    // CASE 2: Superadmin inside company
+    if (user?.role_id === 1 && hasCompanyContext) {
+      return getSuperadminCompanyMenu(companyId);
+    }
+
+    // CASE 3: Company Admin (role_id: 2)
+    if (user?.role_id === 2 && hasCompanyContext) {
+      return getAdminMenu(companyId);
+    }
+
+    // CASE 4: Other roles (permission-based filtering)
+    if (hasCompanyContext && user?.role?.permissions) {
+      const menuTemplate = getFullCompanyMenuTemplate(companyId);
+      const filteredMenu = filterMenuByPermissions(menuTemplate, user.role.permissions);
+
+      // ✅ FIX: Always add Dashboard link at the top for other roles
+      const dashboardItem = {
+        icon: Building, // Import this from lucide-react
+        label: "Dashboard",
+        href: `/clientDashboard/${companyId}`,
+        hasDropdown: false,
+      };
+
+      // Check if Dashboard already exists in filtered menu
+      const hasDashboard = filteredMenu.some(item =>
+        item.href === `/clientDashboard/${companyId}`
+      );
+
+      // If Dashboard not in filtered menu, add it at the beginning
+      if (!hasDashboard) {
+        return [dashboardItem, ...filteredMenu];
+      }
+
+      return filteredMenu;
+    }
+
+    // Fallback: Empty menu
+    return [];
+  };
+  const menuItems = getMenuItems();
+
+  // ✅ Route Active Check
   const isRouteActive = (href) => {
     if (!href) return false;
-    if (href === '/dashboard' && pathname === '/dashboard') return true;
-    if (href.startsWith('/clientDashboard/') && pathname.startsWith('/clientDashboard/')) return true;
-    const [basePath] = href.split('?');
+    if (href === "/dashboard" && pathname === "/dashboard") return true;
+    if (href.startsWith("/clientDashboard/") && pathname.startsWith("/clientDashboard/")) return true;
+    const [basePath] = href.split("?");
     return pathname.startsWith(basePath);
   };
 
+  // ✅ Dropdown Active Check
   const isDropdownActive = (children) => {
     if (!children) return false;
-    return children.some(child => isRouteActive(child.href));
+    return children.some((child) => isRouteActive(child.href));
   };
 
-  const getMenuItems = () => {
-    if (isSuperadmin && !hasCompanyContext) {
-      return [
-        {
-          icon: LayoutDashboard,
-          label: "Dashboard",
-          href: "/dashboard"
-        },
-        {
-          icon: Building2,
-          label: "Organizations",
-          href: "/companies"
-        },
-        {
-          icon: Award,
-          label: "Score Management",
-          href: "/score-management"
-        },
-        {
-          icon: ShieldCheck,
-          label: "Role Management",
-          hasDropdown: true,
-          key: "role-management",
-          children: [
-            {
-              icon: List,
-              label: "Super Admins",
-              href: "/role/superadmin",
-            },
-            {
-              icon: List,
-              label: "Admins",
-              href: "/role/admin",
-            },
-            {
-              icon: List,
-              label: "Supervisors",
-              href: "/role/supervisor",
-            },
-            {
-              icon: List,
-              label: "Cleaners",
-              href: "/role/cleaner",
-            },
-          ],
-        },
-      ];
-    }
-
-    if (hasCompanyContext && isSuperadmin) {
-      return [
-        {
-          icon: LayoutDashboard,
-          label: "Main Dashboard",
-          href: "/dashboard"
-        },
-        {
-          icon: Building2,
-          label: "Client Dashboard",
-          href: `/clientDashboard/${companyId}`
-        },
-        {
-          icon: FolderTree,
-          label: "Location Hierarchy",
-          hasDropdown: true,
-          key: "locationTypes",
-          children: [
-            {
-              icon: List,
-              label: "View Location Hierarchy",
-              href: `/location-types?companyId=${companyId}`,
-            },
-            {
-              icon: FolderPlus,
-              label: "Add Location Hierarchy",
-              href: `/location-types/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: Toilet,
-          label: "Washrooms",
-          hasDropdown: true,
-          key: "washrooms",
-          children: [
-            {
-              icon: List,
-              label: "Washrooms List",
-              href: `/washrooms?companyId=${companyId}`
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Washroom",
-              href: `/washrooms/add-location?companyId=${companyId}`
-            },
-          ],
-        },
-        {
-          icon: Users,
-          label: "User Management",
-          hasDropdown: true,
-          key: "user-management",
-          children: [
-            {
-              icon: List,
-              label: "User List",
-              href: `/users?companyId=${companyId}`,
-            },
-            {
-              icon: UserPlus,
-              label: "Add User",
-              href: `/users/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: UserCog,
-          label: "User Mapping",
-          hasDropdown: true,
-          key: "cleaner-assignments",
-          children: [
-            {
-              icon: List,
-              label: "Mapped List",
-              href: `/cleaner-assignments?companyId=${companyId}`,
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Mapping",
-              href: `/cleaner-assignments/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: Building2,
-          label: "Facility Companies",
-          hasDropdown: true,
-          key: "facility-companies",
-          children: [
-            {
-              icon: List,
-              label: "View List",
-              href: `/facility-company?companyId=${companyId}`,
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Facility",
-              href: `/facility-company/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: MapPin,
-          label: "Locate On Map",
-          href: `/locations?companyId=${companyId}`
-        },
-        {
-          icon: ClipboardList,
-          label: "Cleaner Activity",
-          href: `/cleaner-review?companyId=${companyId}`
-        },
-        {
-          icon: MessageSquare,
-          label: "User Review",
-          href: `/user-activity?companyId=${companyId}`
-        },
-        {
-          icon: FileText,
-          label: "Reports",
-          href: `/reports?companyId=${companyId}`,
-        },
-      ];
-    }
-
-    if (hasCompanyContext && user?.role_id === 2) {
-      return [
-        {
-          icon: Building,
-          label: "Dashboard",
-          href: `/clientDashboard/${companyId}`
-        },
-        {
-          icon: FolderTree,
-          label: "Location Hierarchy",
-          hasDropdown: true,
-          key: "locationTypes",
-          children: [
-            {
-              icon: List,
-              label: "View Location Hierarchy",
-              href: `/location-types?companyId=${companyId}`,
-            },
-            {
-              icon: FolderPlus,
-              label: "Add Location Hierarchy",
-              href: `/location-types/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: Toilet,
-          label: "Washrooms",
-          hasDropdown: true,
-          key: "washrooms",
-          children: [
-            {
-              icon: List,
-              label: "Washrooms List",
-              href: `/washrooms?companyId=${companyId}`
-            },
-            {
-              icon: PlusCircle,
-              label: "Add Washroom",
-              href: `/washrooms/add-location?companyId=${companyId}`
-            },
-          ],
-        },
-        {
-          icon: Users,
-          label: "User Management",
-          hasDropdown: true,
-          key: "user-management",
-          children: [
-            {
-              icon: List,
-              label: "User List",
-              href: `/users?companyId=${companyId}`,
-            },
-            {
-              icon: UserPlus,
-              label: "Add User",
-              href: `/users/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: ClipboardList,
-          label: "User Mapping",
-          hasDropdown: true,
-          key: "cleaner-assignments",
-          children: [
-            {
-              icon: List,
-              label: "Mapped List",
-              href: `/cleaner-assignments?companyId=${companyId}`,
-            },
-            {
-              icon: UserCog,
-              label: "Add Mapping",
-              href: `/cleaner-assignments/add?companyId=${companyId}`,
-            },
-          ],
-        },
-        {
-          icon: MapPin,
-          label: "Locate On Map",
-          href: `/locations?companyId=${companyId}`
-        },
-        {
-          icon: ClipboardList,
-          label: "Cleaner Activity",
-          href: `/cleaner-review?companyId=${companyId}`
-        },
-        {
-          icon: Building,
-          label: "User Review",
-          href: `/user-activity?companyId=${companyId}`
-        },
-        {
-          icon: FileText,
-          label: "Reports",
-          href: `/reports?companyId=${companyId}`,
-        },
-      ];
-    }
-
-    if (hasCompanyContext && user?.role_id === 3) {
-      return [
-        {
-          icon: Building,
-          label: "Dashboard",
-          href: `/clientDashboard/${companyId}`
-        },
-        {
-          icon: Toilet,
-          label: "Washrooms",
-          hasDropdown: true,
-          key: "washrooms",
-          children: [
-            {
-              icon: List,
-              label: "Washrooms List",
-              href: `/washrooms?companyId=${companyId}`
-            },
-          ],
-        },
-        {
-          icon: UserCheck,
-          label: "Cleaner List",
-          href: `/users/cleaner?companyId=${companyId}`
-        },
-        {
-          icon: MapPin,
-          label: "Locate On Map",
-          href: `/locations?companyId=${companyId}`
-        },
-        {
-          icon: ClipboardList,
-          label: "Cleaner Activity",
-          href: `/cleaner-review?companyId=${companyId}`
-        },
-        {
-          icon: Building,
-          label: "User Review",
-          href: `/user-activity?companyId=${companyId}`
-        },
-        {
-          icon: FileText,
-          label: "Reports",
-          href: `/reports?companyId=${companyId}`,
-        },
-        {
-          icon: ClipboardList,
-          label: "User Mapping",
-          hasDropdown: true,
-          key: "cleaner-assignments",
-          children: [
-            {
-              icon: List,
-              label: "Mapped List",
-              href: `/cleaner-assignments?companyId=${companyId}`,
-            },
-            {
-              icon: UserCog,
-              label: "Add Mapping",
-              href: `/cleaner-assignments/add?companyId=${companyId}`,
-            },
-          ],
-        },
-      ];
-    }
-
-    return [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }
-    ];
-  };
-
-  const filterMenuByPermissions = (menuItems) => {
-    if (!user?.features) return menuItems;
-
-    try {
-      const userFeatures = typeof user.features === 'string'
-        ? JSON.parse(user.features)
-        : user.features;
-
-      return menuItems.filter(item => {
-        if (!item.requiredFeature) return true;
-        return userFeatures.includes(item.requiredFeature);
-      });
-    } catch (error) {
-      console.error('Error parsing user features:', error);
-      return menuItems;
-    }
-  };
-
-  const menuItems = filterMenuByPermissions(getMenuItems());
-
+  // ✅ Auto-open active dropdowns
   useEffect(() => {
     const newOpenDropdowns = {};
 
-    menuItems.forEach(item => {
+    menuItems.forEach((item) => {
       if (item.hasDropdown && item.children) {
         const isActive = isDropdownActive(item.children);
         if (isActive) {
@@ -451,9 +113,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       }
     });
 
-    setOpenDropdowns(prev => ({ ...prev, ...newOpenDropdowns }));
+    setOpenDropdowns((prev) => ({ ...prev, ...newOpenDropdowns }));
   }, [pathname, companyId]);
 
+  // ✅ Mobile Detection
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
@@ -465,10 +128,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, [setSidebarOpen]);
 
+  // ✅ Toggle Sidebar
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+  // ✅ Toggle Dropdown
   const toggleDropdown = (key) => {
-    if (!sidebarOpen && !isHovered) { // ⭐ UPDATED: Check hover state
+    if (!sidebarOpen && !isHovered) {
       setSidebarOpen(true);
       setTimeout(() => {
         setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -478,12 +143,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     }
   };
 
+  // ✅ Logout
   const handleLogout = () => {
     dispatch(logout());
     router.push("/login");
   };
 
-  // ⭐ NEW: Hover handlers (desktop only)
+  // ✅ Hover Handlers (Desktop Only)
   const handleMouseEnter = () => {
     if (!isMobile) {
       setIsHovered(true);
@@ -498,21 +164,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     }
   };
 
-  const commonLinkClasses = "flex items-center px-3 py-3 rounded-md cursor-pointer relative overflow-hidden transition-all duration-200";
+  // ✅ CSS Classes
+  const commonLinkClasses =
+    "flex items-center px-3 py-3 rounded-md cursor-pointer relative overflow-hidden transition-all duration-200";
 
   const getActiveLinkClasses = (href, isChild = false) => {
     const isActive = isRouteActive(href);
 
     if (isActive) {
       return `${commonLinkClasses} ${isChild
-        ? 'bg-slate-700 text-white border-l-2 border-indigo-500'
-        : 'bg-indigo-600 text-white shadow-lg'
+        ? "bg-slate-700 text-white border-l-2 border-indigo-500"
+        : "bg-indigo-600 text-white shadow-lg"
         }`;
     }
 
     return `${commonLinkClasses} ${isChild
-      ? 'text-gray-400 hover:bg-slate-700 hover:text-white'
-      : 'text-gray-300 hover:bg-indigo-600 hover:text-white'
+      ? "text-gray-400 hover:bg-slate-700 hover:text-white"
+      : "text-gray-300 hover:bg-indigo-600 hover:text-white"
       }`;
   };
 
@@ -543,7 +211,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       )}
 
-      {/* Sidebar - ⭐ ADDED: onMouseEnter and onMouseLeave */}
+      {/* Sidebar */}
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -577,8 +245,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         <nav
           className="flex-1 overflow-y-auto p-3 mt-2"
           style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
           <style jsx>{`
@@ -592,6 +260,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               const IconComponent = item.icon;
               const isDropdownOpen = openDropdowns[item.key];
 
+              // ✅ Dropdown Menu
               if (item.hasDropdown) {
                 return (
                   <li key={index} className="group">
@@ -607,11 +276,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             {item.label}
                           </span>
                           <div className="ml-auto">
-                            {isDropdownOpen ? (
-                              <ChevronUp size={16} />
-                            ) : (
-                              <ChevronDown size={16} />
-                            )}
+                            {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </div>
                         </>
                       )}
@@ -623,9 +288,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                     </button>
                     {sidebarOpen && (
                       <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          isDropdownOpen ? "max-h-60" : "max-h-0"
-                        }`}
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${isDropdownOpen ? "max-h-60" : "max-h-0"
+                          }`}
                       >
                         <ul className="ml-6 mt-1 space-y-1 border-l border-slate-700 pl-3">
                           {item.children?.map((child, childIndex) => {
@@ -637,13 +301,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                   onClick={() => {
                                     if (isMobile) setSidebarOpen(false);
                                   }}
-                                  className={`w-full flex items-center px-2 py-2 rounded-md transition-all duration-200 text-sm ${getActiveLinkClasses(child.href, true)
-                                    }`}
+                                  className={`w-full flex items-center px-2 py-2 rounded-md transition-all duration-200 text-sm ${getActiveLinkClasses(
+                                    child.href,
+                                    true
+                                  )}`}
                                 >
-                                  <ChildIcon
-                                    size={16}
-                                    className="flex-shrink-0"
-                                  />
+                                  <ChildIcon size={16} className="flex-shrink-0" />
                                   <span className="ml-2">{child.label}</span>
                                 </Link>
                               </li>
@@ -656,7 +319,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 );
               }
 
-              // Regular menu items
+              // ✅ Regular Menu Items (Direct Links)
               return (
                 <li key={index} className="group">
                   <Link
@@ -668,9 +331,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       }`}
                   >
                     <IconComponent size={20} className="flex-shrink-0" />
-                    {sidebarOpen && (
-                      <span className="ml-3 font-medium">{item.label}</span>
-                    )}
+                    {sidebarOpen && <span className="ml-3 font-medium">{item.label}</span>}
                     {!sidebarOpen && (
                       <div className="absolute left-16 bg-slate-800 text-white px-2 py-1 rounded-md text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50">
                         {item.label}
@@ -683,7 +344,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           </ul>
         </nav>
 
-        {/* Footer */}
+        {/* Footer - Logout */}
         <div className="border-t border-slate-700 bg-slate-800">
           <div className="p-4">
             <button
@@ -699,12 +360,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </div>
 
-      {/* Mobile overlay */}
+      {/* Mobile Overlay */}
       {sidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={toggleSidebar}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={toggleSidebar} />
       )}
     </>
   );

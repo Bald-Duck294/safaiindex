@@ -7,9 +7,8 @@ import { useRouter } from "next/navigation";
 import { loginStart, loginSuccess, loginFailure } from "../../../store/slices/authSlice";
 import toast, { Toaster } from "react-hot-toast";
 import { FaRestroom } from "react-icons/fa";
-// import { AuthApi } from "../../../lib/api/authApi.js" // Assuming you have this API utility
-// import { AuthApi } from "@/lib/api/authApi";
 import { AuthApi } from "@/lib/api/authApi";
+
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -18,7 +17,6 @@ const AuthPage = () => {
     phone: "",
     password: "",
   });
-  // Using a local state for the UI loading indicator
   const [isLoading, setIsLoading] = useState(false);
 
   const dispatch = useDispatch();
@@ -37,43 +35,56 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Start local loading indicator
+    setIsLoading(true);
 
     if (isLogin) {
-      // --- LOGIN LOGIC ---
-
-      console.log('here')
-      dispatch(loginStart()); // Still dispatch to manage global state
+      dispatch(loginStart());
+      
       try {
         const response = await AuthApi.login(formData.phone, formData.password);
+        console.log(response, "user login response");
 
         if (response.success && response.data?.status === "success") {
-          toast.success("Login Successful!");
-          dispatch(loginSuccess(response.data.user));
+          const user = response.data.user;
+          const token = user.token;
 
-          console.log(response.data.user, "user data");
+          if (!user?.role || !Array.isArray(user?.role?.permissions)) {
+            toast.error("Invalid Login, Please Contact Support!");
+            dispatch(loginFailure("Missing role/permissions"));
+            return; // ✅ Early return, loading will stop in finally
+          }
 
-          if (response.data.user?.role_id === 1) {
+          if (token) {
+            localStorage.setItem('token', token);
+          }
+
+          dispatch(loginSuccess(user));
+          toast.success(`Welcome back, ${user.name}!`);
+
+          if (user.role_id === 1) {
             // Superadmin → Main dashboard
             router.push('/dashboard');
-          } else if (response.data.user?.role_id === 2 && response.data.user?.company_id) {
-            // Admin → Their company dashboard
-            router.push(`/clientDashboard/${response.data.user?.company_id}`);
+          } else if (user.company_id) {
+            // All other roles with company_id → Client dashboard
+            router.push(`/clientDashboard/${user.company_id}`);
+          } else {
+            // No company assigned (shouldn't happen for non-superadmin)
+            toast.error("No company assigned. Contact support.");
+            dispatch(logout());
           }
-          else if (response.data.user?.role_id === 3 && response.data.user?.company_id) {
-            // Admin → Their company dashboard
-            router.push(`/clientDashboard/${response.data.user?.company_id}`);
-          }
-          // router.push("/dashboard");
-          // router.push('/dashboard');
+
         } else {
           toast.error(response.error || "Login failed. Please check your credentials.");
-          dispatch(loginFailure());
+          dispatch(loginFailure(response.error));
         }
       } catch (error) {
+        console.error('Login error:', error);
         toast.error(error.message || "An unexpected error occurred.");
-        dispatch(loginFailure());
+        dispatch(loginFailure(error.message));
+      } finally {
+        setIsLoading(false);
       }
+
     } else {
       // --- SIGNUP LOGIC ---
       try {
@@ -88,9 +99,10 @@ const AuthPage = () => {
         }
       } catch (error) {
         toast.error(error.message || "An unexpected error occurred during registration.");
+      } finally {
+        setIsLoading(false);
       }
     }
-    setIsLoading(false); // Stop local loading indicator in all cases
   };
 
   return (
@@ -109,12 +121,15 @@ const AuthPage = () => {
                 : "Create a new account."}
             </p>
           </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Fields for Signup */}
+            {/* Signup Fields */}
             {!isLogin && (
               <>
                 <div>
-                  <label htmlFor="name" className="text-sm font-medium text-slate-700">Full Name</label>
+                  <label htmlFor="name" className="text-sm font-medium text-slate-700">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     id="name"
@@ -127,7 +142,9 @@ const AuthPage = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+                  <label htmlFor="email" className="text-sm font-medium text-slate-700">
+                    Email
+                  </label>
                   <input
                     type="email"
                     id="email"
@@ -142,9 +159,11 @@ const AuthPage = () => {
               </>
             )}
 
-            {/* Phone Number field */}
+            {/* Phone Number */}
             <div>
-              <label htmlFor="phone" className="text-sm font-medium text-slate-700">Phone Number</label>
+              <label htmlFor="phone" className="text-sm font-medium text-slate-700">
+                Phone Number
+              </label>
               <input
                 type="tel"
                 id="phone"
@@ -156,9 +175,11 @@ const AuthPage = () => {
               />
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="text-sm font-medium text-slate-700">Password</label>
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </label>
               <input
                 type="password"
                 id="password"
@@ -170,22 +191,26 @@ const AuthPage = () => {
               />
             </div>
 
+            {/* Submit Button */}
             <div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className=" cursor-pointer w-full px-4  py-3 font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105 disabled:bg-red-400 disabled:cursor-not-allowed"
+                className="cursor-pointer w-full px-4 py-3 font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105 disabled:bg-red-400 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"}
               </button>
             </div>
           </form>
+
+          {/* Toggle Login/Signup */}
           <div className="text-center text-sm text-slate-500">
             <p>
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="font-semibold text-red-600 hover:underline ml-1"
+                type="button"
               >
                 {isLogin ? "Sign Up" : "Sign In"}
               </button>

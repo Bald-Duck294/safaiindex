@@ -95,8 +95,8 @@ export const UsersApi = {
   // },
 
   createUser: async (data, companyId) => {
-    console.log(data, "Create User Data");
-    console.log(companyId, "companyId from frontend");
+    // console.log(data, "Create User Data");
+    // console.log(companyId, "companyId from frontend");
 
     try {
       // Include company_id in the request body

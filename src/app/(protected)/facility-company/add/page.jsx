@@ -18,9 +18,18 @@ import toast, { Toaster } from "react-hot-toast";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import Loader from "@/components/ui/Loader";
-import { State, City } from 'country-state-city'; // ✅ Add this import
+import { State, City } from 'country-state-city';
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 export default function AddFacilityCompanyPage() {
+
+    useRequirePermission(MODULES.FACILITY_COMPANIES);
+
+    const { canAdd } = usePermissions();
+    const canAddFacility = canAdd(MODULES.FACILITY_COMPANIES);
+
     const router = useRouter();
     const { companyId } = useCompanyId();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -217,6 +226,12 @@ export default function AddFacilityCompanyPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+
+        if (!canAddFacility) {
+            toast.error("You don't have permission to add facility companies");
+            return;
+        }
+
         if (!validateForm()) {
             toast.error("Please fix the errors in the form");
             return;
@@ -294,6 +309,23 @@ export default function AddFacilityCompanyPage() {
                         </div>
                     </div>
 
+
+                    {/* ✅ Permission Warning */}
+                    {!canAddFacility && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 sm:mb-6">
+                            <div className="flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="text-sm font-semibold text-red-800 mb-1">
+                                        No Permission
+                                    </h4>
+                                    <p className="text-sm text-red-700">
+                                        You don't have permission to add facility companies. Please contact your administrator.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* Form */}
                     <form onSubmit={handleSubmit}>
                         {/* Basic Information */}
@@ -758,8 +790,9 @@ export default function AddFacilityCompanyPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || !canAddFacility}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={!canAddFacility ? "You don't have permission to add facility companies" : ""}
                                 >
                                     {isSubmitting ? (
                                         <>

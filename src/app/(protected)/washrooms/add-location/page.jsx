@@ -618,9 +618,12 @@ import { AssignmentsApi } from "@/lib/api/assignmentsApi";
 import { UsersApi } from "@/lib/api/usersApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import { useRouter } from "next/navigation";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 import {
   Upload, X, Image as ImageIcon, Plus, MapPin,
-  Users, UserCheck, Search, ChevronDown, CheckCircle, Mail, Phone, Droplets, Armchair,
+  Users, UserCheck, Search, ChevronDown, CheckCircle, Mail, Phone, Droplets, Armchair, ArrowLeft 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Country, State, City } from 'country-state-city';
@@ -635,6 +638,14 @@ const validatePincode = (pincode) => {
 };
 
 export default function AddLocationPage() {
+
+
+  useRequirePermission(MODULES.LOCATIONS);
+
+  const { canAdd } = usePermissions();
+  const canAddLocation = canAdd(MODULES.LOCATIONS);
+  const canAssignCleaner = canAdd(MODULES.ASSIGNMENTS);
+
   const [features, setFeatures] = useState([]);
   const [locationTypes, setLocationTypes] = useState([]);
   const [images, setImages] = useState([]);
@@ -1010,6 +1021,18 @@ export default function AddLocationPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
+        {/* ✅ NEW: Navigation Bar */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-4 px-6 py-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
+            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+            <span className="font-medium">Back to Washrooms</span>
+          </button>
+        </div>
+
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
             <h1 className="text-2xl font-bold text-white mb-2">Add New Washroom</h1>
@@ -1461,7 +1484,7 @@ export default function AddLocationPage() {
             </div>
 
             {/* ========== SECTION 2: ASSIGN CLEANERS ========== */}
-            <div className="space-y-6 border-t border-slate-200 pt-8 min-h-[500px]">
+            {canAssignCleaner && <div className="space-y-6 border-t border-slate-200 pt-8 min-h-[500px]">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-3">
                   <Users className="h-6 w-6 text-green-600" />
@@ -1652,7 +1675,7 @@ export default function AddLocationPage() {
                 </div>
               )}
             </div>
-
+            }
 
             {/* ========== SUBMIT BUTTON ========== */}
             <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200">
@@ -1672,7 +1695,8 @@ export default function AddLocationPage() {
                   !form.type_id ||
                   !form.latitude ||
                   !form.longitude ||
-                  pincodeError
+                  pincodeError ||
+                  !canAddLocation
                 }
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed min-w-48"
               >
@@ -1693,7 +1717,7 @@ export default function AddLocationPage() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

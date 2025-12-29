@@ -26,6 +26,9 @@ import {
     ChevronRight,
     Maximize2
 } from "lucide-react";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 // Helper to get score color
 const getScoreColor = (score) => {
@@ -340,17 +343,115 @@ const PhotoModal = ({ photos, onClose }) => {
 // Editable Score Cell Component
 // Update the EditableScoreCell component with auto-edit and ongoing check
 
-const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false }) => {
+// const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false }) => {
+//     const [isEditing, setIsEditing] = useState(false);
+//     const [score, setScore] = useState(review.score || 0);
+//     const [isSaving, setIsSaving] = useState(false);
+
+//     // ✅ Auto-open edit mode if autoEdit is true
+//     useEffect(() => {
+//         if (autoEdit && review.status === 'completed') {
+//             setIsEditing(true);
+//         }
+//     }, [autoEdit, review.status]);
+
+//     const handleSave = async () => {
+//         if (score < 0 || score > 10) {
+//             toast.error("Score must be between 0 and 10");
+//             return;
+//         }
+
+//         setIsSaving(true);
+//         const result = await CleanerReviewApi.updateReviewScore(review.id, score);
+
+//         if (result.success) {
+//             toast.success("Score updated successfully!");
+//             onSave(review.id, score);
+//             setIsEditing(false);
+//         } else {
+//             toast.error(result.error || "Failed to update score");
+//         }
+//         setIsSaving(false);
+//     };
+
+//     const handleCancel = () => {
+//         setScore(review.score || 0);
+//         setIsEditing(false);
+//     };
+
+//     // ✅ Handle edit click for ongoing reviews
+//     const handleEditClick = () => {
+//         if (isOngoing) {
+//             toast.error(`Cannot edit ongoing review for ${review.cleaner_user?.name || 'cleaner'}. Please wait until it's completed.`);
+//             return;
+//         }
+//         setIsEditing(true);
+//     };
+
+//     if (isEditing) {
+//         return (
+//             <div className="flex items-center gap-2">
+//                 <input
+//                     type="number"
+//                     min="0"
+//                     max="10"
+//                     step="0.1"
+//                     value={score}
+//                     onChange={(e) => setScore(parseFloat(e.target.value))}
+//                     className="w-16 px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+//                     autoFocus
+//                 />
+//                 <button
+//                     onClick={handleSave}
+//                     disabled={isSaving}
+//                     className="cursor-pointer p-1 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+//                     title="Save"
+//                 >
+//                     <Save size={16} />
+//                 </button>
+//                 <button
+//                     onClick={handleCancel}
+//                     disabled={isSaving}
+//                     className="cursor-pointer p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+//                     title="Cancel"
+//                 >
+//                     <X size={16} />
+//                 </button>
+//             </div>
+//         );
+//     }
+
+//     return (
+//         <div className="flex items-center gap-2">
+//             <span className={`font-semibold ${getScoreColor(review.score)}`}>
+//                 {review.score?.toFixed(1) || "N/A"}
+//             </span>
+//             <button
+//                 onClick={handleEditClick}
+//                 className={`cursor-pointer p-1 rounded transition-colors ${isOngoing
+//                     ? 'text-slate-300 cursor-not-allowed'
+//                     : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+//                     }`}
+//                 title={isOngoing ? "Review in progress" : "Edit Score"}
+//                 disabled={isOngoing}
+//             >
+//                 <Edit2 size={14} />
+//             </button>
+//         </div>
+//     );
+// };
+
+const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false, canEdit = true }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [score, setScore] = useState(review.score || 0);
     const [isSaving, setIsSaving] = useState(false);
 
     // ✅ Auto-open edit mode if autoEdit is true
     useEffect(() => {
-        if (autoEdit && review.status === 'completed') {
+        if (autoEdit && review.status === 'completed' && canEdit) {
             setIsEditing(true);
         }
-    }, [autoEdit, review.status]);
+    }, [autoEdit, review.status, canEdit]);
 
     const handleSave = async () => {
         if (score < 0 || score > 10) {
@@ -376,8 +477,12 @@ const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false
         setIsEditing(false);
     };
 
-    // ✅ Handle edit click for ongoing reviews
+    // ✅ Handle edit click with permission check
     const handleEditClick = () => {
+        if (!canEdit) {
+            toast.error("You don't have permission to edit scores");
+            return;
+        }
         if (isOngoing) {
             toast.error(`Cannot edit ongoing review for ${review.cleaner_user?.name || 'cleaner'}. Please wait until it's completed.`);
             return;
@@ -425,12 +530,18 @@ const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false
             </span>
             <button
                 onClick={handleEditClick}
-                className={`cursor-pointer p-1 rounded transition-colors ${isOngoing
+                className={`cursor-pointer p-1 rounded transition-colors ${!canEdit || isOngoing
                     ? 'text-slate-300 cursor-not-allowed'
                     : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
                     }`}
-                title={isOngoing ? "Review in progress" : "Edit Score"}
-                disabled={isOngoing}
+                title={
+                    !canEdit
+                        ? "No permission to edit"
+                        : isOngoing
+                            ? "Review in progress"
+                            : "Edit Score"
+                }
+                disabled={!canEdit || isOngoing}
             >
                 <Edit2 size={14} />
             </button>
@@ -439,7 +550,14 @@ const EditableScoreCell = ({ review, onSave, autoEdit = false, isOngoing = false
 };
 
 
+
 export default function ScoreManagement() {
+
+    useRequirePermission(MODULES.SCORE_MANAGEMENT);
+
+    const { canUpdate } = usePermissions();
+    const canEditScores = canUpdate(MODULES.SCORE_MANAGEMENT);
+
     const router = useRouter();
 
     const searchParams = useSearchParams();
@@ -1147,6 +1265,7 @@ export default function ScoreManagement() {
                                                                             onSave={handleScoreUpdate}
                                                                             autoEdit={autoEditReviewId === review.id}
                                                                             isOngoing={review.status === 'ongoing'}
+                                                                            canEdit={canEditScores}
                                                                         />
                                                                     </div>
                                                                 </td>
@@ -1270,6 +1389,7 @@ export default function ScoreManagement() {
                                                                 onSave={handleScoreUpdate}
                                                                 autoEdit={autoEditReviewId === review.id}
                                                                 isOngoing={review.status === 'ongoing'}
+                                                                canEdit={canEditScores}
                                                             />
                                                         </div>
                                                         <div className="flex items-center gap-2">

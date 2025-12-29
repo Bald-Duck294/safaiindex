@@ -22,8 +22,20 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 export default function FacilityCompaniesPage() {
+
+
+    useRequirePermission(MODULES.FACILITY_COMPANIES);
+
+    const { canAdd, canUpdate, canDelete } = usePermissions();
+    const canAddFacility = canAdd(MODULES.FACILITY_COMPANIES);
+    const canEditFacility = canUpdate(MODULES.FACILITY_COMPANIES);
+    const canDeleteFacility = canDelete(MODULES.FACILITY_COMPANIES);
+
     const router = useRouter();
     const { companyId } = useCompanyId();
 
@@ -92,6 +104,11 @@ export default function FacilityCompaniesPage() {
     };
 
     const confirmDelete = async () => {
+        if (!canDeleteFacility) {
+            toast.error("You don't have permission to delete facility companies");
+            return;
+        }
+
         const { company } = deleteModal;
         if (!company) return;
 
@@ -184,13 +201,16 @@ export default function FacilityCompaniesPage() {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => router.push(`/facility-company/add?companyId=${companyId}`)}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add Facility Company
-                            </button>
+                            {canAddFacility && (
+                                <button
+                                    onClick={() => router.push(`/facility-company/add?companyId=${companyId}`)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add Facility Company
+                                </button>
+                            )}
+
                         </div>
                     </div>
 
@@ -294,7 +314,7 @@ export default function FacilityCompaniesPage() {
                                     ? "Try adjusting your search or filters"
                                     : "Get started by adding your first facility company"}
                             </p>
-                            {!searchQuery && (
+                            {!searchQuery && canAddFacility && (
                                 <button
                                     onClick={() => router.push(`facility-company/add?companyId=${companyId}`)}
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -364,11 +384,15 @@ export default function FacilityCompaniesPage() {
                                                 <td className="px-6 py-4">
                                                     <button
                                                         onClick={() => handleStatusClick(company)}
-                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${company.status
-                                                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                            : "bg-red-100 text-red-700 hover:bg-red-200"
+                                                        disabled={!canEditFacility}
+                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${canEditFacility ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                                                            } ${company.status
+                                                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                                : "bg-red-100 text-red-700 hover:bg-red-200"
                                                             }`}
+                                                        title={!canEditFacility ? "No permission to update status" : ""}
                                                     >
+
                                                         {company.status ? (
                                                             <>
                                                                 <CheckCircle className="w-3.5 h-3.5" />
@@ -399,25 +423,30 @@ export default function FacilityCompaniesPage() {
                                                         >
                                                             <Eye className="w-4 h-4" />
                                                         </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                router.push(
-                                                                    `/facility-company/${company.id}/edit?companyId=${companyId}`
-                                                                )
-                                                            }
-                                                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <Edit className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteClick(company)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {canEditFacility && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/facility-company/${company.id}/edit?companyId=${companyId}`
+                                                                    )
+                                                                }
+                                                                className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                                                title="Edit"
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {canDeleteFacility && (
+                                                            <button
+                                                                onClick={() => handleDeleteClick(company)}
+                                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
+
                                                 </td>
                                             </tr>
                                         ))}
@@ -445,11 +474,15 @@ export default function FacilityCompaniesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleStatusClick(company)}
-                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${company.status
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
+                                                disabled={!canEditFacility}
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${canEditFacility ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                                                    } ${company.status
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-red-100 text-red-700"
                                                     }`}
+                                                title={!canEditFacility ? "No permission to update" : ""}
                                             >
+
                                                 {company.status ? (
                                                     <>
                                                         <CheckCircle className="w-3 h-3" />
@@ -489,21 +522,25 @@ export default function FacilityCompaniesPage() {
                                                 <Eye className="w-4 h-4" />
                                                 View
                                             </button>
-                                            <button
-                                                onClick={() =>
-                                                    router.push(`/facility-company/${company.id}/edit?companyId=${companyId}`)
-                                                }
-                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteClick(company)}
-                                                className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {canEditFacility && (
+                                                <button
+                                                    onClick={() =>
+                                                        router.push(`/facility-company/${company.id}/edit?companyId=${companyId}`)
+                                                    }
+                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                    Edit
+                                                </button>
+                                            )}
+                                            {canDeleteFacility && (
+                                                <button
+                                                    onClick={() => handleDeleteClick(company)}
+                                                    className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

@@ -1,5 +1,7 @@
 import axios from "axios";
 import API_BASE_URL from "../utils/Constant";
+import { measureMemory } from "vm";
+import axiosInstance from "../axiosInstance";
 
 
 
@@ -38,6 +40,19 @@ export const AuthApi = {
         password,
       });
       console.log(response, "response");
+
+      if (response.data.sucess) {
+        const { user, token } = response.data;
+
+        if (!user?.role || !Array.isArray(user?.role.permissions)) {
+          console.error('❌ Backend returned user without role/permissions')
+          toast.error('❌ Backend returned user without role/permissions')
+          return {
+            sucess: false,
+            data: []
+          }
+        }
+      }
       return {
         success: true,
         data: response.data,
@@ -50,4 +65,33 @@ export const AuthApi = {
       };
     }
   },
+  refreshUser: async () => {
+
+    try {
+      // this checks type of device weather browser or backend
+      const token = typeof windonw !== 'undefined' ? localStorage.getItem('token') : null
+
+      if (!token) {
+        return { success: false, error: 'No token found' };
+      }
+
+
+      const response = await axiosInstance(`${API_BASE_URL}/auth/me`)
+
+
+      if (response.data.success) {
+        return {
+          success: true,
+          data: response.data.user,
+        };
+      }
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
 };

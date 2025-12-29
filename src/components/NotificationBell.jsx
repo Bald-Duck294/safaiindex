@@ -36,9 +36,9 @@ const NotificationBell = () => {
 
     // ✅ Close dropdown when clicking outside
     useEffect(() => {
-        console.log("🔔 NotificationBell - Notifications count:", notifications.length);
-        console.log("🔔 NotificationBell - Unread count:", unreadCount);
-        console.log("🔔 NotificationBell - Notifications:", notifications);
+        //  console.log("🔔 NotificationBell - Notifications count:", notifications.length);
+        //  console.log("🔔 NotificationBell - Unread count:", unreadCount);
+        //   console.log("🔔 NotificationBell - Notifications:", notifications);
 
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -64,7 +64,7 @@ const NotificationBell = () => {
 
     const handleNotificationClick = async (notification) => {  // ✅ Receive full notification object
 
-        console.log("data ", notification);
+        //      console.log("data ", notification);
         dispatch(markAsRead(notification.id));
 
 
@@ -73,20 +73,20 @@ const NotificationBell = () => {
 
         if (notification.data) {  // ✅ CORRECT - Access the clicked notification's data
             const { type, reviewId } = notification.data
-            console.log("notification 💡💡💡", type, " reviewId", reviewId);
+            //  console.log("notification 💡💡💡", type, " reviewId", reviewId);
 
             switch (type) {
                 case "review":
                     if (reviewId && companyId) {
 
                         const url = `/score-management?reviewId=${reviewId}&autoOpen=true`;
-                        console.log("🚀 Navigating to:", url);
+                        //console.log("🚀 Navigating to:", url);
                         router.push(url);
                         // router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`)
                     }
                     else {
-                        console.log('company_id', companyId);
-                        console.log('review_id', reviewId);
+                        //console.log('company_id', companyId);
+                        //console.log('review_id', reviewId);
                         toast.error('Either reviewId or company id not provided')
                     }
                     break;

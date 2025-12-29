@@ -3,21 +3,30 @@
 
 import { createSlice } from "@reduxjs/toolkit";
 import { resetNotifications } from "./notificationSlice";
+
+
 // Function to safely get the initial state from localStorage
+
+
 const getInitialState = () => {
   if (typeof window === 'undefined') {
     return { user: null, isAuthenticated: false, isFetching: false, error: false };
   }
   try {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    if (storedUser) {  // checking permissions is optional
       const user = JSON.parse(storedUser);
-      return {
-        user,
-        isAuthenticated: true, // ✅ Set to true if user exists
-        isFetching: false,
-        error: false
-      };
+      if (user && user.role && Array.isArray(user.role.permissions)) {
+        return {
+          user,
+          isAuthenticated: true,
+          isFetching: false,
+          error: false
+        };
+      } else {
+        console.warn('⚠️ Stored user missing role/permissions. Clearing auth state.');
+        localStorage.removeItem('user');
+      }
     }
   } catch (error) {
     console.error("Failed to parse user from localStorage", error);
@@ -25,6 +34,7 @@ const getInitialState = () => {
   }
   return { user: null, isAuthenticated: false, isFetching: false, error: false };
 };
+
 
 const authSlice = createSlice({
   name: "auth",
@@ -45,11 +55,11 @@ const authSlice = createSlice({
         console.error('Error saving user data to local storage:', error);
       }
     },
-    loginFailure: (state) => {
+    loginFailure: (state, action) => {
       state.user = null;
       state.isAuthenticated = false; // ✅ Set to false on failure
       state.isFetching = false;
-      state.error = true;
+      state.error = action.payload || true;
     },
     logout: (state) => {
       state.user = null;
@@ -58,6 +68,7 @@ const authSlice = createSlice({
       state.error = false;
       try {
         localStorage.removeItem("user");
+        localStorage.removeItem("token");
       } catch (error) {
         console.error('Error removing user data from local storage:', error);
       }

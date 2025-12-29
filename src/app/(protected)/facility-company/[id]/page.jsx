@@ -22,8 +22,17 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import Loader from "@/components/ui/Loader";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 export default function ViewFacilityCompanyPage() {
+
+  useRequirePermission(MODULES.FACILITY_COMPANIES);
+
+  const { canUpdate } = usePermissions();
+  const canEditFacility = canUpdate(MODULES.FACILITY_COMPANIES);
+
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -139,8 +148,6 @@ export default function ViewFacilityCompanyPage() {
                 </div>
               </div>
 
-
-
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={handleViewLocations}
@@ -150,33 +157,24 @@ export default function ViewFacilityCompanyPage() {
                   View Assigned Washroom(s)
                 </button>
 
-                <button
-                  onClick={() =>
-                    router.push(
-                      `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`
-                    )
-                  }
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit Details
-                </button>
+                {/* ✅ Only show Edit button if user has UPDATE permission */}
+                {canEditFacility && (
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`
+                      )
+                    }
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Details
+                  </button>
+                )}
               </div>
-
-
-              {/* <button
-                onClick={() =>
-                  router.push(
-                    `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`
-                  )
-                }
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Details
-              </button> */}
             </div>
           </div>
+
 
           {/* Basic Information */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">

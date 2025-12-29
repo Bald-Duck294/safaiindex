@@ -45,8 +45,19 @@ import Loader from "@/components/ui/Loader";
 import toast from 'react-hot-toast';
 import { CleanerReviewApi } from '@/lib/api/cleanerReviewApi';
 
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
+
 
 const SingleLocation = () => {
+
+  useRequirePermission(MODULES.LOCATIONS);
+
+  const { canUpdate, canDelete } = usePermissions();
+  const canEditLocation = canUpdate(MODULES.LOCATIONS);
+  const canDeleteLocation = canDelete(MODULES.LOCATIONS);
+
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -780,20 +791,27 @@ const SingleLocation = () => {
                     <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                     Locate on Map
                   </button>
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                    Delete
-                  </button>
+
+                  {canEditLocation && (
+                    <button
+                      onClick={handleEdit}
+                      className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                      Edit
+                    </button>
+                  )}
+
+                  {/* ✅ UPDATED: Delete button with permission check */}
+                  {canDeleteLocation && (
+                    <button
+                      onClick={handleDelete}
+                      className="flex items-center justify-center xs:justify-start px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

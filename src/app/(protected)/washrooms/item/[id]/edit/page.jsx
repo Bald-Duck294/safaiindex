@@ -1098,6 +1098,10 @@ import LocationsApi from '@/lib/api/LocationApi';
 import { fetchToiletFeaturesByName } from '@/lib/api/configurationsApi';
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import Loader from "@/components/ui/Loader";
+
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 import toast, { Toaster } from 'react-hot-toast';
 import { FacilityCompanyApi } from '@/lib/api/facilityCompanyApi';
 import {
@@ -1142,6 +1146,12 @@ const INDIAN_STATES = [
 ];
 
 const EditLocationPage = () => {
+
+  useRequirePermission(MODULES.LOCATIONS);
+
+  const { canUpdate } = usePermissions();
+  const canEditLocation = canUpdate(MODULES.LOCATIONS);
+
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2682,7 +2692,7 @@ const EditLocationPage = () => {
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={saving || !formData.name.trim()}
+                  disabled={saving || !canEditLocation}
                   className="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-md"
                 >
                   {saving ? (
@@ -2702,6 +2712,19 @@ const EditLocationPage = () => {
                     Save Changes
                   </> */}
                 </button>
+                {!canEditLocation && (
+                  <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg mb-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Read-Only Mode</p>
+                        <p className="text-sm text-amber-700">
+                          You don't have permission to edit this location
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

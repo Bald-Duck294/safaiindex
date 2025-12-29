@@ -1,3 +1,4 @@
+// src/app/(protected)/location-types/[id]/edit/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,8 +7,14 @@ import locationTypesApi from "@/lib/api/locationTypesApi";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+// ✅ NEW: Permission imports
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
 
 export default function EditLocationTypePage() {
+  // ✅ NEW: Page protection (requires location_types.update permission)
+  useRequirePermission(MODULES.LOCATION_TYPES, { action: 'update' });
+
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();

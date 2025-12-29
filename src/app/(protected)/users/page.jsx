@@ -3,16 +3,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
-import { Plus, Edit, Trash2, Users, Search, Eye, Filter, TrendingUp, UserCog, Briefcase, HardHat } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, Eye, Filter, TrendingUp, UserCog, Briefcase, HardHat, LucideDog } from "lucide-react";
 import { UsersApi } from "@/lib/api/usersApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import { useRouter } from "next/navigation";
+
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
+
 
 // Role hierarchy definition (removed User and Superadmin)
 const ROLE_HIERARCHY = {
   2: { name: 'Admin', level: 2, icon: Briefcase, color: 'blue' },
   3: { name: 'Supervisor', level: 3, icon: UserCog, color: 'green' },
-  5: { name: 'Cleaner', level: 5, icon: HardHat, color: 'gray' }
+  5: { name: 'Cleaner', level: 5, icon: HardHat, color: 'gray' },
+  6: { name: 'Demo users', level: 6, icon: LucideDog, color: 'orange' }
+
 };
 
 const TableRowSkeleton = () => (
@@ -49,6 +56,15 @@ const StatCardSkeleton = () => (
 );
 
 export default function UsersPage() {
+
+  useRequirePermission(MODULES.USERS);
+
+  // ✅ ADD: Permission checks
+  const { canAdd, canUpdate, canDelete } = usePermissions();
+  const canAddUser = canAdd(MODULES.USERS);
+  const canEditUser = canUpdate(MODULES.USERS);
+  const canDeleteUser = canDelete(MODULES.USERS);
+
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,7 +89,7 @@ export default function UsersPage() {
   // ✅ FIXED: Filter users by role - exclude superadmins (role_id 1) and users (role_id 4)
   const filterUsersByRole = useCallback((allUsers) => {
     if (!currentUser || !currentUser.role_id) return allUsers;
-    
+
     return allUsers.filter(user => {
       const userRoleId = parseInt(user.role_id || user.role?.id || 4);
 
@@ -95,7 +111,7 @@ export default function UsersPage() {
       // ✅ For other roles, apply hierarchy: show users with equal or lower authority
       const userRoleLevel = ROLE_HIERARCHY[userRoleId]?.level || 999;
       const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
-      
+
       return userRoleLevel >= currentUserRoleLevel;
     });
   }, [currentUser, currentUserRoleId]);
@@ -159,11 +175,11 @@ export default function UsersPage() {
   const canManageUser = (targetUser) => {
     // Superadmin can manage all users
     if (currentUserRoleId === 1) return true;
-    
+
     const targetUserRoleId = parseInt(targetUser.role_id || targetUser.role?.id || 4);
     const targetUserRoleLevel = ROLE_HIERARCHY[targetUserRoleId]?.level || 999;
     const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
-    
+
     return targetUserRoleLevel >= currentUserRoleLevel;
   };
 
@@ -250,13 +266,15 @@ export default function UsersPage() {
                 <p className="text-sm text-slate-600 mt-1">Manage all user roles and permissions</p>
               </div>
             </div>
-            <a
-              href={`/users/add?companyId=${companyId}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
-            >
-              <Plus size={20} />
-              Add User
-            </a>
+            {canAddUser && (
+              <a
+                href={`/users/add?companyId=${companyId}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+              >
+                <Plus size={20} />
+                Add User
+              </a>
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -291,11 +309,10 @@ export default function UsersPage() {
                     <div
                       key={roleId}
                       onClick={() => setSelectedRole(selectedRole === roleId ? 'all' : roleId)}
-                      className={`bg-white p-6 rounded-xl shadow-md border-2 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl animate-slideUp ${
-                        selectedRole === roleId
-                          ? `border-${roleData.color}-400 ring-2 ring-${roleData.color}-200`
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                      className={`bg-white p-6 rounded-xl shadow-md border-2 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl animate-slideUp ${selectedRole === roleId
+                        ? `border-${roleData.color}-400 ring-2 ring-${roleData.color}-200`
+                        : 'border-slate-200 hover:border-slate-300'
+                        }`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-center justify-between">
@@ -340,11 +357,10 @@ export default function UsersPage() {
                 </div>
                 <button
                   onClick={() => setSelectedRole('all')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    selectedRole === 'all'
-                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${selectedRole === 'all'
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
                 >
                   All Users
                 </button>
@@ -356,18 +372,16 @@ export default function UsersPage() {
                     <button
                       key={roleId}
                       onClick={() => setSelectedRole(roleId)}
-                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
-                        selectedRole === roleId
-                          ? `bg-${roleData.color}-600 text-white shadow-md`
-                          : `bg-${roleData.color}-100 text-${roleData.color}-700 hover:bg-${roleData.color}-200`
-                      }`}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${selectedRole === roleId
+                        ? `bg-${roleData.color}-600 text-white shadow-md`
+                        : `bg-${roleData.color}-100 text-${roleData.color}-700 hover:bg-${roleData.color}-200`
+                        }`}
                     >
                       {roleData.name}s
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${
-                        selectedRole === roleId
-                          ? 'bg-white/20'
-                          : `bg-${roleData.color}-200`
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${selectedRole === roleId
+                        ? 'bg-white/20'
+                        : `bg-${roleData.color}-200`
+                        }`}>
                         {count}
                       </span>
                     </button>
@@ -428,23 +442,22 @@ export default function UsersPage() {
                               >
                                 <Eye size={16} />
                               </button>
-                              {canManageUser(user) && (
-                                <>
-                                  <button
-                                    onClick={() => router.push(`/users/${user.id}?companyId=${companyId}`)}
-                                    className="cursor-pointer p-2 text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition-all duration-200 hover:scale-110"
-                                    title="Edit User"
-                                  >
-                                    <Edit size={16} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(user)}
-                                    className="cursor-pointer p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-all duration-200 hover:scale-110"
-                                    title="Delete User"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </>
+                              {canManageUser(user) && canEditUser && (
+                                <button
+                                  onClick={() => router.push(`/users/${user.id}?companyId=${companyId}`)}
+                                  className="flex-1 cursor-pointer p-2.5 text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm"
+                                >
+                                  <Edit size={16} />
+                                  Edit
+                                </button>
+                              )}
+                              {canManageUser(user) && canDeleteUser && (
+                                <button
+                                  onClick={() => handleDelete(user)}
+                                  className="cursor-pointer p-2.5 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
                               )}
                             </div>
                           </td>

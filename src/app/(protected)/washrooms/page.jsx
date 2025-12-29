@@ -11,7 +11,9 @@ import FacilityCompanyApi from "@/lib/api/facilityCompanyApi";
 import LocationActionsMenu from './components/LocationActionsMenu';
 import { useSelector } from "react-redux";
 import locationTypesApi from "@/lib/api/locationTypesApi";
-
+import { usePermissions } from "@/lib/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/permissions";
+import { useRequirePermission } from "@/lib/hooks/useRequirePermission";
 function WashroomsPage() {
   const [list, setList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -45,6 +47,18 @@ function WashroomsPage() {
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
   const isPermitted = userRoleId === 1 || userRoleId === 2;
+
+
+  useRequirePermission(MODULES.LOCATIONS);
+  const { canView, canAdd, canUpdate, canDelete, hasPermission } = usePermissions();
+
+
+  // Permission checks for different actions
+  const canAddLocation = canAdd(MODULES.LOCATIONS);
+  const canEditLocation = canUpdate(MODULES.LOCATIONS);
+  const canDeleteLocation = canDelete(MODULES.LOCATIONS);
+  const canToggleStatus = hasPermission(MODULES.LOCATIONS, 'toggle_status');
+  const canAssignCleaner = canAdd(MODULES.ASSIGNMENTS);
 
   const getRatingColor = (rating) => {
     const actualRating = rating || 0;
@@ -125,6 +139,8 @@ function WashroomsPage() {
   useEffect(() => {
     handleSort('name');
   }, [])
+
+
   // ✅ NEW: Render sort icon
   const renderSortIcon = (currentOrder) => {
     if (!currentOrder) {
@@ -376,7 +392,7 @@ function WashroomsPage() {
     setStatusSortOrder(null);
   };
 
-  const renderCleanerBadge = (cleaners) => {
+  const renderCleanerBadge = (locationName, cleaners) => {
     if (!cleaners || cleaners.length === 0) {
       return <span className="text-sm text-slate-400">No cleaners</span>;
     }
@@ -393,7 +409,7 @@ function WashroomsPage() {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setCleanerModal({ open: true, location: { name: "", cleaners } });
+            setCleanerModal({ open: true, location: { name: locationName, cleaners } });
           }}
           className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
         >
@@ -435,24 +451,28 @@ function WashroomsPage() {
                   </div>
                 </div>
 
-                {isPermitted && (
-                  <div className="flex gap-2">
+                <div className="flex gap-2">
+                  {canAddLocation && (
                     <button
                       onClick={handleAddToilet}
-                      className="flex items-center gap-1.5 px-3 py-2 sm:px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
+                      className="cursor-pointer flex items-center gap-1.5 px-3 py-2 sm:px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
                     >
                       <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">Add Location</span>
                     </button>
+                  )}
+
+                  {canAssignCleaner && (
                     <button
                       onClick={handleAssignWashroom}
-                      className="flex items-center gap-1.5 px-3 py-2 sm:px-4 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm"
+                      className="cursor-pointer flex items-center gap-1.5 px-3 py-2 sm:px-4 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all shadow-sm"
                     >
                       <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">Assign</span>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
+
               </div>
             </div>
 
@@ -474,21 +494,21 @@ function WashroomsPage() {
                   <div className="flex gap-1 bg-white border border-slate-300 rounded-lg p-1">
                     <button
                       onClick={() => setAssignmentFilter("")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "" ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                      className={`cursor-pointer px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "" ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
                         }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setAssignmentFilter("assigned")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "assigned" ? 'bg-emerald-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                      className={`cursor-pointer px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "assigned" ? 'bg-emerald-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
                         }`}
                     >
                       Assigned
                     </button>
                     <button
                       onClick={() => setAssignmentFilter("unassigned")}
-                      className={`px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "unassigned" ? 'bg-orange-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                      className={`cursor-pointer px-3 py-2 rounded text-sm font-medium transition-all ${assignmentFilter === "unassigned" ? 'bg-orange-600 text-white' : 'bg-transparent text-slate-600 hover:bg-slate-100'
                         }`}
                     >
                       Unassigned
@@ -498,7 +518,7 @@ function WashroomsPage() {
 
                 <div className="flex flex-wrap gap-2">
                   <select
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="cursor-pointer px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={selectedLocationTypeId}
                     onChange={(e) => setSelectedLocationTypeId(e.target.value)}
                   >
@@ -509,7 +529,7 @@ function WashroomsPage() {
                   </select>
 
                   <select
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="cursor-pointer px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={facilityCompanyId}
                     onChange={(e) => {
                       const selectedId = e.target.value;
@@ -529,7 +549,7 @@ function WashroomsPage() {
                   </select>
 
                   <select
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="cursor-pointer px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={minRating}
                     onChange={(e) => setMinRating(e.target.value)}
                   >
@@ -542,7 +562,7 @@ function WashroomsPage() {
 
                   <button
                     onClick={clearAllFilters}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-all"
+                    className="cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-all"
                   >
                     <X className="h-4 w-4" />
                     Clear
@@ -651,7 +671,7 @@ function WashroomsPage() {
                     </div>
 
                     <div>
-                      {renderCleanerBadge(item.cleaner_assignments)}
+                      {renderCleanerBadge(item.name, item.cleaner_assignments)}
                     </div>
 
                     <div>
@@ -663,14 +683,17 @@ function WashroomsPage() {
                     </div>
 
                     <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => setStatusModal({ open: true, location: item })}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${(item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                          }`}
-                      >
-                        {(item.status === true || item.status === null) ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
-                        {(item.status === true || item.status === null) ? 'Active' : 'Inactive'}
-                      </button>
+                      {canToggleStatus && (
+                        <button
+                          onClick={() => setStatusModal({ open: true, location: item })}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${(item.status === true || item.status === null) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                            }`}
+                        >
+                          {(item.status === true || item.status === null) ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
+                          {(item.status === true || item.status === null) ? 'Active' : 'Inactive'}
+                        </button>
+                      )}
+
 
                       <button
                         onClick={() => handleViewLocation(item.latitude, item.longitude)}
@@ -693,6 +716,8 @@ function WashroomsPage() {
                             onDelete={(location) => setDeleteModal({ open: true, location })}
                             onEdit={(locationId) => router.push(`/locations/${locationId}/edit`)}
                             location_id={item.id}
+                            canDeleteLocation={canDeleteLocation}
+                            canEditLocation={canEditLocation}
                           />
                         )}
                       </div>
@@ -789,7 +814,7 @@ function WashroomsPage() {
 
                       <div>
                         <label className="text-xs font-medium text-slate-500 mb-1 block">Cleaner</label>
-                        {renderCleanerBadge(item.cleaner_assignments)}
+                        {renderCleanerBadge(item.name, item.cleaner_assignments)}
                       </div>
 
                       <div>
@@ -809,10 +834,11 @@ function WashroomsPage() {
 
           {/* Modals - remain the same */}
           {cleanerModal.open && (
+            // console.log("cleaner modal", cleanerModal),
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setCleanerModal({ open: false, location: null })}>
-              <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white rounded-xl max-w-md w-full max-h-[85vh] overflow-y-scroll p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800">Assigned Cleaners</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">{cleanerModal.location?.name} - Assigned Cleaners</h3>
                   <button onClick={() => setCleanerModal({ open: false, location: null })} className="text-slate-400 hover:text-slate-600">
                     <X className="h-5 w-5" />
                   </button>

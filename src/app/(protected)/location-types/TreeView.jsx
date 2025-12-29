@@ -33,10 +33,17 @@
 //   );
 // }
 
+// src/app/(protected)/location-types/TreeView.jsx
 
-import TreeNode from "@/components/TreeNode";
-import { useState } from "react";
-export default function TreeView({ types, onUpdate, flag }) {
+
+
+// import TreeNOde import { useState } from "react";
+import TreeNode from "./TreeNode"
+
+
+
+
+export default function TreeView({ types, onUpdate, flag , canUpdate , canDelete }) {
 
   // const [read , setRead] = useState( flag == false? true :false )
   // console.log(flag, "flag");
@@ -68,7 +75,8 @@ export default function TreeView({ types, onUpdate, flag }) {
   return (
     <div className="space-y-2">
       {tree.map((type) => (
-        <TreeNode key={type.id} type={type} onUpdate={onUpdate} allTypes={types} read={flag} />
+        <TreeNode key={type.id} type={type} onUpdate={onUpdate} allTypes={types} read={flag} canUpdate={canUpdate}
+          canDelete={canDelete} />
       ))}
     </div>
   );

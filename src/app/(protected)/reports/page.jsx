@@ -19,6 +19,9 @@ import ReportsApi from "@/lib/api/reportsApi";
 import ReportModal from "./components/ReportModal";
 import Loader from "@/components/ui/Loader";
 import { useSelector } from "react-redux";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 const REPORT_TYPES = [
   {
@@ -160,6 +163,13 @@ const toastInfo = (message) => {
   })
 }
 export default function ReportsPage() {
+
+
+  useRequirePermission(MODULES.REPORTS);
+
+  const { canView } = usePermissions();
+  const canViewReports = canView(MODULES.REPORTS);
+
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
   const userRoleId = user?.role_id;
@@ -284,7 +294,7 @@ export default function ReportsPage() {
         setLocations(response.data);
       } else {
         setLocations([]);
-        toast.info("No locations found for selected zone");
+        toast.error("No locations found for selected zone");
       }
     } catch (error) {
       console.error("Error fetching locations by zone:", error);
@@ -318,7 +328,7 @@ export default function ReportsPage() {
       if (response.success) {
         setCleaners(response.data);
         if (response.data.length === 0) {
-          toast.info("No cleaners assigned to this washroom");
+          toast.error("No cleaners assigned to this washroom");
         }
       } else {
         setCleaners([]);
@@ -389,6 +399,12 @@ export default function ReportsPage() {
   });
 
   const generateReport = async () => {
+
+    if (!canViewReports) {
+      toast.error("You don't have permission to generate reports");
+      return;
+    }
+
     if (!companyId) {
       toast.error("Company ID is required");
       return;
@@ -468,7 +484,7 @@ export default function ReportsPage() {
       if (response.success || response.status === "success") {
         if (!hasData) {
           setShowNoDataModal(true);
-          toast.info("No records found for selected filters");
+          toast.error("No records found for selected filters");
           return;
         }
 
@@ -636,6 +652,24 @@ export default function ReportsPage() {
               </div>
             </div>
           </div>
+
+
+          {/* ✅ Permission Warning */}
+          {!canViewReports && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-red-800 mb-1">
+                    No Permission
+                  </h4>
+                  <p className="text-sm text-red-700">
+                    You don't have permission to generate reports. Please contact your administrator.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Report Type Selector */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -868,8 +902,9 @@ export default function ReportsPage() {
             <div className="flex flex-wrap gap-3 mt-6">
               <button
                 onClick={generateReport}
-                disabled={isLoading}
+                disabled={isLoading || !canViewReports}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                title={!canViewReports ? "You don't have permission to generate reports" : ""}
               >
                 {isLoading ? (
                   <>

@@ -1,3 +1,4 @@
+// src/app/(protected)/location-types/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +7,10 @@ import locationTypesApi from "@/lib/api/locationTypesApi";
 import TreeView from "./TreeView";
 import { useCompanyId } from '@/lib/providers/CompanyProvider';
 import toast, { Toaster } from "react-hot-toast";
+// ✅ NEW: Permission imports
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { MODULES } from '@/lib/constants/permissions';
 
 import {
   Plus,
@@ -45,7 +50,8 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-const EmptyState = ({ companyId }) => (
+// ✅ MODIFIED: Accept canAdd permission prop
+const EmptyState = ({ companyId, canAdd }) => (
   <div className="text-center py-16 px-4">
     <div className="max-w-md mx-auto">
       <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -57,18 +63,25 @@ const EmptyState = ({ companyId }) => (
       <p className="text-gray-500 mb-6">
         You haven't created any location hierarchy yet. Start by adding your first location type to organize your washroom locations.
       </p>
-      <Link
-        href={companyId ? `/location-types/add?companyId=${companyId}` : "/location-types/add"}
-        className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
-        <Plus className="w-5 h-5" />
-        Create First Location Type
-      </Link>
+      {/* ✅ MODIFIED: Conditional rendering */}
+      {canAdd && (
+        <Link
+          href={companyId ? `/location-types/add?companyId=${companyId}` : "/location-types/add"}
+          className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Create First Location Type
+        </Link>
+      )}
     </div>
   </div>
 );
 
 export default function LocationTypesPage() {
+  // ✅ NEW: Permission checks
+  useRequirePermission(MODULES.LOCATION_TYPES);
+  const { canAdd, canUpdate, canDelete } = usePermissions();
+
   const [types, setTypes] = useState([]);
   const [filteredTypes, setFilteredTypes] = useState([]);
   const [showTree, setShowTree] = useState(false);
@@ -189,13 +202,16 @@ export default function LocationTypesPage() {
                   </button>
                 )}
 
-                <Link
-                  href={companyId ? `/location-types/add?companyId=${companyId}` : "/location-types/add"}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium order-1 sm:order-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Location Hierarchy
-                </Link>
+                {/* ✅ MODIFIED: Conditional rendering for Add button */}
+                {canAdd && (
+                  <Link
+                    href={companyId ? `/location-types/add?companyId=${companyId}` : "/location-types/add"}
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium order-1 sm:order-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Location Hierarchy
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -223,7 +239,7 @@ export default function LocationTypesPage() {
                 <LoadingSkeleton />
               </div>
             ) : types.length === 0 ? (
-              <EmptyState companyId={companyId} />
+              <EmptyState companyId={companyId} canAdd={canAdd} />
             ) : (
               <>
                 {/* Table View (desktop and tablets) */}
@@ -249,12 +265,15 @@ export default function LocationTypesPage() {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent Type</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                              {/* ✅ MODIFIED: Conditional column header */}
+                              {(canUpdate || canDelete) && (
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                              )}
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
                             {filteredTypes.length === 0 ? (
-                              <tr><td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                              <tr><td colSpan={canUpdate || canDelete ? "4" : "3"} className="px-6 py-8 text-center text-gray-500">
                                 <Search className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                                 <p className="font-medium">No location hierarchy found</p>
                                 <p className="text-sm">Try adjusting your search terms</p>
@@ -265,20 +284,29 @@ export default function LocationTypesPage() {
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{type.id}</td>
                                   <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{type.name}</div></td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getParentName(type.parent_id)}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div className="flex items-center gap-2">
-                                      <Link
-                                        href={`/location-types/${type.id}/edit${companyId ? `?companyId=${companyId}` : ''}`}
-                                        className="cursor-pointer text-blue-600 hover:text-blue-900 font-medium"
-                                      >
-                                        Edit
-                                      </Link>
-                                      <span className="text-gray-300">|</span>
-                                      <button onClick={() => handleDeleteClick(type)} className="cursor-pointer text-red-600 hover:text-red-900 font-medium">
-                                        Delete
-                                      </button>
-                                    </div>
-                                  </td>
+                                  {/* ✅ MODIFIED: Conditional actions column */}
+                                  {(canUpdate || canDelete) && (
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      <div className="flex items-center gap-2">
+                                        {canUpdate && (
+                                          <Link
+                                            href={`/location-types/${type.id}/edit${companyId ? `?companyId=${companyId}` : ''}`}
+                                            className="cursor-pointer text-blue-600 hover:text-blue-900 font-medium"
+                                          >
+                                            Edit
+                                          </Link>
+                                        )}
+                                        {canUpdate && canDelete && (
+                                          <span className="text-gray-300">|</span>
+                                        )}
+                                        {canDelete && (
+                                          <button onClick={() => handleDeleteClick(type)} className="cursor-pointer text-red-600 hover:text-red-900 font-medium">
+                                            Delete
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  )}
                                 </tr>
                               )))}
                           </tbody>
@@ -315,20 +343,27 @@ export default function LocationTypesPage() {
                           <div key={type.id} className="bg-white rounded-lg shadow border p-4 space-y-2">
                             <div className="flex justify-between items-center">
                               <div className="text-gray-600 text-sm font-semibold">ID: #{type.id}</div>
-                              <div className="flex gap-2 text-gray-600 text-sm">
-                                <Link
-                                  href={`/location-types/${type.id}/edit${companyId ? `?companyId=${companyId}` : ''}`}
-                                  className="text-blue-600 hover:text-blue-900 font-medium"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => handleDeleteClick(type)}
-                                  className="text-red-600 hover:text-red-900 font-medium"
-                                >
-                                  Delete
-                                </button>
-                              </div>
+                              {/* ✅ MODIFIED: Conditional action buttons */}
+                              {(canUpdate || canDelete) && (
+                                <div className="flex gap-2 text-gray-600 text-sm">
+                                  {canUpdate && (
+                                    <Link
+                                      href={`/location-types/${type.id}/edit${companyId ? `?companyId=${companyId}` : ''}`}
+                                      className="text-blue-600 hover:text-blue-900 font-medium"
+                                    >
+                                      Edit
+                                    </Link>
+                                  )}
+                                  {canDelete && (
+                                    <button
+                                      onClick={() => handleDeleteClick(type)}
+                                      className="text-red-600 hover:text-red-900 font-medium"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="text-lg font-semibold text-gray-900">{type.name}</div>
                             <div className="text-gray-500 text-sm">Parent: {getParentName(type.parent_id)}</div>
@@ -344,7 +379,14 @@ export default function LocationTypesPage() {
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Hierarchy View</h3>
                       <p className="text-sm text-gray-500">Drag and drop to reorganize the location hierarchy</p>
                     </div>
-                    <TreeView types={types} onUpdate={fetchTypes} flag={false} />
+                    {/* ✅ MODIFIED: Pass permissions to TreeView */}
+                    <TreeView
+                      types={types}
+                      onUpdate={fetchTypes}
+                      flag={false}
+                      canUpdate={canUpdate}
+                      canDelete={canDelete}
+                    />
                   </div>
                 )}
               </>

@@ -30,7 +30,7 @@ export default function useNotifications() {
       return;
     }
     if (isInitialized.current) {
-      console.log("⏭️ FCM already initialized, skipping...");
+    //  console.log("⏭️ FCM already initialized, skipping...");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function useNotifications() {
 
     const initializeFCM = async () => {
       const token = await requestFCMToken();
-      console.log("🔑 FCM Token received");
+     // console.log("🔑 FCM Token received");
 
       if (token) {
         dispatch(setFCMToken(token));
@@ -56,7 +56,7 @@ export default function useNotifications() {
             fcmToken: token,
             userId: user.id
           }).unwrap();
-          console.log("✅ FCM token saved to backend");
+         // console.log("✅ FCM token saved to backend");
         } catch (error) {
           console.error("❌ Error saving FCM token:", error);
         }
@@ -66,11 +66,11 @@ export default function useNotifications() {
       const addNotificationToStore = (title, body, data, messageId) => {
         // Check if already processed
         if (messageId && processedMessageIds.current.has(messageId)) {
-          console.log("⏭️ Message already processed:", messageId);
+        //  console.log("⏭️ Message already processed:", messageId);
           return;
         }
 
-        console.log("📝 Adding to Redux - Title:", title, "Body:", body);
+       // console.log("📝 Adding to Redux - Title:", title, "Body:", body);
 
         dispatch(
           addNotification({
@@ -91,21 +91,21 @@ export default function useNotifications() {
           }
         }
 
-        console.log("✅ Notification added to Redux");
+    //    console.log("✅ Notification added to Redux");
       };
 
       // ✅ 1. Listen for FOREGROUND messages via onMessage
-      console.log("👂 Setting up onMessage listener (foreground only)...");
+    //  console.log("👂 Setting up onMessage listener (foreground only)...");
       unsubscribeFCM = listenToFCMMessages((payload) => {
 
         const currentAuth = store.getState?.()?.auth?.isAuthenticated;
         if (!currentAuth) {
-          console.log("⚠️ User logged out, ignoring notification");
+    //      console.log("⚠️ User logged out, ignoring notification");
           return;
         }
 
-        console.log("🎉 onMessage FIRED - Tab is ACTIVE (foreground)");
-        console.log("📦 Payload:", JSON.stringify(payload, null, 2));
+    //    console.log("🎉 onMessage FIRED - Tab is ACTIVE (foreground)");
+   //     console.log("📦 Payload:", JSON.stringify(payload, null, 2));
 
         const title = payload.notification?.title ||
           payload.data?.title ||
@@ -121,13 +121,13 @@ export default function useNotifications() {
       });
 
       // ✅ 2. Listen for BACKGROUND messages from Service Worker
-      console.log("👂 Setting up Service Worker message listener (background only)...");
+     // console.log("👂 Setting up Service Worker message listener (background only)...");
       const handleServiceWorkerMessage = (event) => {
-        console.log("📨 Message from SW:", event.data);
+    //    console.log("📨 Message from SW:", event.data);
 
         // Handle background notifications
         if (event.data?.type === 'FCM_NOTIFICATION_BACKGROUND') {
-          console.log("🌙 Background notification from SW (tab was not active)");
+    //      console.log("🌙 Background notification from SW (tab was not active)");
           const { title, body, data, messageId } = event.data.payload;
 
           addNotificationToStore(title, body, data, messageId);
@@ -135,12 +135,12 @@ export default function useNotifications() {
 
         // Handle notification clicks
         if (event.data?.type === 'NOTIFICATION_CLICKED') {
-          console.log("🖱️ Notification clicked!");
+       //   console.log("🖱️ Notification clicked!");
           // Handle navigation if needed
           // e.g., router.push(event.data.data.screen);
 
           const { data, targetUrl } = event.data;
-          console.log("🚀 Navigating to:", targetUrl);
+         // console.log("🚀 Navigating to:", targetUrl);
 
 
           if (targetUrl) {
@@ -157,7 +157,7 @@ export default function useNotifications() {
         navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
       }
 
-      console.log("✅ All message listeners setup complete");
+     // console.log("✅ All message listeners setup complete");
 
       return () => {
         if ('serviceWorker' in navigator) {
@@ -169,7 +169,7 @@ export default function useNotifications() {
     const cleanupSWListener = initializeFCM();
 
     return () => {
-      console.log("🧹 Cleaning up FCM");
+    //  console.log("🧹 Cleaning up FCM");
       unsubscribeFCM();
       cleanupSWListener?.then(cleanup => cleanup?.());
       isInitialized.current = false;

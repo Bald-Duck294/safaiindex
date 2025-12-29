@@ -24,6 +24,9 @@ import {
   Loader2,
   Eye
 } from "lucide-react";
+import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { MODULES } from '@/lib/constants/permissions';
 
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
@@ -54,7 +57,30 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-const EmptyState = ({ role, companyId }) => (
+// const EmptyState = ({ role, companyId }) => (
+//   <div className="text-center py-16 px-4">
+//     <div className="max-w-md mx-auto">
+//       <div className="w-24 h-24 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+//         <UserPlus className="w-12 h-12 text-blue-400" />
+//       </div>
+//       <h3 className="text-xl font-semibold text-gray-900 mb-3">
+//         No {role}s Found
+//       </h3>
+//       <p className="text-gray-500 mb-6">
+//         You haven't added any {role}s yet. Start by creating your first {role} account.
+//       </p>
+//       <Link
+//         href={`/role/${role}/add${companyId ? `?companyId=${companyId}` : ''}`}
+//         className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+//       >
+//         <Plus className="w-5 h-5" />
+//         Add First {role}
+//       </Link>
+//     </div>
+//   </div>
+// );
+
+const EmptyState = ({ role, companyId, canAdd }) => (
   <div className="text-center py-16 px-4">
     <div className="max-w-md mx-auto">
       <div className="w-24 h-24 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
@@ -64,18 +90,24 @@ const EmptyState = ({ role, companyId }) => (
         No {role}s Found
       </h3>
       <p className="text-gray-500 mb-6">
-        You haven't added any {role}s yet. Start by creating your first {role} account.
+        {canAdd
+          ? `You haven't added any ${role}s yet. Start by creating your first ${role} account.`
+          : `No ${role}s have been added yet.`
+        }
       </p>
-      <Link
-        href={`/role/${role}/add${companyId ? `?companyId=${companyId}` : ''}`}
-        className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
-        <Plus className="w-5 h-5" />
-        Add First {role}
-      </Link>
+      {canAdd && (
+        <Link
+          href={`/role/${role}/add${companyId ? `?companyId=${companyId}` : ''}`}
+          className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Add First {role}
+        </Link>
+      )}
     </div>
   </div>
 );
+
 
 const StatusBadge = ({ isActive }) => (
   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${isActive
@@ -105,6 +137,15 @@ const roleIdMap = {
 };
 
 export default function RolePage() {
+
+  useRequirePermission(MODULES.USERS);
+
+  const { canView, canAdd, canUpdate, canDelete } = usePermissions();
+  const canViewUsers = canView(MODULES.USERS);
+  const canAddUsers = canAdd(MODULES.USERS);
+  const canEditUsers = canUpdate(MODULES.USERS);
+  const canDeleteUsers = canDelete(MODULES.USERS);
+
   const params = useParams();
   const router = useRouter();
   const role = params.role;
@@ -124,6 +165,8 @@ export default function RolePage() {
   // src/app/(protected)/role/[role]/page.jsx
   // Replace only the fetchUsers function:
 
+
+  console.log("In role page")
   const fetchUsers = async () => {
     if (!roleId) return;
 
@@ -150,7 +193,32 @@ export default function RolePage() {
   };
 
 
+  // const handleDelete = async (id, userName) => {
+  //   if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+  //     return;
+  //   }
+
+  //   const loadingToast = toast.loading('Deleting user...');
+  //   try {
+  //     const response = await UsersApi.deleteUser(id);
+  //     if (response.success) {
+  //       toast.success("User deleted successfully!", { id: loadingToast });
+  //       fetchUsers(); // Refresh the list
+  //     } else {
+  //       toast.error(response.error, { id: loadingToast });
+  //     }
+  //   } catch (error) {
+  //     toast.error('Failed to delete user', { id: loadingToast });
+  //   }
+  // };
+
   const handleDelete = async (id, userName) => {
+    // ✅ Check permission before deleting
+    if (!canDeleteUsers) {
+      toast.error("You don't have permission to delete users"); 
+      return;
+    }
+
     if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
       return;
     }
@@ -170,6 +238,7 @@ export default function RolePage() {
   };
 
   useEffect(() => {
+
     if (roleId) {
       fetchUsers();
     }
@@ -212,7 +281,7 @@ export default function RolePage() {
         <div className="max-w-7xl mx-auto p-4 sm:p-6">
           {/* Header */}
           <div className="bg-white rounded-lg shadow-sm border mb-6 p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.back()}
@@ -238,7 +307,39 @@ export default function RolePage() {
                 <Plus className="w-4 h-4" />
                 Add {title}
               </Link>
+            </div> */}
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.back()}
+                  className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">{title} Management</h1>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {hasCompanyContext
+                      ? `Manage ${title.toLowerCase()}s for this company`
+                      : `Manage all ${title.toLowerCase()}s`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* ✅ Only show Add button if user has ADD permission */}
+              {canAddUsers && (
+                <Link
+                  href={`/role/${role}/add${companyId ? `?companyId=${companyId}` : ''}`}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add {title}
+                </Link>
+              )}
             </div>
+
           </div>
 
           {/* Search - Only show if there are users */}
@@ -348,7 +449,7 @@ export default function RolePage() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <StatusBadge isActive={user.is_active !== false} />
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex items-center gap-2">
                                 <Link
                                   href={`/role/${role}/${user.id}${companyId ? `?companyId=${companyId}` : ''}`}
@@ -372,7 +473,45 @@ export default function RolePage() {
                                   Delete
                                 </button>
                               </div>
+                            </td> */}
+
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex items-center gap-2">
+                                {/* ✅ View button - always visible if user has VIEW permission */}
+                                {canViewUsers && (
+                                  <Link
+                                    href={`/role/${role}/${user.id}${companyId ? `?companyId=${companyId}` : ''}`}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    View
+                                  </Link>
+                                )}
+
+                                {/* ✅ Edit button - only if user has UPDATE permission */}
+                                {canEditUsers && (
+                                  <Link
+                                    href={`/role/${role}/${user.id}/edit${companyId ? `?companyId=${companyId}` : ''}`}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 rounded-md hover:bg-green-100 transition-colors"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                    Edit
+                                  </Link>
+                                )}
+
+                                {/* ✅ Delete button - only if user has DELETE permission */}
+                                {canDeleteUsers && (
+                                  <button
+                                    onClick={() => handleDelete(user.id, user.name)}
+                                    className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
                             </td>
+
                           </tr>
                         ))
                       )}
