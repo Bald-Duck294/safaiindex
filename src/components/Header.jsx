@@ -319,6 +319,12 @@ const Header = ({ pageTitle }) => {
         return "User";
       case 5:
         return "Cleaner";
+      case 6:
+        return "Zonal Admin";
+      case 7:
+        return "Facility Supervisor";
+      case 8:
+        return "Facility Admin";
       default:
         return "User";
     }

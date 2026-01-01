@@ -39,7 +39,7 @@ const AuthPage = () => {
 
     if (isLogin) {
       dispatch(loginStart());
-      
+
       try {
         const response = await AuthApi.login(formData.phone, formData.password);
         console.log(response, "user login response");
@@ -59,10 +59,14 @@ const AuthPage = () => {
           }
 
           dispatch(loginSuccess(user));
+          const roleId = parseInt(user?.role_id)
           toast.success(`Welcome back, ${user.name}!`);
+          console.log(user.role_id, "user before redirecting ");
+          console.log(user.role_id === 1, "user role id ");
 
-          if (user.role_id === 1) {
+          if (roleId === 1) {
             // Superadmin → Main dashboard
+            console.log('Redirecting to /dashboard for superadmin');
             router.push('/dashboard');
           } else if (user.company_id) {
             // All other roles with company_id → Client dashboard

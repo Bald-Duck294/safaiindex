@@ -3,24 +3,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
-import { Plus, Edit, Trash2, Users, Search, Eye, Filter, TrendingUp, UserCog, Briefcase, HardHat, LucideDog } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, Eye, Filter, TrendingUp, Building2, MapPin, Shield, UserCog, Briefcase, HardHat, LucideDog } from "lucide-react";
 import { UsersApi } from "@/lib/api/usersApi";
 import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import { useRouter } from "next/navigation";
-
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
 import { MODULES } from '@/lib/constants/permissions';
 
 
-// Role hierarchy definition (removed User and Superadmin)
-const ROLE_HIERARCHY = {
-  2: { name: 'Admin', level: 2, icon: Briefcase, color: 'blue' },
-  3: { name: 'Supervisor', level: 3, icon: UserCog, color: 'green' },
-  5: { name: 'Cleaner', level: 5, icon: HardHat, color: 'gray' },
-  6: { name: 'Demo users', level: 6, icon: LucideDog, color: 'orange' }
 
+
+const ROLE_HIERARCHY = {
+  2: { name: "Admin", level: 2, icon: Shield, color: "blue" },
+  3: { name: "Supervisor", level: 4, icon: UserCog, color: "green" },
+  5: { name: "Cleaner", level: 5, icon: HardHat, color: "gray" },
+  6: { name: "Zonal Admin", level: 3, icon: MapPin, color: "purple" },
+  7: { name: "Facility Supervisor", level: 4, icon: Users, color: "teal" },
+  8: { name: "Facility Admin", level: 3, icon: Building2, color: "indigo" },
 };
+
+// Role hierarchy definition (removed User and Superadmin)
+// const ROLE_HIERARCHY = {
+//   2: { name: 'Admin', level: 2, icon: Briefcase, color: 'blue' },
+//   3: { name: 'Supervisor', level: 3, icon: UserCog, color: 'green' },
+//   5: { name: 'Cleaner', level: 5, icon: HardHat, color: 'gray' },
+//   6: { name: 'Demo users', level: 6, icon: LucideDog, color: 'orange' }
+// };
 
 const TableRowSkeleton = () => (
   <tr className="animate-pulse">
@@ -87,34 +96,63 @@ export default function UsersPage() {
   }, [users]);
 
   // ✅ FIXED: Filter users by role - exclude superadmins (role_id 1) and users (role_id 4)
+  // const filterUsersByRole = useCallback((allUsers) => {
+  //   if (!currentUser || !currentUser.role_id) return allUsers;
+
+  //   return allUsers.filter(user => {
+  //     const userRoleId = parseInt(user.role_id || user.role?.id || 4);
+
+  //     //  Exclude superadmins (role_id 1) and regular users (role_id 4)
+  //     if (userRoleId === 1 || userRoleId === 4) {
+  //       return false;
+  //     }
+
+  //     // Only show roles that exist in ROLE_HIERARCHY (2, 3, 5)
+  //     if (!ROLE_HIERARCHY[userRoleId]) {
+  //       return false;
+  //     }
+
+  //     // ✅ If current user is Superadmin (role_id 1), show all valid roles
+  //     if (currentUserRoleId === 1) {
+  //       return true;
+  //     }
+
+  //     // ✅ For other roles, apply hierarchy: show users with equal or lower authority
+  //     const userRoleLevel = ROLE_HIERARCHY[userRoleId]?.level || 999;
+  //     const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
+
+  //     return userRoleLevel >= currentUserRoleLevel;
+  //   });
+  // }, [currentUser, currentUserRoleId]);
+
+
   const filterUsersByRole = useCallback((allUsers) => {
     if (!currentUser || !currentUser.role_id) return allUsers;
 
     return allUsers.filter(user => {
-      const userRoleId = parseInt(user.role_id || user.role?.id || 4);
+      const userRoleId = parseInt(user.role_id || user.role?.id, 10);
 
-      //  Exclude superadmins (role_id 1) and regular users (role_id 4)
-      if (userRoleId === 1 || userRoleId === 4) {
-        return false;
-      }
+      // ✅ Exclude superadmins (1) and reserved (4)
+      if (userRoleId === 1 || userRoleId === 4) return false;
 
-      // Only show roles that exist in ROLE_HIERARCHY (2, 3, 5)
-      if (!ROLE_HIERARCHY[userRoleId]) {
-        return false;
-      }
+      // ✅ Only show roles defined in ROLE_HIERARCHY (2, 3, 5, 6, 7, 8)
+      if (!ROLE_HIERARCHY[userRoleId]) return false;
 
-      // ✅ If current user is Superadmin (role_id 1), show all valid roles
-      if (currentUserRoleId === 1) {
-        return true;
-      }
+      // ✅ Superadmin sees all
+      if (currentUserRoleId === 1) return true;
 
-      // ✅ For other roles, apply hierarchy: show users with equal or lower authority
+      // ✅ Admin sees all in their company
+      if (currentUserRoleId === 2) return true;
+
+      // ✅ Other roles: Show same role or lower hierarchy
       const userRoleLevel = ROLE_HIERARCHY[userRoleId]?.level || 999;
       const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
 
+      // Show users of same level or lower
       return userRoleLevel >= currentUserRoleLevel;
     });
   }, [currentUser, currentUserRoleId]);
+
 
   // Filter users by search
   const filterUsersBySearch = useCallback((allUsers, term) => {
@@ -134,7 +172,7 @@ export default function UsersPage() {
     setIsLoading(true);
     try {
       const response = await UsersApi.getAllUsers(companyId);
-      console.log('Fetched users:', response);
+      console.log('Fetched users:', response.data);
       if (response.success) {
         const roleFilteredUsers = filterUsersByRole(response.data);
         console.log('After role filter:', roleFilteredUsers); // ✅ Debug log
@@ -277,62 +315,51 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
-            ) : (
-              <>
-                {/* Total Users Card */}
-                <div className="col-span-2 sm:col-span-1 bg-white p-6 rounded-xl shadow-md border border-slate-200 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 animate-slideUp">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Total Users</p>
-                      <p className="text-3xl font-bold text-slate-800 mt-2">{users.length}</p>
-                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <TrendingUp size={12} />
-                        All roles
-                      </p>
-                    </div>
-                    <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <Users className="w-7 h-7 text-white" />
+          {/* Stats Cards - Compact Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+            {/* Total Users - Spans 2 columns on mobile */}
+            <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 rounded-lg shadow-md text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs opacity-90">Total Users</p>
+                  <p className="text-2xl font-bold mt-1">{users.length}</p>
+                </div>
+                <Users className="w-8 h-8 opacity-80" />
+              </div>
+            </div>
+
+            {/* Role Cards - Only show roles with users */}
+            {Object.entries(ROLE_HIERARCHY)
+              .filter(([roleId]) => stats[roleId] > 0)
+              .map(([roleId, roleData]) => {
+                const Icon = roleData.icon;
+                const count = stats[roleId] || 0;
+
+                return (
+                  <div
+                    key={roleId}
+                    onClick={() => setSelectedRole(selectedRole === roleId ? 'all' : roleId)}
+                    className={`p-4 rounded-lg shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedRole === roleId
+                      ? `bg-${roleData.color}-600 text-white ring-2 ring-${roleData.color}-400`
+                      : 'bg-white hover:bg-gray-50'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-xs ${selectedRole === roleId ? 'text-white opacity-90' : 'text-gray-600'}`}>
+                          {roleData.name}
+                        </p>
+                        <p className={`text-2xl font-bold mt-1 ${selectedRole === roleId ? 'text-white' : 'text-gray-800'}`}>
+                          {count}
+                        </p>
+                      </div>
+                      <Icon className={`w-6 h-6 ${selectedRole === roleId ? 'text-white opacity-80' : 'text-gray-400'}`} />
                     </div>
                   </div>
-                </div>
-
-                {/* Role-specific cards */}
-                {Object.entries(ROLE_HIERARCHY).map(([roleId, roleData], index) => {
-                  const Icon = roleData.icon;
-                  const count = stats[roleId] || 0;
-
-                  return (
-                    <div
-                      key={roleId}
-                      onClick={() => setSelectedRole(selectedRole === roleId ? 'all' : roleId)}
-                      className={`bg-white p-6 rounded-xl shadow-md border-2 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl animate-slideUp ${selectedRole === roleId
-                        ? `border-${roleData.color}-400 ring-2 ring-${roleData.color}-200`
-                        : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-slate-600">{roleData.name}s</p>
-                          <p className="text-3xl font-bold text-slate-800 mt-2">{count}</p>
-                          <p className={`text-xs mt-1 ${selectedRole === roleId ? `text-${roleData.color}-600 font-semibold` : 'text-slate-500'}`}>
-                            {selectedRole === roleId ? 'Filtered ✓' : 'Click to filter'}
-                          </p>
-                        </div>
-                        <div className={`w-14 h-14 bg-gradient-to-br ${getStatCardColor(roleData.color)} rounded-xl flex items-center justify-center shadow-lg transition-transform ${selectedRole === roleId ? 'scale-110' : ''}`}>
-                          <Icon className="w-7 h-7 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
+                );
+              })}
           </div>
+
 
           {/* Filters Section */}
           <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 animate-fadeIn">

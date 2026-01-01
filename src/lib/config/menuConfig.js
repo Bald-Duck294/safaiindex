@@ -68,11 +68,6 @@ export const getSuperadminMainMenu = () => [
       },
       {
         icon: List,
-        label: "Superadmin",
-        href: "/role/superadmin",
-      },
-      {
-        icon: List,
         label: "Admin",
         href: "/role/admin",
       },
