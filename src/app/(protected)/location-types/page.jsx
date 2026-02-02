@@ -151,7 +151,8 @@ export default function LocationTypesPage() {
       setTypes(prev => prev.filter(t => t.id !== typeId));
       setDeleteModal({ open: false, type: null });
     } catch (error) {
-      toast.error("Failed to delete location type");
+      console.log(error)
+      toast.error(error?.message || "Failed to delete location hierarchy");
     } finally {
       setIsDeleting(false);
     }
