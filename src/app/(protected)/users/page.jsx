@@ -12,7 +12,7 @@ import { useRequirePermission } from '@/lib/hooks/useRequirePermission';
 import { MODULES } from '@/lib/constants/permissions';
 
 
-
+import { useSearchParams } from "next/navigation";
 
 const ROLE_HIERARCHY = {
   2: { name: "Admin", level: 2, icon: Shield, color: "blue" },
@@ -84,6 +84,10 @@ export default function UsersPage() {
   const { companyId } = useCompanyId();
   const router = useRouter();
 
+  const params = useSearchParams();
+  const flag = params.get('flag');
+
+  console.log('Flag from URL params:', flag);
   const currentUserRoleId = parseInt(currentUser?.role_id || 4);
 
   // Calculate role statistics
@@ -164,6 +168,7 @@ export default function UsersPage() {
     );
   }, []);
 
+
   const fetchUsers = useCallback(async () => {
     if (!companyId) {
       setIsLoading(false);
@@ -205,6 +210,17 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+
+    if (flag === 'cleaner') {
+      // setCleaner
+      console.log('Setting selectedRole based on flag:', flag);
+      setSelectedRole('5');
+    }
+
+  }, [flag])
+
 
   useEffect(() => {
     applyFilters(users, searchTerm, selectedRole);
@@ -409,7 +425,7 @@ export default function UsersPage() {
                         ? 'bg-white/20'
                         : `bg-${roleData.color}-200`
                         }`}>
-                        {count}
+                        {count} 
                       </span>
                     </button>
                   );

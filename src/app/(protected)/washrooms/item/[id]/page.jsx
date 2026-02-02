@@ -648,8 +648,8 @@ const SingleLocation = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             {/* Back Button */}
             <button
-              onClick={() => router.push(`/washrooms?companyId=${finalCompanyId}`)}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
+              onClick={() => router.back()}
+              className=" cursor-pointer flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               <span className="hidden xs:inline">Back to listings</span>

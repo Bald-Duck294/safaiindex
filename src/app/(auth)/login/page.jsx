@@ -61,8 +61,12 @@ const AuthPage = () => {
           dispatch(loginSuccess(user));
           const roleId = parseInt(user?.role_id)
           toast.success(`Welcome back, ${user.name}!`);
-          console.log(user.role_id, "user before redirecting ");
-          console.log(user.role_id === 1, "user role id ");
+          // console.log(user.role_id, "user before redirecting ");
+          // console.log(user.role_id === 1, "user role id ");
+          // console.log(typeof (roleId), "type of role id ");
+          // console.log(typeof (user.role_id), "type of user role id ");
+          // console.log(user.role_id === 1, "user role id ");
+
 
           if (roleId === 1) {
             // Superadmin → Main dashboard

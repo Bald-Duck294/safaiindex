@@ -6,8 +6,6 @@ import { success } from "zod";
 import { parseParameter } from "next/dist/shared/lib/router/utils/route-regex";
 
 
-
-
 export const LocationsApi = {
   // Get all locations
   getAllLocations: async (company_id, includeUnavailable = false, facilityCompanyId = null) => {
@@ -201,10 +199,10 @@ export const LocationsApi = {
   // },
 
 
-  postLocation: async (data, companyId, images = []) => {
+  postLocation: async (data, companyId, images = [], user) => {
     console.log("=== LOCATION API DEBUG ===");
     console.log("Input data:", data);
-
+    // console.log(user?.role?.name, "role")
     try {
       const formData = new FormData();
 
@@ -212,7 +210,7 @@ export const LocationsApi = {
       const fieldsToSend = [
         'name', 'parent_id', 'type_id', 'latitude', 'longitude',
         'address', 'pincode', 'state', 'city', 'dist', 'status', 'options'
-        , 'facility_company_id', 'no_of_photos', 'usage_category'
+        , 'facility_company_id', 'no_of_photos', 'usage_category',
       ];
 
       fieldsToSend.forEach(key => {
@@ -248,6 +246,11 @@ export const LocationsApi = {
         console.log(`${pair[0]}: ${pair[1]}`);
       }
 
+      if (user) {
+        formData.append('user_id', user?.id)
+        formData.append('role_name', user?.role?.name);
+        formData.append('role_id', user?.role?.id);
+      }
       const response = await axiosInstance.post(
         `/locations?companyId=${companyId}`,
         formData,

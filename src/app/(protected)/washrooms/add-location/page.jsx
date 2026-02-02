@@ -606,6 +606,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSelector } from "react-redux";
 import { fetchToiletFeaturesByName } from "@/lib/api/configurationsApi.js";
 import DynamicOptions from "./components/DynamicOptions";
 import LocationTypeSelect from "./components/LocationTypeSelect";
@@ -623,7 +624,7 @@ import { usePermissions } from '@/lib/hooks/usePermissions';
 import { MODULES } from '@/lib/constants/permissions';
 import {
   Upload, X, Image as ImageIcon, Plus, MapPin,
-  Users, UserCheck, Search, ChevronDown, CheckCircle, Mail, Phone, Droplets, Armchair, ArrowLeft 
+  Users, UserCheck, Search, ChevronDown, CheckCircle, Mail, Phone, Droplets, Armchair, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Country, State, City } from 'country-state-city';
@@ -670,7 +671,8 @@ export default function AddLocationPage() {
   const [availableCities, setAvailableCities] = useState([]);
   const [availableDistricts, setAvailableDistricts] = useState([]);
 
-  console.log("add location mounted");
+  const user = useSelector((state) => state.auth.user);
+  console.log("add location mounted", user);
   const { companyId } = useCompanyId();
 
   const [form, setForm] = useState({
@@ -926,7 +928,7 @@ export default function AddLocationPage() {
     try {
       // ✅ Step 1: Create Location
       console.log("📍 Creating location...");
-      const locationRes = await LocationsApi.postLocation(form, companyId, images);
+      const locationRes = await LocationsApi.postLocation(form, companyId, images, user);
       console.log("✅ Location response:", locationRes);
 
       if (!locationRes?.success) {
@@ -981,7 +983,7 @@ export default function AddLocationPage() {
       console.log("All operations complete, redirecting...");
       setTimeout(() => {
         router.push(`/washrooms?companyId=${companyId}`);
-      }, 1500);
+      }, 1500); 
 
     } catch (error) {
       console.error("❌ Submission error:", error);

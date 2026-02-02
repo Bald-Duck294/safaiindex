@@ -8,7 +8,7 @@ export default function AuthChecker({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isReady, setIsReady] = useState(false);
-  
+
   const user = useSelector((state) => state.auth.user);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
@@ -34,17 +34,38 @@ export default function AuthChecker({ children }) {
     // If user is authenticated and on login/register page, redirect to appropriate dashboard
     if (isAuthenticated && (pathname === "/login" || pathname === "/register")) {
       console.log("User already authenticated, redirecting to dashboard");
-      
+
       // Check user role and redirect accordingly
-      if (user?.role_id === 1) {
+      // if (user?.role_id === 1) {
+      //   router.push('/dashboard');
+      // } else {
+      //   router.push(`/clientDashboard/${user.company_id}`);
+      // }
+      const roleId = parseInt(user?.role_id)
+
+
+
+
+      if (roleId === 1) {
+        // Superadmin → Main dashboard
+        console.log('Redirecting to /dashboard for superadmin');
         router.push('/dashboard');
-      } else if (user?.role_id === 2 && user?.company_id) {
-        router.push(`/clientDashboard/${user.company_id}`);
-      } else if (user?.role_id === 3 && user?.company_id) {
+      } else if (user.company_id) {
+        // All other roles with company_id → Client dashboard
         router.push(`/clientDashboard/${user.company_id}`);
       } else {
-        router.push('/dashboard');
+        // No company assigned (shouldn't happen for non-superadmin)
+        toast.error("No company assigned. Contact support.");
+        dispatch(logout());
       }
+
+      // else if (user?.role_id === 2 && user?.company_id) {
+      //   router.push(`/clientDashboard/${user.company_id}`);
+      // } else if (user?.role_id === 3 && user?.company_id) {
+      //   router.push(`/clientDashboard/${user.company_id}`);
+      // } else {
+      //   router.push('/dashboard');
+      // }
       return;
     }
   }, [isAuthenticated, pathname, router, isPublicRoute, isReady, user]);
