@@ -1128,8 +1128,10 @@ import {
 } from 'lucide-react';
 
 import { Country, State, City } from 'country-state-city';
-import GoogleMapPicker from '@/app/(protected)/add-location/components/GoogleMapPicker';
-import LatLongInput from '@/app/(protected)/add-location/components/LatLongInput';
+// import GoogleMapPicker from '@/app/(protected)/add-location/components/GoogleMapPicker';
+import GoogleMapPicker from '../../../add-location/components/GoogleMapPicker';
+// import LatLongInput from '@/app/(protected)/add-location/components/LatLongInput';
+import LatLongInput from '../../../add-location/components/LatLongInput';
 // import SearchableSelect from './components/SearchableSelect';
 import SearchableSelect from '../../../add-location/components/SearchableSelect';
 import locationTypesApi from '@/lib/api/locationTypesApi';
